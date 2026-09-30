@@ -1,0 +1,13 @@
+{
+  "name": "edit-video-youtube-reaction",
+  "owner": { "name": "Annie-246", "url": "https://github.com/Annie-246" },
+  "description": "Plugin dựng video YouTube reaction cho Claude Code.",
+  "plugins": [
+    {
+      "name": "edit-video-youtube-reaction",
+      "displayName": "Edit Video Youtube Reaction",
+      "source": "./",
+      "description": "Dựng video react/phân tích YouTube: cắt vấp, chữ nhảy theo từ, phụ đề Việt, motion graphic Remotion, thẻ full màn hình."
+    }
+  ]
+}

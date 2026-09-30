@@ -1,0 +1,15 @@
+{
+  "name": "reactforge-motion",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "render": "remotion render"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.506",
+    "@remotion/fonts": "^4.0.506",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "remotion": "^4.0.506"
+  }
+}

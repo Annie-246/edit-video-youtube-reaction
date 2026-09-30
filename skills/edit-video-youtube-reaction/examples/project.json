@@ -1,0 +1,15 @@
+{
+  "title": "Tên video của bạn",
+  "script": "script.md",
+  "source": {
+    "url": "https://www.youtube.com/watch?v=XXXXXXXXXXX",
+    "local_file": "source/raw.mp4",
+    "quality": 1080,
+    "pad": 1.0,
+    "cover_bottom": {"y": 0.872, "h": 0.090}
+  },
+  "recording": {"files": ["recording/take1.mp4"], "cx": 0.5, "cy": 0.42, "pip_file": null},
+  "whisper": {"model": "medium", "language": "vi"},
+  "style": {"accent": "#8B7CFF", "label_xy": [72, 190]},
+  "output": {"width": 1920, "height": 1080, "fps": 30, "encoder": "auto", "break_secs": 2.6}
+}

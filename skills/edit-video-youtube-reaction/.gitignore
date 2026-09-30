@@ -1,0 +1,8 @@
+.venv/
+*.pyc
+out/
+work/
+.env
+.DS_Store
+node_modules/
+__pycache__/
