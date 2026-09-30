@@ -43,7 +43,9 @@ Từ đó mỗi lần repo có commit mới, Claude Code tự kéo bản mới k
 Lần chạy đầu plugin tự tạo venv Python + cài Remotion vào thư mục dữ liệu của plugin
 (`~/.claude/plugins/data/...`), không mất khi plugin cập nhật.
 
-Khoá AI (tuỳ chọn) đặt trong `<dự-án>/.env` hoặc `~/.env`: `GEMINI_API_KEY` hoặc `ANTHROPIC_API_KEY`.
+Lần đầu dùng, Claude sẽ xin **API key Gemini miễn phí** (lấy tại https://aistudio.google.com/apikey)
+để tự sinh ảnh minh hoạ chèn vào video, rồi lưu vào `~/.env`. Không đưa khoá vẫn dựng được,
+chỉ không có ảnh AI.
 
 ## Dùng
 

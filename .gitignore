@@ -8,3 +8,4 @@ work/
 .env
 .env.*
 .DS_Store
+build/

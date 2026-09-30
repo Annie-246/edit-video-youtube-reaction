@@ -3,6 +3,7 @@ import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remo
 import { Particles } from "./library/motion";
 import { FONT } from "./theme";
 import { Rise } from "./ui";
+import { CUSTOM } from "./custom";
 import {
   BarGrowth,
   DualLineTrend,
@@ -31,6 +32,7 @@ import {
 
 export type CardStyle =
   | "question"
+  | (string & {}) // custom templates registered in src/custom
   | "beat"
   | "chapter"
   | "bars"
@@ -108,7 +110,7 @@ const Glow: React.FC<{ accent: string; intensity: number }> = ({ accent, intensi
   );
 };
 
-export const Card: React.FC<CardProps> = ({
+const BuiltinCard: React.FC<CardProps> = ({
   width,
   height,
   accent,
@@ -409,4 +411,10 @@ export const Card: React.FC<CardProps> = ({
       </AbsoluteFill>
     </AbsoluteFill>
   );
+};
+
+/** A custom template registered under `style` takes over the whole card. */
+export const Card: React.FC<CardProps & Record<string, unknown>> = (props) => {
+  const C = CUSTOM[props.style];
+  return C ? <C {...props} /> : <BuiltinCard {...props} />;
 };

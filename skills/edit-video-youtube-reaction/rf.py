@@ -71,7 +71,13 @@ def setup(data: Path) -> None:
 
     # Remotion resolves node_modules next to its sources, so mirror motion/ into the data dir.
     dst = data / "motion"
-    shutil.copytree(MOTION, dst, dirs_exist_ok=True, ignore=shutil.ignore_patterns("node_modules"))
+    def skip(folder: str, names: list[str]) -> list[str]:
+        out = [n for n in names if n == "node_modules"]
+        # src/custom holds templates Claude wrote on this machine; seed it once, then leave it alone.
+        if Path(folder).resolve() == (MOTION / "src").resolve() and (dst / "src" / "custom").is_dir():
+            out.append("custom")
+        return out
+    shutil.copytree(MOTION, dst, dirs_exist_ok=True, ignore=skip)
     npm_stamp = data / ".npm-stamp"
     want = digest(MOTION / "package.json", MOTION / "package-lock.json")
     if not stamp_ok(npm_stamp, want) or not (dst / "node_modules").is_dir():

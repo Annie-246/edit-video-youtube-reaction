@@ -18,7 +18,8 @@ from .panel import parse_full, render_panel
 
 
 def _props(cfg: dict, L: dict, secs: float, style: str, src: dict) -> dict:
-    return {"width": L["w"], "height": L["h"], "fps": cfg["output"]["fps"], "secs": round(secs, 3),
+    extra = {k: v for k, v in src.items() if k not in ("secs", "style")}
+    return {**extra, "width": L["w"], "height": L["h"], "fps": cfg["output"]["fps"], "secs": round(secs, 3),
             "accent": cfg["style"]["accent"], "bg": L["bg"], "style": style,
             "kicker": src.get("kicker", ""), "title": src.get("title", ""),
             "sub": src.get("sub", ""), "emoji": src.get("emoji", "")}
@@ -55,7 +56,7 @@ def main(project: Path, only: str | None = None, force: bool = False) -> None:
             cache = out.with_suffix(".json")
             if out.exists() and not force and cache.exists() and read_json(cache) == props:
                 print(f"{out.stem}: thẻ có sẵn"); continue
-            render_panel(props, out, composition="Card")
+            render_panel(props, out, composition="Card", base=project)
             print(f"{out.stem}: {props['style']} {props['secs']}s — {props['title'][:52]}")
             n += 1
     print(f"→ {n} thẻ dựng mới trong {out_dir}")

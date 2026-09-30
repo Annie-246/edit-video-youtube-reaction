@@ -8,7 +8,7 @@ the word timings); the first scene without a phrase starts at 0. Scenes run unti
 Templates: card · bignumber · list · quote · compare · twoline (see remotion-explainer/src/Panel.tsx).
 """
 from __future__ import annotations
-import json, os, re, subprocess
+import base64, json, os, re, subprocess
 from pathlib import Path
 from .align import normalize
 from .captions import timed_words_for
@@ -113,9 +113,29 @@ def build_scenes(gfx_lines: list[str], ws: list[dict], total: float) -> tuple[li
     return scenes, notes
 
 
-def render_panel(props: dict, out: Path, composition: str = "Panel") -> None:
-    props_p = out.with_suffix(".json")
-    write_json(props_p, props)
+IMG_EXT = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".gif": "image/gif"}
+
+
+def _inline_images(v, base: Path | None):
+    """Remotion renders in a browser that cannot read local paths: turn image files into data URIs."""
+    if isinstance(v, dict):
+        return {k: _inline_images(x, base) for k, x in v.items()}
+    if isinstance(v, list):
+        return [_inline_images(x, base) for x in v]
+    if isinstance(v, str) and Path(v).suffix.lower() in IMG_EXT and not v.startswith(("http:", "https:", "data:")):
+        p = Path(v)
+        if not p.is_absolute() and base is not None:
+            p = base / p
+        if p.is_file():
+            return f"data:{IMG_EXT[p.suffix.lower()]};base64," + base64.b64encode(p.read_bytes()).decode()
+        print(f"   ⚠ không thấy ảnh {v}")
+    return v
+
+
+def render_panel(props: dict, out: Path, composition: str = "Panel", base: Path | None = None) -> None:
+    write_json(out.with_suffix(".json"), props)  # cache key, compared on the next run
+    props_p = out.with_suffix(".props.json")
+    write_json(props_p, _inline_images(props, base))
     cmd = ["npx", "remotion", "render", composition, str(out), f"--props={props_p}", "--log=error"]
     r = subprocess.run(cmd, cwd=str(REMOTION_DIR), capture_output=True, text=True, shell=(os.name == "nt"))
     if r.returncode != 0:
@@ -164,7 +184,7 @@ def main(project: Path, only: str | None = None, force: bool = False) -> None:
             if out.exists() and not force and out.with_suffix(".json").exists() and read_json(out.with_suffix(".json")) == props:
                 print(f"{it['id']}: side graphic có sẵn")
             else:
-                render_panel(props, out, composition="Side")
+                render_panel(props, out, composition="Side", base=project)
                 print(f"{it['id']}: {len(scenes)} cảnh 1/2 màn hình → side/{out.name}  " + " · ".join(f"{s['start']:.0f}s {s['template']}" for s in scenes))
                 for n in notes:
                     print("   ⚠", n)
@@ -175,7 +195,7 @@ def main(project: Path, only: str | None = None, force: bool = False) -> None:
             if out.exists() and not force and out.with_suffix(".json").exists() and read_json(out.with_suffix(".json")) == props:
                 print(f"{it['id']}: panel có sẵn")
             else:
-                render_panel(props, out, composition="Panel")
+                render_panel(props, out, composition="Panel", base=project)
                 print(f"{it['id']}: {len(scenes)} cảnh → panel/{out.name}  " + " · ".join(f"{s['start']:.0f}s {s['template']}" for s in scenes))
                 for n in notes:
                     print("   ⚠", n)

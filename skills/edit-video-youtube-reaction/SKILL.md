@@ -27,6 +27,27 @@ Khoá AI để dịch phụ đề và chấm chỗ cắt (đặt trong `<dự-á
 - Hoặc dùng **Claude**: Đặt `ANTHROPIC_API_KEY` hoặc dùng CLI `claude -p`.
 - Không có khoá thì pipeline tự động rơi về thuật toán n-gram cắt vấp cục bộ.
 
+## Lần đầu dùng: hỏi người dùng trước khi làm gì khác
+
+Kiểm tra `GEMINI_API_KEY` đã có trong `~/.env` chưa (chỉ kiểm có/không, không in khoá ra).
+Chưa có thì **hỏi người dùng khoá Gemini free** trước khi làm bất cứ việc gì khác:
+
+> "Để mình tự sinh ảnh minh hoạ chèn vào video (và dịch phụ đề, chấm chỗ cắt nhanh hơn),
+> bạn cho mình xin API key Gemini miễn phí nhé. Lấy tại https://aistudio.google.com/apikey
+> → Create API key → dán vào đây."
+
+Nhận khoá → ghi `GEMINI_API_KEY=...` vào `~/.env` (tạo file nếu chưa có), không ghi vào
+file nào trong dự án, không nhắc lại khoá trong câu trả lời. Người dùng chưa muốn đưa khoá
+thì vẫn làm tiếp được, chỉ bỏ phần sinh ảnh.
+
+Sau đó chạy `rf.py setup` (mục trên). Thiếu công cụ nào thì báo đúng tên công cụ và cách cài.
+
+Mỗi video mới, hỏi đủ các thứ còn thiếu:
+1. Kịch bản (file `.md` hoặc dán thẳng), có note chỗ cần đồ hoạ/ảnh đặc biệt nếu có.
+2. File quay thô người đọc kịch bản.
+3. Link video gốc để react (nếu có đoạn `[CLIP …]`).
+4. Thư mục dự án muốn đặt (mặc định `projects/<tên-video>` trong thư mục đang mở).
+
 ## Quy trình phối hợp 6 bước (Bắt buộc)
 
 1. **Bước 1 (Gửi đầu vào):** Người dùng gửi kịch bản (`script.md`) + video quay thô (`recording/take1.mp4`). Trong kịch bản có note các đoạn cần chèn đồ họa, hình ảnh đặc biệt.
@@ -51,7 +72,20 @@ Khoá AI để dịch phụ đề và chấm chỗ cắt (đặt trong `<dự-á
     2. *1/2 Màn hình bên cạnh người nói (`SIDE:`):* Kích thước 900x1016, chiếm trọn toàn bộ nửa bên trái bên cạnh người nói, tối ưu cho quy trình dọc (bước 1-2-3), timeline, danh sách trọng tâm, biểu đồ so sánh hoặc sơ đồ công nghệ.
     3. *Graphic Full to toàn màn hình (`FULL:`):* Kích thước 1920x1080, chiếm trọn khung hình vài giây để nhấn mạnh luận điểm hoặc câu hỏi quan trọng.
     4. Không được chỉ dùng 1 kiểu gây nhàm chán.
-  - **Linh hoạt phong cách:** 4 mẫu video (`mau-graphic-motion-1..4`) là tiêu chuẩn về phong cách thị giác (glassmorphism, neon gradient, viền phát sáng, chuyển động mượt, typography rõ nét). Ngoài 4 mẫu đó, AI linh hoạt code bất kỳ dạng Motion Graphic Remotion nào phù hợp nhất với kịch bản (phễu, quy trình, mindmap, bảng so sánh, số liệu...).
+  - **Phân tích kịch bản trước, chọn graphic sau.** Đọc từng đoạn, tìm chỗ có thể "vẽ" ra
+    được: một con số, một phép so sánh, một quy trình, một danh sách, một câu chốt, một khái
+    niệm trừu tượng, một cảm xúc. Mỗi chỗ đó chọn dạng graphic diễn tả đúng ý nhất — không
+    lấy mẫu có sẵn rồi nhét chữ vào cho đủ.
+  - **4 video mẫu (`mau-graphic-motion-1..4`) chỉ là chuẩn PHONG CÁCH** (glassmorphism, neon
+    gradient, viền phát sáng, chuyển động mượt, chữ rõ nét), **không phải giới hạn nội dung**.
+    Dùng đa dạng, ví dụ:
+    - *Text motion:* chữ bật từng từ, gạch chân chạy, số đếm nhảy, chữ gõ máy, highlight
+      từ khoá, câu trích dẫn hiện dần, chữ to đập vào màn hình cho câu chốt.
+    - *Hình motion:* icon/biểu tượng bay vào, phễu, mũi tên luồng đi, sơ đồ nối nút, mindmap,
+      timeline, cân so sánh, thanh tiến trình, biểu đồ cột/đường/tròn, đồng hồ, bản đồ.
+    - *Kết hợp:* icon + con số, sơ đồ + nhãn chữ, ảnh Gemini + chữ chạy trên ảnh.
+  - **Mẫu có sẵn không hợp thì tự code mẫu mới** (xem mục "Tự code graphic mới" bên dưới).
+    Hai graphic liền nhau không được cùng một dạng.
 - **Quy chuẩn Font chữ & Typography (Notion Font):**
   - Luôn sử dụng font kiểu Notion (`NotionInter` / Inter) sạch sẽ, hiện đại, dễ đọc trên mọi thiết bị.
   - **Không viết hoa toàn bộ (All-Caps)** ở tiêu đề: Sử dụng chữ hoa đầu câu (Sentence / Title case) để người xem không bị đau mắt và tránh va chạm dấu tiếng Việt.
@@ -59,7 +93,16 @@ Khoá AI để dịch phụ đề và chấm chỗ cắt (đặt trong `<dự-á
 - **Phụ đề tiếng Việt bắt buộc cho clip gốc tiếng Anh:**
   - Tất cả các đoạn clip gốc tiếng Anh phải có phụ đề tiếng Việt (`work/subs/<id>.ass`) chạy dưới khung hình, cỡ chữ to rõ ràng (54px), font chuẩn tiếng Việt, căn lề dưới thoáng đãng.
   - Trường hợp không có file phụ đề `.vtt`, hệ thống tự động chạy Whisper bóc băng trực tiếp âm thanh clip và dịch nghĩa tự nhiên sang tiếng Việt.
-- **Hình ảnh minh họa:** Dùng Gemini API (khoá `GEMINI_API_KEY` đặt trong `<dự-án>/.env` hoặc `~/.env`, không ghi vào file nào khác) để sinh ảnh trám video. **Chỉ sinh ảnh ở những đoạn người dùng note rõ**; đoạn không note thì dùng motion graphic hoặc b-roll theo quy tắc 10 giây.
+- **Hình ảnh minh họa (Gemini):** Sinh ảnh ở những đoạn người dùng note; đoạn không note
+  thì ưu tiên motion graphic/b-roll, chỉ dùng ảnh Gemini khi nó diễn tả ý tốt hơn hẳn.
+  ```bash
+  python "${CLAUDE_PLUGIN_ROOT}/skills/edit-video-youtube-reaction/pipeline/scripts/gemini_image.py" \
+    --project projects/video-cua-toi --out assets/t03/minh-hoa.png --aspect 16:9 "mô tả ảnh"
+  ```
+  Chèn ảnh theo 3 cách: bỏ vào `assets/<id>/` (chạy khung trái có push-in), dùng trong
+  `SIDE: image {"src":"assets/t03/minh-hoa.png",…}`, hoặc `FULL: {"style":"illustration","images":["assets/t03/minh-hoa.png"],…}`.
+  Đường dẫn ảnh tính từ thư mục dự án; pipeline tự nhúng ảnh vào Remotion.
+  Lỗi 429 là hết hạn mức free — báo người dùng, đừng thử lại liên tục.
 - **Phản hồi của người dùng chỉ áp dụng cho video/phiên hiện tại.** Không tự sửa skill này vì một lời chê; muốn ghi chặt phải hỏi và được duyệt.
 
 
@@ -147,6 +190,24 @@ SIDE: @"so sánh trực quan" compare {"kicker":"ĐỐI ĐẦU","leftTitle":"Th�
 FULL: @"quy trình tự động" {"secs":3.8,"style":"system_flow","kicker":"KIỂM DUYỆT","title":"Tự động hóa 100% bằng AI"}
 FULL: @"tiết kiệm toàn bộ thời gian" {"secs":4.0,"style":"clock_cycle","kicker":"24/7","title":"Hệ thống vận hành không ngừng nghỉ"}
 ```
+
+### Tự code graphic mới
+
+Mẫu mới nằm trong `${CLAUDE_PLUGIN_DATA}/motion/src/custom/` — thư mục này **không bị ghi đè
+khi plugin cập nhật** (chạy ngoài plugin: `~/.edit-video-youtube-reaction/motion/src/custom/`).
+
+1. Viết component vào `custom/<TenMau>.tsx`. Dùng lại `../library/motion`, `../library/text`,
+   `../ui` (`Rise`), `../theme` (`FONT`) và `useCurrentFrame`/`spring` để giữ đúng phong cách
+   4 video mẫu. Component nhận props của dòng kịch bản + `accent` (FULL nhận thêm `width`,
+   `height`, `secs`, `bg`). Vẽ vừa khung: GFX 900x478, SIDE 900x1016, FULL 1920x1080.
+2. Đăng ký tên trong `custom/index.ts`: `export const CUSTOM = { phieu: Phieu, … }`.
+3. Gọi trong kịch bản như mẫu có sẵn: `GFX: @"câu" phieu {…}`, `SIDE: @"câu" phieu {…}`,
+   `FULL: @"câu" {"style":"phieu", …}`.
+4. Xem thử 1 khung trước khi dựng cả bài:
+   `cd "${CLAUDE_PLUGIN_DATA}/motion" && npx remotion still Card out.png --props=props.json --frame=45`,
+   mở ảnh ra xem có tràn chữ, đè dấu tiếng Việt, rối mắt không.
+
+Mẫu nào dùng tốt nhiều lần thì gợi ý người dùng đưa vào repo plugin để cả team có.
 
 ## Cắt vấp — Claude làm giám khảo
 

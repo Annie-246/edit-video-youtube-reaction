@@ -12,6 +12,7 @@ import { GridFloor, Particles } from "./library/motion";
 import { useCountUp, vn } from "./library/text";
 import { FONT } from "./theme";
 import { Rise } from "./ui";
+import { CUSTOM } from "./custom";
 import {
   BarGrowth,
   DualLineTrend,
@@ -542,7 +543,7 @@ const TEMPLATES: Record<string, React.FC<any>> = {
 const SideSceneRenderer: React.FC<{ scene: SideScene; accent: string }> = ({ scene, accent }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const T = TEMPLATES[scene.template] ?? StepsTemplate;
+  const T = CUSTOM[scene.template] ?? TEMPLATES[scene.template] ?? StepsTemplate;
 
   const scale = 1 + Math.min(frame, fps * 40) * 0.00002;
   const fadeIn = interpolate(frame, [0, fps * 0.25], [0, 1], { extrapolateRight: "clamp" });

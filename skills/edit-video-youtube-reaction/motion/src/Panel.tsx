@@ -16,6 +16,7 @@ import {
   BrowserAIFlow,
   ClockCycleTasks,
 } from "./templates/MotionStandards";
+import { CUSTOM } from "./custom";
 
 /**
  * Panel — a compact animated graphic for the bottom-left corner of a react
@@ -691,7 +692,7 @@ const TEMPLATES: Record<PanelScene["template"], React.FC<any>> = {
 const Scene: React.FC<{ scene: PanelScene; accent: string }> = ({ scene, accent }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const T = TEMPLATES[scene.template] ?? Card;
+  const T = CUSTOM[scene.template] ?? TEMPLATES[scene.template] ?? Card;
   // gentle push-in over the scene so nothing ever sits perfectly still
   // capped at +2.4% over 40s: a bigger push-in walks wide content off the right edge
   const scale = 1 + Math.min(frame, fps * 40) * 0.00002;
