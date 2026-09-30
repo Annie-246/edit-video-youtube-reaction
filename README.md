@@ -19,6 +19,22 @@ Marketplace bên thứ ba mặc định **tắt** auto-update. Bật bằng:
 
 `/plugin` → tab **Marketplaces** → chọn `edit-video-youtube-reaction` → **Enable auto-update**
 
+Hoặc dán vào `~/.claude/settings.json` (cài + bật auto-update một lần):
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "edit-video-youtube-reaction": {
+      "source": { "source": "github", "repo": "Annie-246/edit-video-youtube-reaction" },
+      "autoUpdate": true
+    }
+  },
+  "enabledPlugins": {
+    "edit-video-youtube-reaction@edit-video-youtube-reaction": true
+  }
+}
+```
+
 Từ đó mỗi lần repo có commit mới, Claude Code tự kéo bản mới khi khởi động.
 
 ## Máy cần có
