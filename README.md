@@ -1,8 +1,9 @@
 # Edit Video Youtube Reaction
 
 Plugin Claude Code dựng video YouTube dạng react/phân tích: từ kịch bản markdown + file quay
-đọc kịch bản + link video gốc ra `out/final.mp4` 1080p — cắt vấp, chữ nhảy theo từng từ,
-phụ đề Việt cho clip gốc, motion graphic Remotion (góc nhỏ / nửa màn hình / full màn hình).
+đọc kịch bản + link video gốc ra `out/final.mp4` 1080p theo bố cục trắng kiểu Claude/Anthropic:
+khung nội dung lớn (b-roll thật + motion graphic màu cam trơn), avatar dọc, thẻ tiêu đề phần,
+chữ nhảy theo từng từ, clip gốc full màn hình có phụ đề Việt, tự cắt vấp.
 
 ## Cài đặt
 

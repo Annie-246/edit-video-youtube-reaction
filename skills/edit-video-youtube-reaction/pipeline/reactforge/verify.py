@@ -217,9 +217,13 @@ def main(project: Path, rounds: int = 2, only: str | None = None, model: str = "
             break
         print(f"  → dựng lại {len(changed)} đoạn: {', '.join(changed)}")
         captions.main(project)
+        from . import cards
         for tid in changed:
             panel.main(project, only=tid, force=True)
-            render.main(project, only=tid)
+            cards.main(project, only=tid)
+            # render skips segments that already exist; the old cut must go first
+            (work / "seg" / f"{tid}.mov").unlink(missing_ok=True)
+            render.main(project, only=tid, concat=False)
     if rebuild:
         render.concat_only(project)
     (work / "verify_report.md").write_text("\n".join(report) + "\n", encoding="utf-8")

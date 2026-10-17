@@ -1,33 +1,33 @@
 # Tiêu đề video
 
-Nguồn: Tên buổi nói chuyện · kênh XYZ · https://www.youtube.com/watch?v=XXXXXXXXXXX
+Nguồn: Tên video gốc · kênh XYZ · https://www.youtube.com/watch?v=XXXXXXXXXXX
 
-## 0. MỞ MÀN
+## 0. Mở đầu
 
-SLIDE: TÊN NHÂN VẬT | MỞ MÀN | một dòng tóm ý
-GFX: card {"kicker":"MỞ MÀN","title":"Tên nhân vật","sub":"chức danh, nơi làm"}
-GFX: @"rồi đi ngủ" bignumber {"kicker":"MỘT ĐÊM","value":20,"unit":"đầu việc","headline":"Xong lúc cô ấy ngủ"}
+INFO: Reaction | 6 công cụ AI | Video của Tên Nhân Vật
+SIDE: person {"src":"assets/nhan-vat.jpg","name":"Tên Nhân Vật","role":"Chức danh, nơi làm","tags":["Chủ đề video","24 phút"]}
+SIDE: @"tự đặt ra một câu hỏi" flow {"kicker":"Câu hỏi luôn đặt ra","title":"Công cụ này giúp mình *được gì?*","nodes":[{"icon":"money","label":"Kiếm tiền"},{"icon":"rocket","label":"Dịch vụ mới"},{"icon":"clock","label":"Tiết kiệm thời gian"}]}
+FULL: @"cơ hội kinh doanh" {"secs":4,"tpl":"title","kicker":"Điều hay nhất","title":"Không chỉ là công cụ, mà là *cơ hội kinh doanh*"}
 
-Đoạn văn thường là lời bạn đọc. Viết liền mạch, không cần đánh dấu gì thêm.
+Đoạn văn thường là lời người dẫn đọc. Viết liền mạch. Mình vừa xem xong video này và
+nhân vật tự đặt ra một câu hỏi rất hay, rồi biến công cụ thành cơ hội kinh doanh.
 
-Các đoạn văn nối tiếp nhau gộp thành MỘT đoạn nói, cho tới khi gặp một dòng [CLIP].
+## 1. Công cụ thứ nhất
 
-## 1. PHẦN MỘT
+INFO: Công cụ 1/6 | Tên công cụ | Mô tả ngắn một dòng
+FULL: {"secs":3.6,"tpl":"tool","num":"01","name":"Tên công cụ","icon":"video","desc":"Một câu nói công cụ làm gì","tag":"Skill · Miễn phí"}
+SIDE: broll {"at": 95, "caption": "Demo trong video gốc"}
 
-BREAK: Tên phần một
+Lời dẫn vào clip, xem thử nhé.
 
-SLIDE: CHỮ KHOÁ | PHẦN 1 | dòng phụ
-GFX: twoline {"kicker":"PHẦN 1","first":"Vế thứ nhất","second":"vế thứ hai"}
-FULL: @"câu hỏi của phần này" {"secs":3.6,"kicker":"CÂU HỎI","title":"Câu hỏi chiếm trọn khung hình?"}
+[CLIP 0:01:35–0:01:58]
 
-Lời dẫn vào clip.
+SIDE: broll {"at": 150}
+SIDE: @"hoạt động như thế nào" title {"kicker":"Là gì?","title":"Một *skill* cài vào công cụ AI"}
+SIDE: @"đưa cho nó đường link" steps {"kicker":"Cách dùng","title":"Ba bước, *AI lo phần còn lại*","steps":[{"title":"Đưa link website"},{"title":"Yêu cầu video 20 giây"},{"title":"Nhận video ra mắt"}]}
+SIDE: @"hàng trăm nghìn đô" bars {"kicker":"Chi phí","title":"Rẻ hơn *rất nhiều*","bars":[{"label":"Thuê làm","value":300,"display":"Hàng trăm nghìn đô"},{"label":"Tự làm bằng AI","value":14,"display":"Chỉ trả phí model"}]}
+BEAT: @"điều đáng nói nhất" {"title":"Cách kiếm tiền từ nó mới là *phần hay*"}
 
-[CLIP 0:02:03–0:03:23]
-LABEL: NHÃN NGẮN
-GFX: bots {"kicker":"NÚT THẮT","count":5,"you":"BẠN — người duyệt từng bài","headline":"Năm con AI, vẫn một cửa duy nhất"}
-
-Lời bạn giải thích lại sau khi clip chạy xong. Đây là một đoạn nói mới.
-
-BEAT: @"câu đọng lại" {"secs":3.2,"title":"Một câu để người xem thấm.","emoji":"😮‍💨"}
-
-Đoạn kết của phần.
+Lời giải thích sau clip là một đoạn nói mới. Vậy nó hoạt động như thế nào? Bạn chỉ cần
+đưa cho nó đường link website. Video ra mắt có khi tốn tới hàng trăm nghìn đô. Nhưng
+điều đáng nói nhất là cách kiếm tiền từ nó.

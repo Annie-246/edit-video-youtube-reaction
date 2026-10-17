@@ -47,7 +47,6 @@ def check(project: Path) -> list[tuple[str, str, str]]:
     burned = bool(cfg.get("source", {}).get("burned_captions"))
 
     talks = [i for i in plan if i["type"] == "talk"]
-    with_screen = [i["id"] for i in talks if (project / "screens" / f"{i['id']}.mp4").exists()]
 
     for it in plan:
         tid = it["id"]
@@ -58,12 +57,11 @@ def check(project: Path) -> list[tuple[str, str, str]]:
                 continue
             if not _nonempty(work / "captions" / f"{tid}.ass"):
                 out.append((ERROR, tid, "thiếu chữ nhảy theo lời (captions/*.ass rỗng)"))
-            # the bug that shipped: most talks animate, one silently does not
-            if with_screen and tid not in with_screen:
-                out.append((ERROR, tid, f"thiếu ảnh chạy khung trái — {len(with_screen)}/{len(talks)} đoạn khác có, "
-                                        "khung này sẽ đứng im suốt đoạn"))
-            if it.get("gfx") and not _nonempty(work / "panel" / f"{tid}.mp4"):
-                out.append((ERROR, tid, f"kịch bản khai {len(it['gfx'])} cảnh GFX nhưng chưa dựng panel"))
+            # white layout: the big frame is the Main render; without it the frame is empty
+            if not it.get("side"):
+                out.append((ERROR, tid, "không khai SIDE nào → khung chính trống suốt đoạn"))
+            elif not _nonempty(work / "side" / f"{tid}.mp4"):
+                out.append((ERROR, tid, f"khai {len(it['side'])} cảnh khung chính nhưng chưa dựng side/{tid}.mp4"))
             for k, _ in enumerate(it.get("full") or []):
                 mp4 = work / "cards" / f"{tid}_full{k}.mp4"
                 png = work / "gfx" / f"{tid}_full{k}.png"
@@ -105,8 +103,9 @@ def check(project: Path) -> list[tuple[str, str, str]]:
         missing = [t for t in ids if not (seg / f"{t}.mov").exists()]
         if missing and len(missing) < len(ids):
             out.append((WARN, "-", f"chưa dựng: {', '.join(missing)}"))
-    if not burned and not cfg.get("source", {}).get("cover_bottom") and any(i["type"] == "clip" for i in plan):
-        out.append((WARN, "-", "source.cover_bottom chưa đặt — nếu clip gốc có chữ cháy sẵn thì sẽ chồng lên phụ đề"))
+    uses_broll = any('broll' in l for i in plan for l in (i.get("side") or []))
+    if uses_broll and not _nonempty(work / "public" / "screen.mp4"):
+        out.append((ERROR, "-", "kịch bản dùng b-roll nhưng chưa có work/public/screen.mp4 (chạy bước source)"))
     return out
 
 

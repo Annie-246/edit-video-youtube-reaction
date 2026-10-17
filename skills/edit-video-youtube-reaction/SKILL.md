@@ -1,20 +1,53 @@
 ---
 name: edit-video-youtube-reaction
-description: Edit Video Youtube Reaction — dựng video react/phân tích YouTube từ kịch bản markdown + bản quay đọc kịch bản + link video gốc. Tự cắt vấp, chữ nhảy theo từng từ, phụ đề Việt cho clip, đồ hoạ động Remotion, thẻ toàn màn hình và màn chuyển phần. Dùng khi cần biến một buổi quay talking-head thành video hoàn chỉnh. Kích hoạt khi người dùng nói "edit video youtube reaction", "dựng video react", "ghép clip gốc với mặt người", "làm video kiểu Thanh Trần", hoặc gõ /reactforge.
+description: Edit Video Youtube Reaction — dựng video react/phân tích YouTube từ kịch bản markdown + bản quay đọc kịch bản + link video gốc. Bố cục trắng kiểu Claude/Anthropic (khung nội dung lớn, avatar dọc, tiêu đề phần màu cam, chữ nhảy theo từng từ), b-roll thật từ video gốc, motion graphic Remotion màu cam trơn, clip gốc full màn hình có phụ đề Việt, tự cắt vấp. Kích hoạt khi người dùng nói "edit video youtube reaction", "dựng video react", "ghép clip gốc với mặt người", hoặc gõ /reactforge.
 ---
 
 # Edit Video Youtube Reaction — dựng video react tự động
 
-Đầu vào: kịch bản markdown, file quay bạn đọc kịch bản (nói lệch, vấp cũng được), link video gốc.
-Đầu ra: `out/final.mp4` 1080p — khi bạn nói thì **chia đôi màn hình** (trái: hình minh hoạ +
-đồ hoạ động; phải: mặt bạn + chữ nhảy theo từng từ), khi phát clip gốc thì **clip full khung +
-phụ đề Việt + mặt bạn thu nhỏ góc phải**.
+Đầu vào: kịch bản markdown, file quay người dẫn đọc kịch bản (vấp, nói lệch cũng được), link video gốc.
+Đầu ra: `out/final.mp4` 1080p30 theo **bố cục trắng** dưới đây.
+
+## Bố cục (cố định)
+
+```
+┌──────────────────────────────────────────────┐ ┌──────────────┐
+│                                              │ │ Công cụ 2/6  │ ← thẻ tiêu đề phần: nền cam trơn,
+│        KHUNG NỘI DUNG 1440x920               │ │ Agent Reach  │   chữ trắng (dòng INFO: của phần)
+│   b-roll thật / motion graphic / ảnh         │ └──────────────┘
+│   (nền gradient be → cam nhạt)               │ ┌──────────────┐
+│                                              │ │              │
+│                                              │ │   AVATAR     │ ← mặt người dẫn, khung dọc 360x724
+│                                              │ │   người dẫn  │
+│      ┌──────────────────────────────┐        │ │              │
+└──────│  chữ nhảy theo từng từ       │────────┘ └──────────────┘
+       └──────────────────────────────┘  ← thanh trắng ngắn đè mép dưới khung
+        nền: lưới trắng (pipeline/assets/bg-grid.png)
+```
+
+- **Khi người dẫn nói:** khung nội dung chạy b-roll thật từ video gốc, xen với motion graphic.
+  Chữ nhảy nằm trong thanh trắng: chữ đã đọc màu đen, chữ chưa đọc màu xám.
+- **Khi phát clip gốc:** clip **chiếm trọn màn hình**, không avatar, không khung, chỉ có
+  phụ đề Việt ở dưới (chữ trắng trên dải mờ).
+- **Thẻ FULL:** chiếm trọn màn hình vài giây để nhấn một ý (mở đầu công cụ, câu chốt, con số).
+
+## Bộ màu (cố định, kiểu Claude/Anthropic)
+
+- **Màu nhấn duy nhất:** cam trơn `#D97757`, dùng cho từ khoá, thẻ tiêu đề phần, nút, icon.
+  **Không dùng gradient nhiều màu**, không dùng hiệu ứng vòng tròn lan toả.
+- **Chữ:** `#141413`, chữ phụ `#5E5D59`. Font Inter, viết hoa đầu câu, không viết hoa toàn bộ.
+- **Nền motion graphic:** gradient be `#F7F3EC` → cam nhạt `#F4DDCB`, thẻ trắng có bóng mềm.
+- **Nền đen** (`#1F1E1D`, chữ kem, nhấn cam): chỉ dùng cho vài cảnh cần nhấn. Mặc định các
+  thẻ FULL dạng `title`, `quote`, `equation` và mọi `BEAT:` / `BREAK:` có nền đen; các cảnh
+  khác nền sáng. Muốn đổi thì thêm `"dark": true/false` vào cảnh đó.
+- **Chuyển động** theo 2 video mẫu ở `motion/templates/samples/`: chữ hiện dần từng từ, thẻ
+  trồi lên lần lượt, con trỏ tay bấm, chữ gõ từng ký tự, số đếm lên.
 
 ## Cài một lần
 
 Máy cần sẵn trên PATH: `ffmpeg`, `ffprobe`, `yt-dlp`, `node` (>= 20), `python` (>= 3.11).
-Mọi lệnh đều đi qua `rf.py`. Lần đầu nó tự tạo venv + cài Remotion vào thư mục dữ liệu bền
-của plugin (không mất khi plugin tự cập nhật); các lần sau chỉ cài lại khi thư viện đổi.
+Mọi lệnh đi qua `rf.py`. Lần đầu nó tự tạo venv và cài Remotion vào thư mục dữ liệu bền của
+plugin (không mất khi plugin tự cập nhật).
 
 ```bash
 python "${CLAUDE_PLUGIN_ROOT}/skills/edit-video-youtube-reaction/rf.py" --data "${CLAUDE_PLUGIN_DATA}" setup
@@ -22,240 +55,160 @@ python "${CLAUDE_PLUGIN_ROOT}/skills/edit-video-youtube-reaction/rf.py" --data "
 
 (macOS/Linux dùng `python3`. Chạy ngoài plugin thì bỏ `--data`, dữ liệu nằm ở `~/.edit-video-youtube-reaction`.)
 
-Khoá AI để dịch phụ đề và chấm chỗ cắt (đặt trong `<dự-án>/.env` hoặc `~/.env`):
-- **Tối ưu nhất với Antigravity**: Đặt `GEMINI_API_KEY` (hoặc `GOOGLE_API_KEY`) — chạy siêu nhanh, rẻ, không bị lỗi token và dịch tiếng Việt cực chuẩn.
-- Hoặc dùng **Claude**: Đặt `ANTHROPIC_API_KEY` hoặc dùng CLI `claude -p`.
-- Không có khoá thì pipeline tự động rơi về thuật toán n-gram cắt vấp cục bộ.
+Khoá AI để dịch phụ đề và chấm chỗ cắt (trong `<dự-án>/.env` hoặc `~/.env`): `GEMINI_API_KEY`
+(hoặc `GOOGLE_API_KEY`), hoặc `ANTHROPIC_API_KEY`. Khoá Gemini lỗi (402/429) thì pipeline tự
+chuyển sang `claude -p`. Không có gì cả thì cắt vấp bằng thuật toán n-gram.
 
-## Lần đầu dùng: hỏi người dùng trước khi làm gì khác
+## Lần đầu dùng: hỏi người dùng trước
 
-Kiểm tra `GEMINI_API_KEY` đã có trong `~/.env` chưa (chỉ kiểm có/không, không in khoá ra).
-Chưa có thì **hỏi người dùng khoá Gemini free** trước khi làm bất cứ việc gì khác:
+Kiểm tra `GEMINI_API_KEY` trong `~/.env` (chỉ kiểm có/không, không in khoá). Chưa có thì hỏi:
 
-> "Để mình tự sinh ảnh minh hoạ chèn vào video (và dịch phụ đề, chấm chỗ cắt nhanh hơn),
-> bạn cho mình xin API key Gemini miễn phí nhé. Lấy tại https://aistudio.google.com/apikey
-> → Create API key → dán vào đây."
+> "Để mình tự sinh ảnh minh hoạ (và dịch phụ đề, chấm chỗ cắt nhanh hơn), bạn cho mình xin
+> API key Gemini miễn phí nhé. Lấy tại https://aistudio.google.com/apikey → Create API key."
 
-Nhận khoá → ghi `GEMINI_API_KEY=...` vào `~/.env` (tạo file nếu chưa có), không ghi vào
-file nào trong dự án, không nhắc lại khoá trong câu trả lời. Người dùng chưa muốn đưa khoá
-thì vẫn làm tiếp được, chỉ bỏ phần sinh ảnh.
+Nhận khoá thì ghi vào `~/.env`, không ghi vào file nào trong dự án, không nhắc lại khoá.
+Người dùng chưa muốn đưa khoá thì vẫn làm tiếp, chỉ bỏ phần sinh ảnh.
 
-Sau đó chạy `rf.py setup` (mục trên). Thiếu công cụ nào thì báo đúng tên công cụ và cách cài.
+Mỗi video mới, hỏi đủ: (1) kịch bản (file `.md`, Google Doc hoặc dán thẳng), (2) file quay thô,
+(3) link video gốc, (4) thư mục dự án (mặc định `projects/<tên-video>`).
 
-Mỗi video mới, hỏi đủ các thứ còn thiếu:
-1. Kịch bản (file `.md` hoặc dán thẳng), có note chỗ cần đồ hoạ/ảnh đặc biệt nếu có.
-2. File quay thô người đọc kịch bản.
-3. Link video gốc để react (nếu có đoạn `[CLIP …]`).
-4. Thư mục dự án muốn đặt (mặc định `projects/<tên-video>` trong thư mục đang mở).
+## Quy trình 6 bước
 
-## Quy trình phối hợp 6 bước (Bắt buộc)
+1. Người dùng gửi kịch bản + video quay thô (+ note chỗ cần đồ hoạ/ảnh nếu có).
+2. AI chạy Whisper bóc băng, cắt sạch vấp/lặp theo kịch bản.
+3. **Không dừng để duyệt cắt:** cắt và dựng một mạch tới bản cuối, trừ khi người dùng yêu cầu dừng.
+4. Áp note dựng của người dùng; không có note thì tự áp các quy tắc dưới đây.
+5. Dựng graphic, b-roll, chữ nhảy, phụ đề clip, ghép và xuất `out/final.mp4`.
+6. Người dùng nghiệm thu và yêu cầu chỉnh thêm.
 
-1. **Bước 1 (Gửi đầu vào):** Người dùng gửi kịch bản (`script.md`) + video quay thô (`recording/take1.mp4`). Trong kịch bản có note các đoạn cần chèn đồ họa, hình ảnh đặc biệt.
-2. **Bước 2 (AI Cắt thô):** AI chạy Whisper bóc băng, phân tích và cắt sạch vấp/lặp theo kịch bản.
-3. **Bước 3 (Người dùng duyệt Cắt - Checkpoint 1):** AI gửi báo cáo các đoạn cắt cho người dùng duyệt xem nhịp điệu và nội dung đã chuẩn chưa. **DỪNG tại đây, không tự dựng đồ họa cho tới khi người dùng duyệt cắt.**
-4. **Bước 4 (Nhận Note dựng):** Người dùng duyệt cắt và gửi thêm note dựng, yêu cầu chèn Motion Graphic hoặc hình minh họa. (Nếu không note, AI tự động áp dụng quy tắc mặc định: tối thiểu mỗi 10s có 1 đồ họa/minh họa mới).
-5. **Bước 5 (AI Dựng hoàn chỉnh):** AI thiết kế và render Motion Graphic (3-5s), chèn ảnh minh họa (dùng Gemini nếu có yêu cầu), căn chỉnh phụ đề, ghép toàn bộ và xuất `out/final.mp4`.
-6. **Bước 6 (Nghiệm thu):** Người dùng kiểm tra bản cuối và yêu cầu tinh chỉnh thêm nếu cần.
+## Quy tắc cắt (khoá cứng)
 
-## Quy tắc Cắt gọt (Khóa cứng)
+- **Ý cuối cùng:** một ý nói lại nhiều lần thì chỉ giữ lần cuối (hoặc lần hoàn chỉnh nhất).
+- **Đệm an toàn:** không cắt chườm vào từ, giữa các ý luôn có đệm tự nhiên.
 
-- **Nguyên tắc Ý cuối cùng:** Một ý người nói có thể nói lại vài lần $\rightarrow$ **chỉ giữ lại đoạn nói cuối cùng** (hoặc ý hoàn chỉnh nhất). Tuyệt đối không để lặp lại ý trong video.
-- **Đệm an toàn (Không nuốt chữ):** Không được cắt chườm vào từ. Kết thúc mỗi ý và chuyển đoạn phải có khoảng đệm tự nhiên từ từ cuối đến phần sau, không cắt quá sát làm mất âm đầu/đuôi.
+## Quy tắc hình ảnh (khoá cứng)
 
-## Quy tắc Đồ hoạ & Nhịp điệu hình ảnh (Khóa cứng)
-
-- **Quy tắc 10 giây:** Tối thiểu **mỗi 10 giây phải có một graphic hoặc minh họa mới**, không để khung hình đứng yên quá lâu gây nhàm chán.
-- **Motion Graphic (React / Remotion, 3-5s):**
-  - Mô tả đúng nội dung kịch bản, trực quan, logic, không rối mắt.
-  - **Linh hoạt kết hợp 3 kiểu xuất hiện:**
-    1. *Góc nhỏ bên trái phía dưới (`GFX:`):* Kích thước 900x478, nửa trên để màn hình/ảnh/b-roll, nửa phải là người nói.
-    2. *1/2 Màn hình bên cạnh người nói (`SIDE:`):* Kích thước 900x1016, chiếm trọn toàn bộ nửa bên trái bên cạnh người nói, tối ưu cho quy trình dọc (bước 1-2-3), timeline, danh sách trọng tâm, biểu đồ so sánh hoặc sơ đồ công nghệ.
-    3. *Graphic Full to toàn màn hình (`FULL:`):* Kích thước 1920x1080, chiếm trọn khung hình vài giây để nhấn mạnh luận điểm hoặc câu hỏi quan trọng.
-    4. Không được chỉ dùng 1 kiểu gây nhàm chán.
-  - **Phân tích kịch bản trước, chọn graphic sau.** Đọc từng đoạn, tìm chỗ có thể "vẽ" ra
-    được: một con số, một phép so sánh, một quy trình, một danh sách, một câu chốt, một khái
-    niệm trừu tượng, một cảm xúc. Mỗi chỗ đó chọn dạng graphic diễn tả đúng ý nhất — không
-    lấy mẫu có sẵn rồi nhét chữ vào cho đủ.
-  - **4 video mẫu (`mau-graphic-motion-1..4`) chỉ là chuẩn PHONG CÁCH** (glassmorphism, neon
-    gradient, viền phát sáng, chuyển động mượt, chữ rõ nét), **không phải giới hạn nội dung**.
-    Dùng đa dạng, ví dụ:
-    - *Text motion:* chữ bật từng từ, gạch chân chạy, số đếm nhảy, chữ gõ máy, highlight
-      từ khoá, câu trích dẫn hiện dần, chữ to đập vào màn hình cho câu chốt.
-    - *Hình motion:* icon/biểu tượng bay vào, phễu, mũi tên luồng đi, sơ đồ nối nút, mindmap,
-      timeline, cân so sánh, thanh tiến trình, biểu đồ cột/đường/tròn, đồng hồ, bản đồ.
-    - *Kết hợp:* icon + con số, sơ đồ + nhãn chữ, ảnh Gemini + chữ chạy trên ảnh.
-  - **Mẫu có sẵn không hợp thì tự code mẫu mới** (xem mục "Tự code graphic mới" bên dưới).
-    Hai graphic liền nhau không được cùng một dạng.
-- **Quy chuẩn Font chữ & Typography (Notion Font):**
-  - Luôn sử dụng font kiểu Notion (`NotionInter` / Inter) sạch sẽ, hiện đại, dễ đọc trên mọi thiết bị.
-  - **Không viết hoa toàn bộ (All-Caps)** ở tiêu đề: Sử dụng chữ hoa đầu câu (Sentence / Title case) để người xem không bị đau mắt và tránh va chạm dấu tiếng Việt.
-  - Line-height tối thiểu 1.24, khoảng đệm padding rộng rãi để không bao giờ bị cắt xén hoặc chạm vào dấu mũ, dấu thanh (Â, Ê, Ô, Ơ, Ư).
-- **Phụ đề tiếng Việt bắt buộc cho clip gốc tiếng Anh:**
-  - Tất cả các đoạn clip gốc tiếng Anh phải có phụ đề tiếng Việt (`work/subs/<id>.ass`) chạy dưới khung hình, cỡ chữ to rõ ràng (54px), font chuẩn tiếng Việt, căn lề dưới thoáng đãng.
-  - Trường hợp không có file phụ đề `.vtt`, hệ thống tự động chạy Whisper bóc băng trực tiếp âm thanh clip và dịch nghĩa tự nhiên sang tiếng Việt.
-- **Hình ảnh minh họa (Gemini):** Sinh ảnh ở những đoạn người dùng note; đoạn không note
-  thì ưu tiên motion graphic/b-roll, chỉ dùng ảnh Gemini khi nó diễn tả ý tốt hơn hẳn.
-  ```bash
-  python "${CLAUDE_PLUGIN_ROOT}/skills/edit-video-youtube-reaction/pipeline/scripts/gemini_image.py" \
-    --project projects/video-cua-toi --out assets/t03/minh-hoa.png --aspect 16:9 "mô tả ảnh"
-  ```
-  Chèn ảnh theo 3 cách: bỏ vào `assets/<id>/` (chạy khung trái có push-in), dùng trong
-  `SIDE: image {"src":"assets/t03/minh-hoa.png",…}`, hoặc `FULL: {"style":"illustration","images":["assets/t03/minh-hoa.png"],…}`.
-  Đường dẫn ảnh tính từ thư mục dự án; pipeline tự nhúng ảnh vào Remotion.
-  Lỗi 429 là hết hạn mức free — báo người dùng, đừng thử lại liên tục.
-- **Phản hồi của người dùng chỉ áp dụng cho video/phiên hiện tại.** Không tự sửa skill này vì một lời chê; muốn ghi chặt phải hỏi và được duyệt.
-
+- **Luật 10 giây:** tối thiểu 10 giây có một hình mới. Pipeline tự đảm bảo: cảnh graphic
+  nào dài quá 11 giây sẽ chạy 7 giây rồi tự chuyển sang b-roll cùng chủ đề (lấy mốc b-roll
+  gần nhất phía trước trong đoạn đó). Vẫn nên khai cảnh dày: khoảng 6–9 giây một cảnh.
+- **Phân tích kịch bản trước, chọn graphic sau:** con số → `bignumber`/`equation`, quy trình →
+  `steps`/`flow`, so sánh → `compare`/`bars`, danh sách → `checklist`, câu chốt → `title`,
+  tin nhắn/AI hỏi đáp → `chat`/`questions`. Hai cảnh liền nhau không cùng dạng.
+- **Xen b-roll thật:** đoạn thuật lại lời/việc của nhân vật trong video gốc thì dùng `broll`
+  đúng khúc đó; đoạn người dẫn tự giải thích, ví dụ, kêu gọi thì dùng graphic.
+- **Nhân vật được nhắc tên lần đầu phải hiện hình:** cắt chân dung từ video gốc (khung nhìn
+  rõ mặt) vào `assets/`, dùng mẫu `person`.
+- **Ảnh minh hoạ:** cả video chỉ khoảng 5–7 ảnh, đặt ở chỗ có câu chuyện, dùng `photo` với chuỗi ảnh.
+  Sinh bằng `pipeline/scripts/gemini_image.py` nếu khoá có hạn mức; khoá trả 402/429 thì báo
+  người dùng và thay bằng motion graphic, không thử lại liên tục.
+- **Phụ đề Việt bắt buộc** cho mọi clip tiếng Anh (`work/subs/<id>.ass`); không có `.vtt` thì
+  tự nghe bằng Whisper rồi dịch.
 
 ## Một dự án = một thư mục
 
 ```
 video-cua-toi/
   project.json     # cấu hình (xem examples/project.json)
-  script.md        # kịch bản (xem examples/script-mau.md)
-  recording/       # take1.mp4 — file quay bạn đọc kịch bản
-  assets/t01/      # tuỳ chọn: ảnh riêng cho đoạn t01 (chân dung, ảnh chụp sản phẩm…)
-  screens/         # tự sinh: b-roll + ảnh chạy khung trái
-  source/          # tự tải: clip gốc + phụ đề (tự động nghe bằng Whisper nếu không có .vtt)
-  work/            # trung gian
+  script.md        # kịch bản + dòng điều khiển graphic
+  recording/       # take1.mp4 — file quay người dẫn (4K/60fps thì hạ về 1080p30 trước)
+  assets/          # chân dung, ảnh minh hoạ; bg.png nếu muốn thay nền lưới
+  source/          # tự tải: full.mp4 (video gốc), c01.mp4…, captions*.vtt
+  work/            # trung gian; work/public/screen.mp4 là b-roll Remotion phát
   out/final.mp4
 ```
 
-## Chạy
+`project.json` quan trọng:
 
-- **Trên Windows**:
-```powershell
-$RF = "${CLAUDE_PLUGIN_ROOT}/skills/edit-video-youtube-reaction/rf.py"
-python $RF --data "${CLAUDE_PLUGIN_DATA}" all projects/video-cua-toi
-python $RF --data "${CLAUDE_PLUGIN_DATA}" doctor projects/video-cua-toi   # KIỂM TRƯỚC KHI GIAO
+```json
+"source": {"url": "https://www.youtube.com/watch?v=…", "screen_crop": [0, 40, 1610, 907]},
+"recording": {"files": ["recording/take1.mp4"], "cx": 0.5, "cy": 0.42, "zoom": 1.12}
 ```
 
-- **Khi chỉ sửa lẻ 1 đoạn và muốn tự động ghép lại file cuối**:
-```powershell
-python $RF --data "${CLAUDE_PLUGIN_DATA}" render projects/video-cua-toi --only t03 --concat
-# Hoặc chỉ nối lại các seg đã có:
-python $RF --data "${CLAUDE_PLUGIN_DATA}" concat projects/video-cua-toi
-```
-
-## ⚠️ Quy tắc số một: đọc `doctor`, đừng đọc log
-
-Pipeline này từng **hỏng êm**. Đoạn nào thiếu dữ liệu thì in một dòng log rồi dựng tiếp.
-Đó là cách ba phút đầu của một video 32 phút đã đi ra ngoài với khung trái đứng im — log
-có ghi, không ai đọc.
-
-`doctor` đối chiếu từng item trong kịch bản với thứ nó đã khai, và `render` gọi nó **tự động**
-trước mỗi lần dựng trọn bài. Thiếu gì thì **thoát mã 1 và không dựng đoạn nào**:
-
-- đoạn nói: có khớp lời, có chữ nhảy, có panel nếu khai `GFX:`, có thẻ nếu khai `FULL:`/`BEAT:`
-- **ảnh chạy khung trái: một số đoạn có mà đoạn khác không → LỖI** (chính là bug đã ship)
-- clip: có file gốc, có phụ đề Việt (cảnh báo riêng nếu phụ đề còn nguyên tiếng Anh)
-- đoạn đã dựng: hình và tiếng phải bằng nhau tới mili giây
-
-`render --only tXX` thì bỏ qua cổng này, vì lúc đó là cố ý dựng lẻ.
+- `source.screen_crop` = `[x, y, w, h]` (pixel của video gốc): vùng màn hình dùng làm b-roll,
+  **cắt bỏ ô webcam** của người trong video gốc. Đo bằng một khung `ffmpeg -ss … -frames:v 1`.
+- `recording.cx/cy/zoom`: tâm và độ phóng khi cắt mặt người dẫn vào khung avatar dọc.
 
 ## Kịch bản: các dòng điều khiển
 
 | Dòng | Việc |
 |---|---|
 | `## N. Tiêu đề` | mở một phần mới |
-| `[CLIP 0:02:03–0:03:23]` | phát clip gốc kèm phụ đề Việt |
-| `LABEL: QUẢN LÝ VI MÔ` | nhãn góc trái của clip ngay trên |
-| `SLIDE: chữ khoá \| dòng nhỏ \| dòng phụ` | khối chữ tĩnh khung trái |
-| `GFX: <mẫu> {json}` | đồ hoạ động góc dưới trái (900x478) |
-| `SIDE: <mẫu> {json}` | đồ hoạ động 1/2 màn hình cạnh người nói (900x1016) |
-| `FULL: @"câu neo" {json}` | thẻ chiếm trọn khung vài giây (1920x1080) |
-| `BEAT: @"câu neo" {json}` | như FULL nhưng giọng cảm xúc, cho emoji |
-| `BREAK: Tên phần` | màn chuyển đen, **tiếng im hoàn toàn** |
-| `[MÀN HÌNH: 1:52–2:18]` | chạy **b-roll thật** từ video gốc ở khung trái (nhiều dòng = nối tiếp) |
-| `[MÀN HÌNH: …]` | dạng chữ tự do: dùng `screens/<id>.mp4` bạn tự dựng |
+| `INFO: Công cụ 2/6 \| Agent Reach \| Tìm lời phàn nàn của khách` | chữ trên thẻ tiêu đề phần (trên avatar). Không khai thì hiện "Phần N" + tiêu đề |
+| `[CLIP 0:05:32–0:05:57]` | phát clip gốc full màn hình kèm phụ đề Việt |
+| `SIDE: @"câu neo" <mẫu> {json}` | cảnh trong khung nội dung, bắt đầu đúng lúc người dẫn nói câu neo, chạy tới cảnh sau |
+| `FULL: @"câu neo" {"secs":4,"tpl":"<mẫu>",…}` | thẻ chiếm trọn màn hình vài giây |
+| `BEAT: @"câu neo" {"title":"…"}` | thẻ chốt nền đen |
+| `BREAK: Tên phần` | màn chuyển nền đen, tiếng im hoàn toàn |
+| `---` | tách một đoạn nói thành hai |
 
-`@"câu neo"` = cảnh bắt đầu đúng lúc người dẫn nói tới câu đó (dò trong lời thật, không phải
-kịch bản). Không tìm thấy thì chia đều thời gian và in cảnh báo.
+- `@"câu neo"` dò trong lời thật đã khớp (3–5 từ, phải duy nhất trong đoạn). Không tìm thấy
+  thì chia đều thời gian và in cảnh báo. Người dẫn hay nói lệch kịch bản: sau `align`, đọc lời
+  thật trong `work/align_report.md` rồi sửa câu neo cho khớp.
+- Mọi đoạn nói **phải có ít nhất một `SIDE:`**, nếu không `doctor` chặn vì khung nội dung trống.
+- Dòng `GFX:` của kịch bản cũ vẫn chạy, được gộp vào `SIDE:`.
+- B-roll: `SIDE: @"câu" broll {"at": 330, "caption": "Agent Reach"}` (giây trong video gốc).
+  Lấy mẫu khung hình video gốc thành bảng ảnh (mỗi 15 giây) và đọc transcript để chọn đúng mốc.
+  Slide trong video gốc thường đứng yên lâu, nên mỗi đoạn b-roll tự zoom trượt về một góc khác.
 
-### Mẫu đồ hoạ chuẩn (`GFX:`, `SIDE:`, và `FULL:`)
-
-Chi tiết cú pháp xem tại [motion/TEMPLATES.md](motion/TEMPLATES.md):
-- **4 Mẫu chuẩn theo video mẫu (`motion/templates/samples/`):**
-  - `bars`: Cột tăng trưởng phát sáng (Mẫu 1)
-  - `trend`: Hai đường xu hướng so sánh đối chiếu (Mẫu 2)
-  - `system_flow`: Dashboard trình duyệt & luồng quyết định AI (Mẫu 3)
-  - `clock_cycle`: Chu kỳ 24/7 & tác vụ xoay quanh đồng hồ (Mẫu 4)
-- **Mẫu mở rộng & 1/2 màn hình:** `steps` (quy trình dọc 1-2-3) · `compare` (so sánh 2 chiều) · `image` (minh họa Gemini/B-roll)
-- **Mẫu chữ & số:** `card` · `bignumber` · `list` · `quote` · `twoline`
-- **Mẫu hệ thống:** `bots` · `flow` · `dashboard`
+Danh mục mẫu và props: [motion/TEMPLATES.md](motion/TEMPLATES.md).
 
 ```text
-GFX: @"tăng trưởng bứt phá" bars {"kicker":"KẾT QUẢ","headline":"Doanh thu tăng gấp 6 lần"}
-SIDE: @"bốn bước cốt lõi" steps {"kicker":"QUY TRÌNH","headline":"4 Bước Thực Hiện"}
-SIDE: @"so sánh trực quan" compare {"kicker":"ĐỐI ĐẦU","leftTitle":"Thủ công","rightTitle":"AI"}
-FULL: @"quy trình tự động" {"secs":3.8,"style":"system_flow","kicker":"KIỂM DUYỆT","title":"Tự động hóa 100% bằng AI"}
-FULL: @"tiết kiệm toàn bộ thời gian" {"secs":4.0,"style":"clock_cycle","kicker":"24/7","title":"Hệ thống vận hành không ngừng nghỉ"}
+## 2. Agent Reach
+INFO: Công cụ 2/6 | Agent Reach | Tìm lời phàn nàn của khách
+FULL: {"secs":3.6,"tpl":"tool","num":"02","name":"Agent Reach","icon":"search","desc":"AI đọc YouTube, Reddit, X giúp bạn","tag":"Repo GitHub · Miễn phí"}
+SIDE: broll {"at": 300, "caption": "Tìm ý tưởng, nghiên cứu thị trường"}
+SIDE: @"những cơ hội kinh doanh tốt" title {"kicker":"Insight","title":"Cơ hội tốt nhất nằm trong *lời phàn nàn* của khách"}
+SIDE: @"trả tiền cho phần mềm" flow {"title":"Có phần mềm, vẫn *làm tay*","nodes":[{"icon":"calendar","label":"Phần mềm xếp lịch"},{"icon":"sheet","label":"Xuất ra Excel"},{"icon":"calc","label":"Tự tính lương"}]}
+FULL: @"Đừng vội cho rằng" {"secs":4,"tpl":"title","kicker":"Greg lưu ý","title":"Có người phàn nàn chưa chắc *có người trả tiền*"}
 ```
 
-### Tự code graphic mới
+## Chạy
 
-Mẫu mới nằm trong `${CLAUDE_PLUGIN_DATA}/motion/src/custom/` — thư mục này **không bị ghi đè
-khi plugin cập nhật** (chạy ngoài plugin: `~/.edit-video-youtube-reaction/motion/src/custom/`).
+```powershell
+$RF = "${CLAUDE_PLUGIN_ROOT}/skills/edit-video-youtube-reaction/rf.py"
+python $RF --data "${CLAUDE_PLUGIN_DATA}" all projects/video-cua-toi
+python $RF --data "${CLAUDE_PLUGIN_DATA}" doctor projects/video-cua-toi   # KIỂM TRƯỚC KHI GIAO
+```
 
-1. Viết component vào `custom/<TenMau>.tsx`. Dùng lại `../library/motion`, `../library/text`,
-   `../ui` (`Rise`), `../theme` (`FONT`) và `useCurrentFrame`/`spring` để giữ đúng phong cách
-   4 video mẫu. Component nhận props của dòng kịch bản + `accent` (FULL nhận thêm `width`,
-   `height`, `secs`, `bg`). Vẽ vừa khung: GFX 900x478, SIDE 900x1016, FULL 1920x1080.
-2. Đăng ký tên trong `custom/index.ts`: `export const CUSTOM = { phieu: Phieu, … }`.
-3. Gọi trong kịch bản như mẫu có sẵn: `GFX: @"câu" phieu {…}`, `SIDE: @"câu" phieu {…}`,
-   `FULL: @"câu" {"style":"phieu", …}`.
-4. Xem thử 1 khung trước khi dựng cả bài:
-   `cd "${CLAUDE_PLUGIN_DATA}/motion" && npx remotion still Card out.png --props=props.json --frame=45`,
-   mở ảnh ra xem có tràn chữ, đè dấu tiếng Việt, rối mắt không.
+Các bước nối nhau: `plan → source → subs → align → captions → panel → cards → graphics →
+render → verify`. Sửa lẻ một đoạn rồi ghép lại:
 
-Mẫu nào dùng tốt nhiều lần thì gợi ý người dùng đưa vào repo plugin để cả team có.
+```powershell
+python $RF --data "${CLAUDE_PLUGIN_DATA}" panel  projects/video-cua-toi --only t03 --force
+python $RF --data "${CLAUDE_PLUGIN_DATA}" render projects/video-cua-toi --only t03 --concat
+```
 
-## Cắt vấp — Claude làm giám khảo
+`render` bỏ qua đoạn đã có `work/seg/<id>.mov`: muốn dựng lại thì xoá file đó trước.
 
-Whisper chỉ đổi giọng thành chữ có mốc giây (**tắt VAD**, không nối ngữ cảnh — bật lên là nó
-"nuốt" luôn câu đọc hụt). Quyết định cắt do **Claude** đọc kịch bản + lời thật rồi trả về
-**số thứ tự từ**, không bịa mốc giây. Giữ lần đọc cuối; không cắt lặp có chủ ý, nói lệch
-trôi chảy, hay cách đọc số.
+## ⚠️ Quy tắc số một: đọc `doctor`, đừng đọc log
 
-Sau khi dựng, `verify` **nghe lại chính file đã dựng** để bắt chỗ cắt chưa sạch ở mối nối,
-chạy nhiều vòng tới khi không còn gì. Vòng này từng bắt thêm 27 chỗ mà vòng đầu bỏ sót.
+`render` tự gọi `doctor` trước khi dựng trọn bài. Thiếu thứ gì kịch bản đã khai (khớp lời,
+chữ nhảy, khung nội dung `side/<id>.mp4`, thẻ FULL, `work/public/screen.mp4` khi có b-roll,
+clip gốc, phụ đề Việt, hình/tiếng lệch nhau) thì thoát mã 1, không dựng đoạn nào.
+
+## Cắt vấp — AI làm giám khảo
+
+Whisper (tắt VAD) chỉ đổi giọng thành chữ có mốc giây. Quyết định cắt do AI đọc kịch bản +
+lời thật rồi trả về số thứ tự từ. `verify` nghe lại chính file đã dựng, cắt thêm chỗ sót và
+dựng lại đúng các đoạn đó.
 
 ## Những cái bẫy đã trả giá
 
-- **Whisper bịa lời tiếng Việt.** Gặp khoảng im lặng là nó chèn "Hãy đăng ký kênh…",
-  "Xin chào", "Hẹn gặp lại". Một bản ghi 31 phút có 52 lần "Ghiền Mì Gõ". Chúng gần như
-  không chiếm thời lượng nên cắt đi là vô hại, nhưng **đừng tin số từ** làm thước đo.
-- **`loudnorm` đẩy mốc thời gian của tiếng lên ~2 khung.** Cắt đuôi tiếng bằng `atrim=end=<giây>`
-  (tính theo mốc tuyệt đối) là hụt đúng chừng ấy mỗi đoạn — cộng lại **nửa giây** trên
-  video 28 đoạn. Phải `asetpts=N/SR/TB` dựng lại mốc từ số mẫu **trước** khi cắt.
-  `apad=whole_dur` KHÔNG thay thế được: nó không kết thúc luồng tiếng, `-frames:v` cắt ngang tuỳ lúc.
-- **Cắt phải căn về lưới khung hình.** Video chỉ cắt được ở khung, tiếng cắt được ở mẫu;
-  không căn thì sai số dồn qua từng mối nối.
-## Khung trái: b-roll thật thay vì ảnh đứng im
-
-`[MÀN HÌNH: 1:52–2:18]` trong một đoạn nói sẽ cắt đúng khúc đó của video gốc và cho **chạy**
-ở khung trái. Khai nhiều dòng thì chúng nối tiếp nhau, lặp lại cho đủ độ dài đoạn nói.
-
-Ảnh bạn tự bỏ vào `assets/<id>/` (headline, chân dung, ảnh sản phẩm) luôn chạy trước b-roll.
-**Đoạn nào đã có ảnh riêng thì pipeline không lấy thêm khung từ video gốc nữa** — nếu không,
-một cảnh phim trường Trung Quốc sẽ rơi vào giữa đoạn đang nói về quảng cáo máy xay.
-
-Hai tuỳ chọn trong `project.json` đi kèm:
-
-```json
-"source": {
-  "crop_bottom": 0.25,                    // cắt dải phụ đề cháy sẵn khỏi khung trái
-  "cover_bottom": {"y": 0.75, "h": 0.25}  // phủ dải đó trên clip, rồi vẽ phụ đề của mình lên
-}
-```
-
-- **Bản đăng lại thường cháy sẵn phụ đề vào hình.** Đặt `source.cover_bottom` để phủ dải đó,
-  nếu không phụ đề Việt của bạn thành lớp chữ thứ ba.
-- **Bản quay 4K/60fps phải hạ về 1080p30 trước khi dựng**, nhanh hơn nhiều lần.
-- **Nguồn có lower-third thường trực** thì dời nhãn của mình bằng `style.label_xy`.
+- **Whisper bịa lời tiếng Việt** ở khoảng lặng ("Hãy subscribe cho kênh Ghiền Mì Gõ"…). Cắt
+  đi là vô hại, nhưng đừng tin số từ làm thước đo.
+- **`loudnorm` đẩy mốc tiếng ~2 khung:** phải `asetpts=N/SR/TB` trước khi `atrim`.
+- **Cắt phải căn về lưới khung hình**, không thì sai số dồn qua từng mối nối.
+- **Bản quay 4K/60fps:** hạ về 1080p30 trước. Chuyển mã dài có thể chết giữa chừng ("Cannot
+  allocate memory"): chia đôi chạy song song bằng `-t`/`-ss` rồi nối `-c copy`.
+- **Phụ đề YouTube trả 429:** vẫn tải được video; phụ đề thì Whisper nghe clip.
+- **Khung nội dung cao hơn 16:9:** b-roll và clip luôn hiện đủ khung hình, dải trống lấp bằng
+  chính video làm mờ. Đừng đổi sang crop, sẽ mất chữ ở hai mép.
+- **Dừng render giữa chừng:** chỉ diệt tiến trình node của Remotion, đừng `taskkill` toàn bộ
+  `node.exe` (sẽ giết cả các công cụ khác trên máy).
 
 ## Bảo mật
 
 - Không ghi khoá vào file nào trong dự án; đọc từ `.env` lúc chạy.
-- Chỉ tải video từ link bạn đưa; không đăng nhập tài khoản nào.
-- Clip gốc dùng theo kiểu trích dẫn có bình luận — tự chịu trách nhiệm về bản quyền
-  và dẫn nguồn trong phần mô tả.
+- Chỉ tải video từ link người dùng đưa; không đăng nhập tài khoản nào.
+- Clip gốc dùng theo kiểu trích dẫn có bình luận; dẫn nguồn trong phần mô tả.
+- Phản hồi của người dùng chỉ áp dụng cho video/phiên hiện tại; muốn ghi vào skill phải hỏi và được duyệt.

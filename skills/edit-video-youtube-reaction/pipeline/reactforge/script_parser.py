@@ -4,7 +4,9 @@ Item types:
   talk  — presenter speaks (text = what anh reads; slide = left panel content)
   clip  — cut from the source video [CLIP mm:ss–mm:ss]
   score — scoreboard update (**Bảng điểm:** line)
-Optional lines inside a talk block:  SLIDE: keyword | kicker | sub    BULLETS: a; b; c
+Optional lines inside a talk block:  SIDE: / FULL: / BEAT: (graphics, see SKILL.md)
+Per section (anywhere under its "## N." heading):  INFO: kicker | title | sub   → the title card
+above the presenter, e.g. "INFO: Công cụ 2/6 | Agent Reach | Tìm lời phàn nàn của khách".
 Optional lines inside a clip paragraph: LABEL: text    NOTE: text
 """
 from __future__ import annotations
@@ -58,7 +60,7 @@ def _section_title(h: str) -> tuple[str, str]:
 
 
 def _as_beat(rest: str) -> str:
-    """A BEAT directive is a FULL directive that asked for the 'beat' style."""
+    """A BEAT directive is a FULL card that lands one line: dark `title` template by default."""
     import json as _json
     m = re.search(r"\{.*\}", rest, re.S)
     if not m:
@@ -67,7 +69,8 @@ def _as_beat(rest: str) -> str:
         props = _json.loads(m.group(0))
     except ValueError:
         return rest
-    props.setdefault("style", "beat")
+    props.setdefault("tpl", "title")
+    props.setdefault("dark", True)
     return rest[:m.start()] + _json.dumps(props, ensure_ascii=False)
 
 
@@ -75,6 +78,7 @@ def parse_script(md_path: Path) -> list[dict]:
     lines = md_path.read_text(encoding="utf-8").split("\n")
     items: list[dict] = []
     sec_num, sec_title = "", ""
+    infos: dict[str, list[str]] = {}  # section number → [kicker, title, sub] for the title card
     started = False  # set at the first numbered "## N." section; prose before it is front matter
     cur: dict | None = None  # current talk item
 
@@ -108,6 +112,10 @@ def parse_script(md_path: Path) -> list[dict]:
                    "bullets": None, "screens": [], "_lines": []}
             if m.group(2):
                 cur["_lines"].append(_clean_spoken(m.group(2)))
+            continue
+        if s.startswith("INFO:"):
+            parts = [x.strip() for x in s[5:].split("|")]
+            infos[sec_num] = (parts + ["", "", ""])[:3]
             continue
         if s.startswith("BREAK:"):
             # a silent full-frame chapter card; gives the ear a rest between sections
@@ -150,8 +158,8 @@ def parse_script(md_path: Path) -> list[dict]:
                    "slide": {"keyword": sec_title.upper(), "kicker": kick, "sub": ""},
                    "bullets": None, "screens": [], "_lines": []}
         if cur is not None:
-            if s.startswith("GFX:"):
-                cur.setdefault("gfx", []).append(s[4:].strip()); continue
+            if s.startswith("GFX:"):  # old corner-panel line: the white layout has one main frame
+                cur.setdefault("side", []).append(s[4:].strip()); continue
             if s.startswith("SIDE:"):
                 cur.setdefault("side", []).append(s[5:].strip()); continue
             if s.startswith("FULL:"):
@@ -176,6 +184,9 @@ def parse_script(md_path: Path) -> list[dict]:
                 continue
             cur["_lines"].append(_clean_spoken(s))
     close()
+    for it in items:
+        if it.get("section") in infos:
+            it["info"] = infos[it["section"]]
     # ids + cumulative scoreboard state attached to each talk item
     state = {"dung": [], "sai": [], "c3": [], "du_bao": []}
     n_talk = n_clip = n_break = 0

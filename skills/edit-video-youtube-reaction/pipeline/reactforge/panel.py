@@ -113,6 +113,47 @@ def build_scenes(gfx_lines: list[str], ws: list[dict], total: float) -> tuple[li
     return scenes, notes
 
 
+MAX_SCENE, SHOW_FOR = 11.0, 7.0
+NO_SPLIT = {"recap", "broll"}
+
+
+def split_long(scenes: list[dict], total: float) -> list[dict]:
+    """The 10-second rule: a graphic that would sit longer than MAX_SCENE keeps the screen for
+    SHOW_FOR seconds, then hands over to running b-roll. The filler comes from the source moment
+    this talk showed most recently (same topic), or the next one if none was shown yet."""
+    brolls = [(i, float(s["props"]["at"])) for i, s in enumerate(scenes) if s["template"] == "broll" and "at" in s["props"]]
+    if not brolls:
+        return scenes
+    starts: list[tuple[float, str, dict]] = []
+    used: dict[float, int] = {}
+    for i, s in enumerate(scenes):
+        end = scenes[i + 1]["start"] if i + 1 < len(scenes) else total
+        d = end - s["start"]
+        starts.append((s["start"], s["template"], s["props"]))
+        if d <= MAX_SCENE or s["template"] == "recap":
+            continue
+        is_b = s["template"] == "broll"
+        prev = [a for j, a in brolls if j < i]
+        nxt = [a for j, a in brolls if j > i]
+        if is_b:
+            cands = nxt[:1] + prev[-1:] or [float(s["props"]["at"])]
+        else:
+            cands = prev[-1:] + nxt[:1]
+        first = min(9.0, d / 2) if is_b else SHOW_FOR
+        t, n = s["start"] + first, 0
+        while end - t > 3.0:
+            base = cands[n % len(cands)]
+            used[base] = used.get(base, 0) + 1
+            starts.append((t, "broll", {"at": round(base + 5.0 * used[base], 2)}))
+            t += 9.0 if end - t > 12.0 else (end - t)
+            n += 1
+    out = []
+    for i, (st, tpl, pr) in enumerate(starts):
+        nxt_t = starts[i + 1][0] if i + 1 < len(starts) else max(total + 5.0, st + MIN_SCENE)
+        out.append({"start": round(st, 3), "duration": round(nxt_t - st, 3), "template": tpl, "props": pr})
+    return out
+
+
 IMG_EXT = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".gif": "image/gif"}
 
 
@@ -132,18 +173,21 @@ def _inline_images(v, base: Path | None):
     return v
 
 
-def render_panel(props: dict, out: Path, composition: str = "Panel", base: Path | None = None) -> None:
+def render_panel(props: dict, out: Path, composition: str = "Main", base: Path | None = None) -> None:
     write_json(out.with_suffix(".json"), props)  # cache key, compared on the next run
     props_p = out.with_suffix(".props.json")
     write_json(props_p, _inline_images(props, base))
     cmd = ["npx", "remotion", "render", composition, str(out), f"--props={props_p}", "--log=error"]
+    # b-roll scenes play work/public/screen.mp4 of THIS project
+    if base is not None and (base / "work" / "public").is_dir():
+        cmd.append(f"--public-dir={base / 'work' / 'public'}")
     r = subprocess.run(cmd, cwd=str(REMOTION_DIR), capture_output=True, text=True, shell=(os.name == "nt"))
     if r.returncode != 0:
         raise RuntimeError(f"remotion failed: {r.stderr[-1500:]}")
 
 
 def main(project: Path, only: str | None = None, force: bool = False) -> None:
-    cfg = load_project(project); L = layout_for(cfg["output"]["width"]); P = L["panel"]; S = L.get("side", {"w": 900, "h": 1016})
+    cfg = load_project(project); L = layout_for(cfg["output"]["width"]); P = L["panel"]; S = L["main"]
     plan = read_json(project / "work" / "plan.json")
     words = read_json(project / "work" / "words.json")
     align = {a["id"]: a for a in read_json(project / "work" / "align.json")}
@@ -151,7 +195,7 @@ def main(project: Path, only: str | None = None, force: bool = False) -> None:
     side_dir = project / "work" / "side"; side_dir.mkdir(parents=True, exist_ok=True)
     full_dir = project / "work" / "full"
     for it in plan:
-        if it["type"] != "talk" or not (it.get("gfx") or it.get("full") or it.get("side")):
+        if it["type"] != "talk" or not (it.get("full") or it.get("side")):
             continue
         if only and it["id"] != only:
             continue
@@ -179,23 +223,13 @@ def main(project: Path, only: str | None = None, force: bool = False) -> None:
             print(f"{it['id']}: {len(cards)} thẻ toàn màn hình — " + " · ".join(f"{c['start']:.0f}s ({c['secs']:.1f}s)" for c in cards))
         if it.get("side"):
             scenes, notes = build_scenes(it["side"], ws, total)
-            props = {"width": S["w"], "height": S["h"], "fps": cfg["output"]["fps"], "accent": cfg["style"]["accent"], "bg": L["bg"], "scenes": scenes}
+            scenes = split_long(scenes, total)
+            props = {"width": S["w"], "height": S["h"], "fps": cfg["output"]["fps"], "scenes": scenes}
             out = side_dir / f"{it['id']}.mp4"
             if out.exists() and not force and out.with_suffix(".json").exists() and read_json(out.with_suffix(".json")) == props:
                 print(f"{it['id']}: side graphic có sẵn")
             else:
-                render_panel(props, out, composition="Side", base=project)
-                print(f"{it['id']}: {len(scenes)} cảnh 1/2 màn hình → side/{out.name}  " + " · ".join(f"{s['start']:.0f}s {s['template']}" for s in scenes))
-                for n in notes:
-                    print("   ⚠", n)
-        if it.get("gfx"):
-            scenes, notes = build_scenes(it["gfx"], ws, total)
-            props = {"width": P["w"], "height": P["h"], "fps": cfg["output"]["fps"], "accent": cfg["style"]["accent"], "bg": L["bg"], "scenes": scenes}
-            out = out_dir / f"{it['id']}.mp4"
-            if out.exists() and not force and out.with_suffix(".json").exists() and read_json(out.with_suffix(".json")) == props:
-                print(f"{it['id']}: panel có sẵn")
-            else:
-                render_panel(props, out, composition="Panel", base=project)
-                print(f"{it['id']}: {len(scenes)} cảnh → panel/{out.name}  " + " · ".join(f"{s['start']:.0f}s {s['template']}" for s in scenes))
+                render_panel(props, out, composition="Main", base=project)
+                print(f"{it['id']}: {len(scenes)} cảnh khung chính → side/{out.name}  " + " · ".join(f"{s['start']:.0f}s {s['template']}" for s in scenes))
                 for n in notes:
                     print("   ⚠", n)

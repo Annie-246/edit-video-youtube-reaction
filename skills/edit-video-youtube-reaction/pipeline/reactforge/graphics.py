@@ -12,19 +12,25 @@ def layout_for(width: int) -> dict:
     def r(x): return int(round(x * s))
     def e(x):  # even size (yuv420 needs even w/h)
         v = int(round(x * s)); return v - (v % 2)
+    # White layout (this project): one big 16:9 frame on the left for b-roll / graphics / clips,
+    # the presenter in a portrait card top-right, word captions under the big frame.
+    main = {"x": r(40), "y": r(40), "w": e(1440), "h": e(920), "r": r(30)}
+    head = {"x": r(1520), "y": r(236), "w": e(360), "h": e(724), "r": r(26)}
     return {
         "w": r(1920), "h": r(1080), "s": s,
-        "left": {"x": r(32), "y": r(32), "w": e(900), "h": e(506), "r": r(24)},
+        "left": dict(main), "main": dict(main), "side": dict(main),
+        # source clips play full screen, no presenter, no frame
+        "clip": {"x": 0, "y": 0, "w": r(1920), "h": r(1080), "r": 0},
+        "head": dict(head), "pip": dict(head),
+        "info": {"x": r(1520), "y": r(40), "w": e(360), "h": e(176), "r": r(24)},
+        # word captions sit in a short white pill straddling the bottom edge of the main frame
+        "cap": {"x": r(260), "y": r(921), "w": e(1000), "h": e(78), "r": r(39)},
         "text_y": r(600),
-        "head": {"x": r(964), "y": r(32), "w": e(924), "h": e(1016), "r": r(28)},
-        "clip": {"x": r(40), "y": r(40), "w": e(1540), "h": e(866), "r": r(24)},
-        "pip": {"x": r(1616), "y": r(830), "w": e(272), "h": e(154), "r": r(16)},
-        "panel": {"x": r(32), "y": r(570), "w": e(900), "h": e(478), "r": r(24)},
-        "side": {"x": r(32), "y": r(32), "w": e(900), "h": e(1016), "r": r(28)},
-        "label": {"x": r(72), "y": r(72)},
-        "note": {"x": r(72), "y": r(560), "w": r(820)},
-        "sub_font": r(54), "sub_margin": r(36),
-        "bg": "#0B0B10",
+        "panel": {"x": r(40), "y": r(40), "w": e(900), "h": e(478), "r": r(24)},
+        "label": {"x": r(76), "y": r(76)},
+        "note": {"x": r(76), "y": r(560), "w": r(820)},
+        "sub_font": r(52), "sub_margin": r(56),
+        "bg": "#FFFFFF",
     }
 
 
@@ -43,57 +49,60 @@ def _img_data(path: Path) -> str:
 COL = {"dung": ("#22C55E", "ĐÚNG"), "sai": ("#EF4444", "SAI"), "c3": ("#F59E0B", "CỘT 3"), "du_bao": ("#60A5FA", "CHƯA CHẤM")}
 
 
-def talk_fg_html(L: dict, item: dict, still: Path | None, accent: str, left_window: bool) -> str:
-    s = L["s"]; lf, tx = L["left"], L["text_y"]
-    sl = item["slide"]
-    bullets = item.get("bullets")
-    if bullets is None:
-        st = item.get("score_state", {})
-        bullets = []
-        for col in ("dung", "sai", "c3", "du_bao"):
-            for claim in st.get(col, [])[-2:]:
-                bullets.append((col, claim))
-        bullets = bullets[-4:]
-        bullets_html = "".join(f'<li><span class="sq" style="background:{COL[c][0]}"></span><b style="color:{COL[c][0]}">{COL[c][1]}</b> — {H.escape(t)}</li>' for c, t in bullets)
-    else:
-        bullets_html = "".join(f'<li><span class="sq" style="background:{accent}"></span>{H.escape(b)}</li>' for b in bullets)
-    left = "" if left_window or still is None or item.get("side") else f'<img class="still" src="{_img_data(still)}">'
-    if item.get("gfx") or item.get("side"):  # an animated Panel or Side replaces the static text block
-        return f"""<html><head><meta charset="utf-8"><style>{_font_css()}
-html,body{{margin:0;width:{L['w']}px;height:{L['h']}px;background:transparent;overflow:hidden}}
-.still{{position:absolute;left:{lf['x']}px;top:{lf['y']}px;width:{lf['w']}px;height:{lf['h']}px;object-fit:cover;border-radius:{lf['r']}px;filter:brightness(.55) saturate(.8)}}
-</style></head><body>{left}</body></html>"""
+GRAD = "#D97757"  # solid Claude orange
+
+
+def frame_html(L: dict, info_kicker: str, info_title: str, info_sub: str = "", footer: str = "") -> str:
+    """Transparent overlay: white borders + soft shadows around the main frame and the presenter
+    card, and the small info card under the presenter (current tool / source)."""
+    s = L["s"]; m, h, inf, cp = L["main"], L["head"], L["info"], L["cap"]
+    bw, hb = int(8 * s), int(6 * s)
+    info = ""
+    if info_title:
+        info = f"""<div class="info"><div class="k"><span class="dot"></span>{H.escape(info_kicker)}</div>
+<div class="t">{H.escape(info_title)}</div>{'<div class="s">' + H.escape(info_sub) + '</div>' if info_sub else ''}</div>"""
     return f"""<html><head><meta charset="utf-8"><style>{_font_css()}
-html,body{{margin:0;width:{L['w']}px;height:{L['h']}px;background:transparent;overflow:hidden}}
-body{{font-family:'NotionInter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#fff}}
-.still{{position:absolute;left:{lf['x']}px;top:{lf['y']}px;width:{lf['w']}px;height:{lf['h']}px;object-fit:cover;border-radius:{lf['r']}px;filter:brightness(.55) saturate(.8)}}
-.kicker{{position:absolute;left:{lf['x']}px;top:{tx}px;font-size:{int(22*s)}px;letter-spacing:.08em;color:{accent};opacity:.95;font-weight:600}}
-.kw{{position:absolute;left:{lf['x']}px;top:{tx+int(36*s)}px;width:{lf['w']}px;font-size:{int(58*s)}px;line-height:1.24;font-weight:700;letter-spacing:-.01em;padding:4px 0 8px 0;background:linear-gradient(90deg,{accent},#C4B5FD);-webkit-background-clip:text;color:transparent}}
-.sub{{position:absolute;left:{lf['x']}px;top:{tx+int(36*s)}px;width:{lf['w']}px;font-size:{int(26*s)}px;line-height:1.35;color:rgba(255,255,255,.85)}}
-ul{{position:absolute;left:{lf['x']}px;width:{lf['w']}px;list-style:none;margin:0;padding:0;font-size:{int(28*s)}px;line-height:1.45}}
-li{{display:flex;gap:{int(14*s)}px;align-items:baseline;margin-bottom:{int(8*s)}px}}
-.sq{{display:inline-block;width:{int(18*s)}px;height:{int(18*s)}px;border-radius:{int(4*s)}px;flex:none;position:relative;top:{int(2*s)}px}}
-</style></head><body>{left}
-<div class="kicker">{H.escape(sl.get('kicker',''))}</div>
-<div class="kw" id="kw">{H.escape(sl.get('keyword',''))}</div>
-<div class="sub" id="sub">{H.escape(sl.get('sub',''))}</div>
-<ul id="ul">{bullets_html}</ul>
-<script>
-const kw=document.getElementById('kw'),sub=document.getElementById('sub'),ul=document.getElementById('ul');
-let fs={int(58*s)};while(kw.scrollHeight>{int(240*s)}&&fs>{int(34*s)}){{fs-=2;kw.style.fontSize=fs+'px'}}
-let y=kw.offsetTop+kw.offsetHeight+{int(14*s)};sub.style.top=y+'px';ul.style.top=(y+(sub.textContent?sub.offsetHeight+{int(22*s)}:{int(6*s)}))+'px';
-</script></body></html>"""
+html,body{{margin:0;width:{L['w']}px;height:{L['h']}px;background:transparent;overflow:hidden;font-family:'NotionInter',sans-serif}}
+.fr{{position:absolute;box-sizing:border-box;border:{bw}px solid #fff;border-radius:{m['r'] + bw}px;
+box-shadow:0 {int(18*s)}px {int(50*s)}px rgba(80,50,30,.20),0 0 0 1px rgba(217,119,87,.10)}}
+.hd{{position:absolute;box-sizing:border-box;border:{hb}px solid #fff;border-radius:{h['r'] + hb}px;
+box-shadow:0 {int(14*s)}px {int(40*s)}px rgba(80,50,30,.22),0 0 0 1px rgba(217,119,87,.12)}}
+.info{{position:absolute;left:{inf['x']}px;top:{inf['y']}px;width:{inf['w']}px;height:{inf['h']}px;box-sizing:border-box;padding:{int(22*s)}px {int(26*s)}px;
+display:flex;flex-direction:column;justify-content:center;background:{GRAD};border-radius:{inf['r']}px;
+box-shadow:0 {int(16*s)}px {int(40*s)}px rgba(217,119,87,.35)}}
+.k{{display:flex;align-items:center;gap:{int(8*s)}px;font-size:{int(20*s)}px;font-weight:600;color:rgba(255,255,255,.88);line-height:1.3}}
+.dot{{width:{int(10*s)}px;height:{int(10*s)}px;border-radius:50%;background:#fff}}
+.t{{margin-top:{int(4*s)}px;font-size:{int(40*s)}px;font-weight:800;letter-spacing:-.02em;line-height:1.24;padding-bottom:2px;color:#fff}}
+.s{{margin-top:{int(2*s)}px;font-size:{int(19*s)}px;color:rgba(255,255,255,.9);line-height:1.35}}
+.cp{{position:absolute;left:{cp['x']}px;top:{cp['y']}px;width:{cp['w']}px;height:{cp['h']}px;border-radius:{cp['r']}px;background:#fff;
+box-shadow:0 {int(12*s)}px {int(34*s)}px rgba(80,50,30,.18),0 0 0 1px rgba(217,119,87,.14);display:flex;align-items:center;justify-content:center;gap:{int(10*s)}px;
+font-size:{int(22*s)}px;font-weight:600;color:#5E5D59}}
+.cp .dot{{background:{GRAD}}}
+</style></head><body>
+<div class="fr" style="left:{m['x']-bw}px;top:{m['y']-bw}px;width:{m['w']+2*bw}px;height:{m['h']+2*bw}px"></div>
+<div class="hd" style="left:{h['x']-hb}px;top:{h['y']-hb}px;width:{h['w']+2*hb}px;height:{h['h']+2*hb}px"></div>
+{info}
+<div class="cp">{'<span class="dot"></span>' + H.escape(footer) if footer else ''}</div>
+</body></html>"""
+
+
+def section_info(item: dict) -> tuple[str, str, str]:
+    """Title card text: the section's INFO: line, else "Phần N" + the section heading."""
+    if item.get("info"):
+        k, t, sub = item["info"]
+        return k, t or item.get("title", ""), sub
+    num = str(item.get("section", ""))
+    return ("Mở đầu" if num == "0" else (f"Phần {num}" if num else "")), item.get("title", ""), ""
+
+
+def talk_fg_html(L: dict, item: dict, still, accent: str, left_window: bool) -> str:
+    k, t, sub = section_info(item)
+    return frame_html(L, k, t, sub)
 
 
 def clip_fg_html(L: dict, item: dict, accent: str) -> str:
-    s = L["s"]; lb = L["label"]
-    label = item.get("label") or ""
-    pill = (f'<div class="pill"><span class="dot"></span>{H.escape(label)}</div>' if label else "")
-    return f"""<html><head><meta charset="utf-8"><style>{_font_css()}
-html,body{{margin:0;width:{L['w']}px;height:{L['h']}px;background:transparent;overflow:hidden}}
-.pill{{position:absolute;left:{lb['x']}px;top:{lb['y']}px;display:flex;align-items:center;gap:{int(10*s)}px;padding:{int(8*s)}px {int(16*s)}px;border-radius:{int(8*s)}px;background:rgba(10,10,16,.78);color:#fff;font:600 {int(22*s)}px 'NotionInter',sans-serif;letter-spacing:.08em;backdrop-filter:blur(6px)}}
-.dot{{width:{int(12*s)}px;height:{int(12*s)}px;border-radius:50%;background:{accent}}}
-</style></head><body>{pill}</body></html>"""
+    """Clips play full screen; nothing is drawn over them except their subtitles."""
+    return f"<html><body style='margin:0;width:{L['w']}px;height:{L['h']}px;background:transparent'></body></html>"
 
 
 def note_html(L: dict, text: str) -> str:
@@ -199,7 +208,7 @@ def render_all(project: Path, only: str | None = None) -> None:
             if not only or only == it["id"]:
                 kick = f"PHẦN {it['section']}" if it.get("section") else ""
                 jobs.append((g / f"{it['id']}_break.png", break_html(L, it["title"], accent, kick), L["w"], L["h"]))
-    for name, box in (("mask_head", L["head"]), ("mask_left", L["left"]), ("mask_clip", L["clip"]), ("mask_pip", L["pip"]), ("mask_panel", L["panel"]), ("mask_side", L["side"])):
+    for name, box in (("mask_head", L["head"]), ("mask_left", L["left"]), ("mask_clip", L["clip"]), ("mask_pip", L["pip"]), ("mask_panel", L["panel"]), ("mask_side", L["side"]), ("mask_main", L["main"])):
         jobs.append((g / f"{name}.png", mask_html(box["w"], box["h"], box["r"]), box["w"], box["h"]))
     with sync_playwright() as pw:
         b = pw.chromium.launch()

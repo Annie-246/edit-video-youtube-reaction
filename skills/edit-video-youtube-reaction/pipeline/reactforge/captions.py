@@ -13,7 +13,7 @@ from .align import normalize
 from .common import load_project, read_json, sec_to_ass
 from .graphics import layout_for
 
-MAX_WORDS, MAX_CHARS, GAP_BREAK = 7, 34, 0.7
+MAX_WORDS, MAX_CHARS, GAP_BREAK = 8, 38, 0.7
 ADLIB_SEC_PER_WORD = 1.2   # script gap stretched beyond this → presenter ad-libbed → use ASR words
 FILLER_SEC = 0.8           # inserted ASR-only run shorter than this (e.g. "à", "ờ") → dropped
 PUNCT_END = re.compile(r"[.,;:!?…]$")
@@ -103,9 +103,11 @@ def _ass_color(hex_rgb: str, alpha: int = 0) -> str:
 
 
 def build_ass(L: dict, accent: str, ws: list[dict], t0: float) -> str:
-    s = L["s"]; hd = L["head"]
-    font = int(46 * s)
-    ml = hd["x"] + int(28 * s); mr = L["w"] - (hd["x"] + hd["w"]) + int(28 * s); mv = L["h"] - (hd["y"] + hd["h"]) + int(30 * s)
+    s = L["s"]; cp = L["cap"]
+    font = int(42 * s)
+    # Inside the white pill on the main frame's bottom edge: spoken words turn ink, upcoming stay grey.
+    ml = cp["x"] + int(30 * s); mr = L["w"] - (cp["x"] + cp["w"]) + int(30 * s)
+    mv = L["h"] - (cp["y"] + cp["h"]) + int(17 * s)
     head = f"""[Script Info]
 ScriptType: v4.00+
 PlayResX: {L['w']}
@@ -115,7 +117,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Kara,Be Vietnam Pro,{font},{_ass_color(accent)},&H28FFFFFF,&H00000000,&H90000000,-1,0,0,0,100,100,0,0,1,{2.6*s:.1f},{1.2*s:.1f},2,{ml},{mr},{mv},1
+Style: Kara,Inter,{font},&H001F1315,&H00C4AFB5,&H00FFFFFF,&H00000000,-1,0,0,0,100,100,0,0,1,0,0,2,{ml},{mr},{mv},1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text

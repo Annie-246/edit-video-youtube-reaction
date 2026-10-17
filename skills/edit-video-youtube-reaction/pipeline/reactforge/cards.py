@@ -1,9 +1,9 @@
-"""Full-frame cards rendered by the Remotion `Card` composition.
+"""Full-frame cards, rendered by the Remotion `Main` composition at 1920x1080 with one scene.
 
-Three kinds, one composition — they differ only in tone:
-  FULL:  a question the video is about to answer      → style "question"
-  BEAT:  a punchline or a feeling, emoji allowed      → style "beat"
-  BREAK: a chapter title over a beat of silence       → style "chapter"
+  FULL:  any light template as a full-frame card        → {"tpl": "...", ...}
+  BEAT:  one line that should land                       → dark `title`
+  BREAK: a chapter title over a beat of silence          → dark `title`
+Statement cards (title / quote / equation) go dark by default; tool openers stay light.
 
 Static PNGs (graphics.py) stay as the fallback for when node/Remotion is not available;
 render.py prefers the video when it exists.
@@ -38,9 +38,10 @@ def main(project: Path, only: str | None = None, force: bool = False) -> None:
         if it["type"] == "break":
             secs = float(cfg["output"].get("break_secs", 2.6))
             jobs.append((out_dir / f"{it['id']}.mp4",
-                         _props(cfg, L, secs, "chapter",
-                                {"kicker": f"PHẦN {it['section']}" if it.get("section") else "",
-                                 "title": it["title"]})))
+                         {"width": L["w"], "height": L["h"], "fps": cfg["output"]["fps"],
+                          "scenes": [{"start": 0, "duration": round(secs, 3), "template": "title",
+                                      "props": {"kicker": f"Phần {it['section']}" if it.get("section") else "",
+                                                "title": it["title"], "dark": True}}]}))
         elif it["type"] == "talk" and it.get("full"):
             timings = read_json(project / "work" / "full" / f"{it['id']}.json") \
                 if (project / "work" / "full" / f"{it['id']}.json").exists() else []
@@ -50,13 +51,20 @@ def main(project: Path, only: str | None = None, force: bool = False) -> None:
                     continue
                 pr = f["props"]
                 secs = float(timings[k]["secs"]) if k < len(timings) else float(pr.get("secs", 3.6))
-                style = pr.get("style", "question")
-                jobs.append((out_dir / f"{it['id']}_full{k}.mp4", _props(cfg, L, secs, style, pr)))
+                # White layout: full-frame cards use the same light templates as the main frame.
+                tpl = pr.get("tpl", "title")
+                sp = {kk: v for kk, v in pr.items() if kk not in ("secs", "tpl")}
+                # emphasis cards (statements, quotes, the money maths) go dark; tool openers stay light
+                sp.setdefault("dark", tpl in ("title", "quote", "equation"))
+                jobs.append((out_dir / f"{it['id']}_full{k}.mp4",
+                             {"width": L["w"], "height": L["h"], "fps": cfg["output"]["fps"],
+                              "scenes": [{"start": 0, "duration": round(secs, 3), "template": tpl, "props": sp}]}))
         for out, props in jobs:
             cache = out.with_suffix(".json")
             if out.exists() and not force and cache.exists() and read_json(cache) == props:
                 print(f"{out.stem}: thẻ có sẵn"); continue
-            render_panel(props, out, composition="Card", base=project)
-            print(f"{out.stem}: {props['style']} {props['secs']}s — {props['title'][:52]}")
+            comp = "Main"
+            render_panel(props, out, composition=comp, base=project)
+            print(f"{out.stem}: {comp} {props.get('secs', props.get('scenes', [{}])[0].get('duration'))}s")
             n += 1
     print(f"→ {n} thẻ dựng mới trong {out_dir}")
