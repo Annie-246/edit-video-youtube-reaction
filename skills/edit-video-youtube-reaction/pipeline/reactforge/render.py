@@ -1,6 +1,6 @@
 """Compose every plan item with ffmpeg, then concatenate."""
 from __future__ import annotations
-import math, subprocess
+import math, re, subprocess
 from pathlib import Path
 from .common import load_project, read_json, run, ffprobe_duration, pick_encoder, escape_ffmpeg_path, FONT_DIR
 from .graphics import layout_for
@@ -235,22 +235,32 @@ def render_screen(project: Path, cfg: dict, L: dict, item: dict, al: dict, out: 
     _finish(cfg, cmd, fc, _full_cards(project, item, fps, cmd, fc, "[vc]", n_in), nfr, dur, out)
 
 
+DUCK = 0.28     # presenter level while a meme with sound plays over the talk
+MEME_DB = -20.0  # mean level a meme's sound is brought to (the voice sits near -19 dB)
+
+
+def _mean_db(f: Path, ss: float, secs: float) -> float | None:
+    """Mean level of the part of a meme that will play; None if it has no audio stream."""
+    r = subprocess.run(["ffmpeg", "-hide_banner", "-ss", f"{ss:.3f}", "-t", f"{secs:.3f}", "-i", str(f), "-vn", "-af", "volumedetect", "-f", "null", "-"],
+                       capture_output=True, text=True)
+    m = re.search(r"mean_volume: (-?[\d.]+) dB", r.stderr)
+    return float(m.group(1)) if m else None
+
+
 def render_memes(project: Path, cfg: dict, L: dict, memes: list[dict], body: Path, out: Path) -> None:
-    """Cut memes into a rendered talk: the voice pauses, the meme plays with its own sound on black
-    (full frame or part of it, no card), then the talk carries on from the same frame."""
+    """Lay memes over a rendered talk, right after the sentence their anchor belongs to: the meme
+    shows on black (full frame or part of it, no card) while the presenter keeps talking. A meme
+    with sound plays it and ducks the voice for its length; a still is silent. Length unchanged."""
     fps = cfg["output"]["fps"]; W, H = L["w"], L["h"]
     total = ffprobe_duration(body)
+    nfr = int(round(total * fps)); dur = nfr / fps
     def q(t: float) -> float:
         return round(round(t * fps) / fps, 6)
-    pts = sorted({q(min(max(m["t"], 0.3), total)): m for m in memes}.items())
     cmd = ["ffmpeg", "-v", "error", "-y", "-i", str(body)]
-    fc, seq, prev, nfr = [], [], 0.0, 0
-    for k, (t, m) in enumerate(pts):
-        if t > prev:
-            fc.append(f"[0:v]trim=start={prev:.6f}:end={t:.6f},setpts=PTS-STARTPTS,setsar=1[bv{k}]")
-            fc.append(f"[0:a]atrim=start={prev:.6f}:end={t:.6f},asetpts=PTS-STARTPTS[ba{k}]")
-            seq.append(f"[bv{k}][ba{k}]"); nfr += int(round((t - prev) * fps))
-        mf = int(round(float(m["secs"]) * fps)); md = mf / fps; nfr += mf
+    fc, vtag, mixes, ducks = [], "[0:v]", [], []
+    for k, m in enumerate(sorted(memes, key=lambda m: m["t"])):
+        t = q(min(max(m["t"], 0.3), total - 0.5))
+        md = min(int(round(float(m["secs"]) * fps)) / fps, dur - t)
         n = k + 1   # input index of this meme
         if m.get("still"):
             cmd += ["-loop", "1", "-t", f"{md + 0.5:.3f}", "-i", m["file"]]
@@ -262,17 +272,28 @@ def render_memes(project: Path, cfg: dict, L: dict, memes: list[dict], body: Pat
         key = ",colorkey=0x00FF00:0.32:0.12" if m.get("green") else ""
         fc.append(f"color=c=black:s={W}x{H}:r={fps}:d={md + 0.5:.3f}[mb{k}]")
         fc.append(f"[{n}:v]fps={fps},scale={bw}:{bh}:force_original_aspect_ratio=decrease,setsar=1,format=rgba{key}[mk{k}]")
-        fc.append(f"[mb{k}][mk{k}]overlay=x={x}:y=(H-h)/2,trim=end_frame={mf},setpts=PTS-STARTPTS,setsar=1,format=yuv420p[mv{k}]")
-        src_a = f"[{n}:a]loudnorm=I=-18:TP=-2:LRA=11," if m.get("audio") else "anullsrc=r=48000:cl=stereo,"
-        fc.append(f"{src_a}aresample=48000,aformat=channel_layouts=stereo,asetpts=N/SR/TB,apad,atrim=end={md:.6f},asetpts=PTS-STARTPTS[ma{k}]")
-        seq.append(f"[mv{k}][ma{k}]")
-        prev = t
-    end = q(total)
-    if end > prev:
-        fc.append(f"[0:v]trim=start={prev:.6f},setpts=PTS-STARTPTS,setsar=1[bvz]")
-        fc.append(f"[0:a]atrim=start={prev:.6f},asetpts=PTS-STARTPTS[baz]")
-        seq.append("[bvz][baz]"); nfr += int(round((end - prev) * fps))
-    fc.append("".join(seq) + f"concat=n={len(seq)}:v=1:a=1[v][a]")
+        fc.append(f"[mb{k}][mk{k}]overlay=x={x}:y=(H-h)/2,trim=duration={md:.6f},setpts=PTS-STARTPTS+{t:.6f}/TB,setsar=1[mv{k}]")
+        fc.append(f"{vtag}[mv{k}]overlay=0:0:eof_action=pass[vo{k}]")
+        vtag = f"[vo{k}]"
+        level = _mean_db(Path(m["file"]), float(m.get("ss", 0)), md) if m.get("audio") and not m.get("still") else None
+        if level is not None and level > -50:
+            # plain gain, never loudnorm: on a clip that opens silent loudnorm lifts the hiss to 0 dB
+            gain = min(12.0, MEME_DB - level)
+            ms = int(round(t * 1000))
+            fc.append(f"[{n}:a]aresample=48000,aformat=channel_layouts=stereo,volume={gain:.1f}dB,alimiter=limit=0.9,"
+                      f"atrim=end={md:.6f},afade=t=out:st={max(0.0, md - 0.15):.3f}:d=0.15,adelay={ms}|{ms}[ma{k}]")
+            mixes.append(f"[ma{k}]")
+            # ramp the voice down/up over 0.15 s so the duck never clicks
+            ducks.append(f"min(1,max(0,min((t-{t:.3f})/0.15,({t + md:.3f}-t)/0.15)))")
+    # quoted, so the commas inside need no escaping
+    vol = f",volume='1-{1 - DUCK}*min(1,{'+'.join(ducks)})':eval=frame" if ducks else ""
+    fc.append(f"[0:a]aformat=channel_layouts=stereo{vol}[voice]")
+    if mixes:
+        fc.append(f"[voice]{''.join(mixes)}amix=inputs={len(mixes) + 1}:duration=first:normalize=0,"
+                  f"asetpts=N/SR/TB,apad,atrim=end={dur:.6f},asetpts=PTS-STARTPTS[a]")
+    else:
+        fc.append(f"[voice]asetpts=N/SR/TB,apad,atrim=end={dur:.6f},asetpts=PTS-STARTPTS[a]")
+    fc.append(f"{vtag}format=yuv420p[v]")
     cmd += ["-filter_complex", ";".join(fc), "-map", "[v]", "-map", "[a]", "-frames:v", str(nfr), "-r", str(fps)] + _enc(cfg) + ["-c:a", "pcm_s16le", str(out)]
     run(cmd)
 

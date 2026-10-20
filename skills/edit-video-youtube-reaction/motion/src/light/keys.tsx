@@ -15,7 +15,10 @@ export type KeyPhrase = { s: number; e: number; style: "line" | "stack"; words: 
 export type KeysProps = { width: number; height: number; fps: number; total: number; phrases: KeyPhrase[] };
 
 const GRAD = "linear-gradient(180deg, #FFBE9C 0%, #F0875E 50%, #D97757 100%)";
-const SHADOW = "0 2px 6px rgba(0,0,0,.35), 0 8px 40px rgba(0,0,0,.45)";
+// Lifting the words off a busy picture (a white shirt is the worst case) takes both: a soft black
+// band rising from the bottom while a phrase is up, and a tight shadow stack hugging each glyph.
+const SHADOW = "0 0 3px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.6), 0 6px 24px rgba(0,0,0,.55), 0 14px 60px rgba(0,0,0,.5)";
+const GRAD_SHADOW = "drop-shadow(0 0 2px rgba(0,0,0,.65)) drop-shadow(0 3px 10px rgba(0,0,0,.6)) drop-shadow(0 10px 36px rgba(0,0,0,.5))";
 const cl = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
 const EXPO = Easing.bezier(0.16, 1, 0.3, 1);
 const W = 1920, H = 1080, SIDE = 80;   // design space; scaled to the output size
@@ -27,8 +30,16 @@ const Grad: React.FC<{ children: React.ReactNode; style?: React.CSSProperties }>
   // padding keeps diacritics / descenders inside the painted box; negative margin cancels it
   <span style={{ display: "inline-block", padding: "0.28em 0.08em 0.22em", margin: "-0.28em -0.08em -0.22em", backgroundImage: GRAD,
     WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", textShadow: "none",
-    filter: "drop-shadow(0 6px 22px rgba(0,0,0,.45))", ...style }}>{children}</span>
+    filter: GRAD_SHADOW, ...style }}>{children}</span>
 );
+
+/** A black gradient from the bottom edge, in and out with the phrase. */
+const Band: React.FC<{ len: number; tall: boolean }> = ({ len, tall }) => {
+  const f = useCurrentFrame();
+  const o = interpolate(f, [0, 8, len - 8, len], [0, 1, 1, 0], cl);
+  return <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: tall ? "58%" : "46%", opacity: o,
+    background: "linear-gradient(0deg, rgba(0,0,0,.72) 0%, rgba(0,0,0,.45) 38%, rgba(0,0,0,.14) 72%, rgba(0,0,0,0) 100%)" }} />;
+};
 
 const useWord = (at: number, len: number) => {
   const f = useCurrentFrame();
@@ -96,6 +107,7 @@ export const Keys: React.FC<KeysProps> = ({ width, fps, phrases }) => (
         const local = { ...p, words: p.words.map((w) => ({ ...w, t: Math.max(0, w.t - p.s) })) };
         return (
           <Sequence key={i} from={from} durationInFrames={len} layout="none">
+            <Band len={len} tall={p.style === "stack"} />
             {p.style === "stack" ? <Stack p={local} fps={fps} len={len} /> : <Line p={local} fps={fps} len={len} />}
           </Sequence>
         );

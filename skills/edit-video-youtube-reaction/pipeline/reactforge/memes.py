@@ -6,8 +6,9 @@
   2. fetch  library first (reuse), else a short meme clip found with yt-dlp, else an Imgflip
             template image. Everything downloaded lands in the meme library with a row in
             index.csv, so later videos reuse it.
-  3. place  render.py cuts each meme in right after the sentence its anchor phrase belongs to:
-            the voice pauses, the meme plays with its sound on black, no card.
+  3. place  render.py lays each meme over the talk right after the sentence its anchor phrase
+            belongs to: on black, no card; the presenter keeps talking (voice ducked under a
+            meme with sound, untouched under a still).
 
 Library: project.json "memes": {"library": "..."} > $REACTFORGE_MEME_LIB >
 <workspace>/meme-library (the folder that holds projects/).
@@ -131,31 +132,38 @@ def _from_youtube(q: str, dest: Path) -> tuple[Path, str] | None:
 
 
 _IMGFLIP: list[dict] | None = None
+UA = {"User-Agent": "Mozilla/5.0 (reactforge meme fetch)"}   # Imgflip answers 403 to urllib's default
+
+
+def _get(url: str) -> bytes:
+    with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=30) as resp:
+        return resp.read()
 
 
 def _from_imgflip(q: str, dest: Path) -> tuple[Path, str] | None:
     global _IMGFLIP
     if _IMGFLIP is None:
-        with urllib.request.urlopen("https://api.imgflip.com/get_memes", timeout=30) as resp:
-            _IMGFLIP = json.loads(resp.read().decode("utf-8"))["data"]["memes"]
+        _IMGFLIP = json.loads(_get("https://api.imgflip.com/get_memes").decode("utf-8"))["data"]["memes"]
     want = _toks(q)
     best = max(_IMGFLIP, key=lambda m: len(want & _toks(m["name"])), default=None)
     if not best or not want or len(want & _toks(best["name"])) / len(want) < 0.5:
         return None
     out = dest.with_suffix(Path(best["url"]).suffix or ".jpg")
-    urllib.request.urlretrieve(best["url"], out)
+    out.write_bytes(_get(best["url"]))
     return out, best["url"]
 
 
 def fetch(lib: Path, rows: list[dict], m: dict, project_name: str) -> dict | None:
     """Library row for this meme request, downloading it if the library has nothing close."""
-    row = lookup(rows, m["q"])
+    # "image": true asks for a still meme (Imgflip template) — it lays over the voice silently
+    want_still = bool(m.get("image"))
+    row = lookup([r for r in rows if not want_still or int(r["still"] or 0)], m["q"])
     if row is None:
         mood = m.get("mood") if m.get("mood") in MOODS else "other"
         (lib / mood).mkdir(exist_ok=True)
         dest = lib / mood / _slug(m["q"])
         got = None
-        for src in (_from_youtube, _from_imgflip):
+        for src in ((_from_imgflip,) if want_still else (_from_youtube, _from_imgflip)):
             try:
                 got = src(m["q"], dest)
             except Exception as e:

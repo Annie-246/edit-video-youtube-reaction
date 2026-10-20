@@ -54,8 +54,10 @@ description: Edit Video Youtube Reaction — dựng video react/phân tích YouT
 Bước `captions` chỉ chọn cụm; bước `panel` vẽ lớp chữ trong suốt `work/keys/<id>.webm` (VP8 có
 alpha) bằng composition `Keys`, `render` đè lên mặt người. Hai kiểu, tự chọn theo từng cụm:
 
-- **Dòng (`line`, mặc định):** một dòng Inter ExtraBold (800) cỡ ~112px ở 1080p, chữ trắng, bóng
-  đổ mềm, từ khoá gradient cam đất. Dòng được kéo ngang gần tới mép khung (lề 80px), **không bó
+- **Cho chữ nổi trên mọi nền** (áo trắng là ca khó nhất): mỗi cụm kéo theo một dải đen mờ dâng
+  từ mép dưới (hiện/tắt cùng cụm) **và** một lớp bóng đậm ôm sát từng nét chữ.
+- **Dòng (`line`, mặc định):** một dòng Inter ExtraBold (800) cỡ ~112px ở 1080p, chữ trắng,
+  từ khoá gradient cam đất. Dòng được kéo ngang gần tới mép khung (lề 80px), **không bó
   trong bề ngang người nói**; câu dài thì tự co cỡ cho vừa một dòng.
 - **Chồng (`stack`):** chữ dẫn nhỏ (~66px) + từ khoá cực to (~200px, Inter Black) — cho con số và
   câu chốt ngắn, khoảng 1/3 số cụm (AI đánh `"big": true`; có chữ số thì tự bật). Chỉ dùng khi từ
@@ -203,9 +205,11 @@ Danh mục mẫu và props: [motion/TEMPLATES.md](motion/TEMPLATES.md).
   `project.json` → `"memes": {"auto": false}` tắt hẳn phần tự chọn; dòng `MEME:` khai tay vẫn chạy.
 - **Tìm meme:** tra kho trước (trùng tên/tag ≥ 60% thì dùng lại), không có thì tìm clip meme ngắn
   (≤ 20 giây) bằng `yt-dlp`, cuối cùng mới lấy ảnh template từ Imgflip. Meme nền xanh tự tách nền.
-- **Chèn:** ngắt nhịp. Lời người dẫn dừng ở cuối câu neo, meme chạy kèm tiếng của nó (clip
-  ≤ 4,5 giây chạy trọn) trên **nền đen, không bo thẻ**: `"mode":"full"` gần kín màn, `"part"` chiếm
-  khoảng nửa màn, lệch trái/phải xen kẽ. Hết meme thì người dẫn nói tiếp từ đúng khung đó.
+- **Chèn:** **đè lên lời, không ngắt nhịp**, ngay sau câu chứa câu neo. Meme hiện trên **nền đen,
+  không bo thẻ**: `"mode":"full"` gần kín màn, `"part"` chiếm khoảng nửa màn, lệch trái/phải xen kẽ;
+  người dẫn vẫn nói tiếp bên dưới. Meme **có tiếng** thì phát tiếng của nó và hạ giọng người dẫn
+  còn ~28% suốt meme (lên xuống mượt 0,15 giây); meme **ảnh tĩnh** thì im, giọng giữ nguyên. Thời
+  lượng video không đổi. Clip ≤ 4,5 giây chạy trọn. Muốn meme ảnh: thêm `"image": true` (lấy từ Imgflip).
   Điểm chèn tính lại mỗi lần render nên `verify` cắt thêm vẫn không lệch.
 - **Kho:** `<thư mục làm việc>/meme-library/` (thư mục chứa `projects/`), chia theo cảm xúc
   (`shock/ laugh/ facepalm/ win/ fail/ awkward/ confused/ sad/ hype/ cringe/`), kèm `index.csv`
@@ -267,8 +271,14 @@ dựng lại đúng các đoạn đó.
 - **Kịch bản viết liền một đoạn, ít dấu chấm:** điểm chèn meme dựa vào dấu câu, chữ viết hoa mở câu
   ("…diễn viên này Cũng không cần…") và quãng nghỉ; không thấy thì lấy quãng nghỉ dài nhất trong
   8 giây sau câu neo. Câu neo meme nên là đuôi câu chốt.
-- **Ghép video có meme:** đoạn có meme dựng thân trước (`seg/<id>.body.mov`) rồi mới cắt meme vào;
-  mọi nhánh phải `setsar=1`, lệch SAR một chút (6479:6480) là `concat` từ chối.
+- **Ghép video có meme:** đoạn có meme dựng thân trước (`seg/<id>.body.mov`) rồi mới đè meme lên;
+  mọi nhánh phải `setsar=1`, lệch SAR một chút (6479:6480) là ffmpeg từ chối.
+- **Đừng `loudnorm` tiếng meme:** nhiều clip meme mở đầu bằng vài giây im lặng; `loudnorm` kéo tiếng
+  rè đó lên 0 dB. Đo `volumedetect` đúng đoạn sẽ phát: dưới −50 dB coi như meme câm (không hạ giọng),
+  còn lại chỉnh bằng `volume` về −20 dB (tăng tối đa +12 dB) + `alimiter`.
+- **Imgflip trả 403** nếu không gửi User-Agent.
+- **Cache lớp chữ / cảnh Remotion chỉ so props:** sửa code giao diện (`keys.tsx`, mẫu) thì phải
+  `panel --force` / `cards --force`, không thì vẫn dùng file cũ.
 - **Chữ gradient chỉ được tô trong khung của nó:** dấu chồng tiếng Việt (ầ, ễ, ỗ) và đuôi chữ (g, y)
   nhô ra ngoài sẽ mất. Mọi span gradient phải có đệm trên/dưới (`padding` + `margin` âm), và chữ
   trắng cha có `textShadow` thì span gradient phải `textShadow: none`, không thì bóng làm đục màu.
