@@ -56,8 +56,10 @@ def check(project: Path) -> list[tuple[str, str, str]]:
                 out.append((ERROR, tid, "chưa khớp lời (thiếu align) → đoạn này sẽ bị bỏ khỏi video"))
                 continue
             mode = it.get("mode", "layout")
-            if mode in ("layout", "face") and not _nonempty(work / "captions" / f"{tid}.ass"):
+            if mode == "layout" and not _nonempty(work / "captions" / f"{tid}.ass"):
                 out.append((ERROR, tid, "thiếu chữ theo lời (captions/*.ass rỗng)"))
+            if mode == "face" and not _nonempty(work / "keys" / f"{tid}.webm"):
+                out.append((ERROR, tid, "thiếu lớp chữ từ khoá keys/*.webm (chạy captions rồi panel)"))
             # white layout / BUBBLE / MOTION show the Main render; without it the screen is empty
             if mode == "face":
                 if it.get("side"):

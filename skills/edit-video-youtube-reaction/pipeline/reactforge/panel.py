@@ -173,17 +173,37 @@ def _inline_images(v, base: Path | None):
     return v
 
 
-def render_panel(props: dict, out: Path, composition: str = "Main", base: Path | None = None) -> None:
+def render_panel(props: dict, out: Path, composition: str = "Main", base: Path | None = None, extra: list[str] | None = None) -> None:
     write_json(out.with_suffix(".json"), props)  # cache key, compared on the next run
     props_p = out.with_suffix(".props.json")
     write_json(props_p, _inline_images(props, base))
-    cmd = ["npx", "remotion", "render", composition, str(out), f"--props={props_p}", "--log=error"]
+    cmd = ["npx", "remotion", "render", composition, str(out), f"--props={props_p}", "--log=error", *(extra or [])]
     # b-roll scenes play work/public/screen.mp4 of THIS project
     if base is not None and (base / "work" / "public").is_dir():
         cmd.append(f"--public-dir={base / 'work' / 'public'}")
     r = subprocess.run(cmd, cwd=str(REMOTION_DIR), capture_output=True, text=True, shell=(os.name == "nt"))
     if r.returncode != 0:
         raise RuntimeError(f"remotion failed: {r.stderr[-1500:]}")
+
+
+KEYS_ARGS = ["--codec=vp8", "--image-format=png", "--pixel-format=yuva420p"]   # keeps the alpha channel
+
+
+def render_keys(project: Path, cfg: dict, L: dict, it: dict, ws: list[dict], total: float, force: bool) -> None:
+    """FACE keyword captions → work/keys/<id>.webm, a transparent layer render.py lays over the face."""
+    from .keywords import keys_props
+    kw = project / "work" / "keywords" / f"{it['id']}.json"
+    if not kw.exists():
+        print(f"   ⚠ {it['id']}: chưa có từ khoá (chạy bước captions)"); return
+    props = {"width": L["w"], "height": L["h"], "fps": cfg["output"]["fps"], "total": round(total, 3),
+             "phrases": keys_props(read_json(kw)["phrases"], ws)}
+    out = project / "work" / "keys" / f"{it['id']}.webm"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    if out.exists() and not force and out.with_suffix(".json").exists() and read_json(out.with_suffix(".json")) == props:
+        print(f"{it['id']}: lớp từ khoá có sẵn"); return
+    render_panel(props, out, composition="Keys", extra=KEYS_ARGS)
+    n = sum(p["style"] == "stack" for p in props["phrases"])
+    print(f"{it['id']}: {len(props['phrases'])} cụm từ khoá ({n} cụm chữ to) → keys/{out.name}")
 
 
 def main(project: Path, only: str | None = None, force: bool = False) -> None:
@@ -195,7 +215,7 @@ def main(project: Path, only: str | None = None, force: bool = False) -> None:
     side_dir = project / "work" / "side"; side_dir.mkdir(parents=True, exist_ok=True)
     full_dir = project / "work" / "full"
     for it in plan:
-        if it["type"] != "talk" or not (it.get("full") or it.get("side")):
+        if it["type"] != "talk" or not (it.get("full") or it.get("side") or it.get("mode") == "face"):
             continue
         if only and it["id"] != only:
             continue
@@ -204,6 +224,8 @@ def main(project: Path, only: str | None = None, force: bool = False) -> None:
             continue
         ws = timed_words_for(it, words, al)
         total = al.get("kept") or (al["end"] - al["start"])
+        if it.get("mode") == "face":
+            render_keys(project, cfg, L, it, ws, total, force)
         # Full-frame cards: anchor each to the phrase it belongs with, so the layout drops away
         # exactly as the question is asked rather than at an arbitrary second.
         if it.get("full"):

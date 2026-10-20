@@ -1,4 +1,4 @@
-"""Keyword captions for FACE / BUBBLE talks (Greg Isenberg style).
+"""Keyword captions for FACE talks (Greg Isenberg style).
 
 No running subtitles: every few seconds a 2–5 word phrase appears word by word at chest height,
 one or two words of it in clay. AI picks the phrases by WORD INDEX (it cannot invent timings);
@@ -19,8 +19,9 @@ SYSTEM = """Bạn là editor chọn CHỮ TỪ KHOÁ hiện trên màn hình cho
 Đầu vào: lời người nói, mỗi từ có số thứ tự và mốc giây.
 Chọn các CỤM 2–5 từ LIÊN TIẾP, chép nguyên văn, mang ý chính của câu: con số, tên riêng, khái niệm, câu chốt, lời hứa hẹn.
 Trong mỗi cụm chọn 1–2 từ để TÔ MÀU (thường là danh từ / con số / tính từ mạnh ở cuối cụm).
+Đánh dấu "big": true cho khoảng 1/3 số cụm đắt nhất: có con số, hoặc câu chốt mà phần tô màu rất ngắn (≤ 2 từ) — cụm này hiện chữ tô màu thật to.
 Quy tắc nhịp: hai cụm liên tiếp cách nhau 3–8 giây; TUYỆT ĐỐI không để quá 9 giây không có cụm nào (kể cả đầu và cuối đoạn). Không chọn từ đệm, từ nối, câu vô nghĩa khi đứng riêng.
-Trả về DUY NHẤT JSON: {"phrases":[{"from":<số thứ tự từ đầu>,"to":<số thứ tự từ cuối, bao gồm>,"hl":[<số thứ tự từ tô màu>]}]}"""
+Trả về DUY NHẤT JSON: {"phrases":[{"from":<số thứ tự từ đầu>,"to":<số thứ tự từ cuối, bao gồm>,"hl":[<số thứ tự từ tô màu>],"big":<true|false>}]}"""
 
 STOP = {"và", "là", "thì", "mà", "của", "có", "cho", "với", "này", "đó", "nó", "một", "những", "các", "được", "để", "khi", "nếu", "rồi", "cũng", "đã", "sẽ", "đang", "ạ", "à", "ờ", "nhé", "nha"}
 
@@ -76,6 +77,25 @@ def _ask(project: Path, ws: list[dict]) -> list[dict]:
     return _extract_json(text).get("phrases", [])
 
 
+def style_of(p: dict, ws: list[dict]) -> str:
+    """'stack' (keyword huge under a small context line) for numbers and short punchlines,
+    'line' otherwise. A keyword too long to stand alone at that size stays on the line."""
+    hl = sorted(p["hl"])
+    key = " ".join(shown(ws[k]["w"]) for k in hl)
+    big = p.get("big") or any(c.isdigit() for c in key)
+    # splitting the phrase around a keyword in its middle reads as nonsense
+    # ("một hoàn chỉnh / workflow"), so the keyword must be one run at either end
+    edge = hl == list(range(hl[0], hl[-1] + 1)) and (hl[0] == p["from"] or hl[-1] == p["to"])
+    return "stack" if big and edge and len(key) <= 16 else "line"
+
+
+def keys_props(phrases: list[dict], ws: list[dict]) -> list[dict]:
+    """Phrases in the shape the Remotion `Keys` composition draws."""
+    return [{"s": round(p["s"], 3), "e": round(p["e"] + 0.7, 3), "style": style_of(p, ws),
+             "words": [{"w": shown(ws[k]["w"]), "t": round(ws[k]["s"], 3), "hl": k in p["hl"]} for k in range(p["from"], p["to"] + 1)]}
+            for p in phrases]
+
+
 def pick(project: Path, item: dict, ws: list[dict], total: float) -> list[dict]:
     """Phrases with times on the cut timeline: [{from,to,hl,s,e,text}]."""
     cache = project / "work" / "keywords" / f"{item['id']}.json"
@@ -96,7 +116,7 @@ def pick(project: Path, item: dict, ws: list[dict], total: float) -> list[dict]:
         if clean and (i <= clean[-1]["to"] or ws[i]["s"] - ws[clean[-1]["to"]]["e"] < MIN_GAP):
             continue
         hl = [int(h) for h in p.get("hl", []) if i <= int(h) <= j] or [j]
-        clean.append({"from": i, "to": j, "hl": hl})
+        clean.append({"from": i, "to": j, "hl": hl, "big": bool(p.get("big"))})
     phrases = fill_gaps(ws, clean, total)
     for p in phrases:
         p["s"] = ws[p["from"]]["s"]; p["e"] = ws[p["to"]]["e"]

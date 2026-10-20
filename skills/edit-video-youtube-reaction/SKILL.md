@@ -36,7 +36,7 @@ description: Edit Video Youtube Reaction — dựng video react/phân tích YouT
 | Dòng | Màn hình | Chữ | Hợp với |
 |---|---|---|---|
 | *(không khai)* | bố cục trắng ở trên | chữ nhảy theo từng từ | phân tích có b-roll, mặc định |
-| `FACE:` | người nói **chiếm cả màn**; mỗi chỗ cắt và mỗi ~7 giây đổi cỡ cảnh rộng ↔ chặt (punch-in 1.15) | **chỉ cụm từ khoá** 2–5 từ ngang ngực, hiện từng chữ từ mờ sang rõ, 1–2 từ màu cam; AI tự chọn | hook, câu chuyện, kêu gọi |
+| `FACE:` | người nói **chiếm cả màn**; mỗi chỗ cắt và mỗi ~7 giây đổi cỡ cảnh rộng ↔ chặt (punch-in 1.15) | **chỉ cụm từ khoá** 2–5 từ, AI tự chọn (xem "Chữ từ khoá FACE") | hook, câu chuyện, kêu gọi |
 | `BUBBLE:` | các cảnh `SIDE:` (b-roll / đồ hoạ) chiếm cả màn, mặt người trong **ô bo góc nhỏ sát mép phải**; nội dung dựng trong vùng 1520px bên trái, dải sau ô mặt là chính cảnh đó làm mờ | không có | bình luận dài trên b-roll |
 | `MOTION:` | **chỉ motion graphic** full màn (các cảnh `SIDE:`), không có người | không có | giải thích bằng sơ đồ, mục lục, con số |
 
@@ -48,6 +48,20 @@ description: Edit Video Youtube Reaction — dựng video react/phân tích YouT
   ô mặt `BUBBLE:` → `recording.bubble: {"cx":0.5,"cy":0.42,"zoom":1.25}`. Bản quay 1080p phóng 1.15
   hơi mềm; quay 4K thì thoải mái.
 - Từ khoá `FACE:` lưu ở `work/keywords/<id>.json` (sửa tay được, giữ nguyên khi lời không đổi).
+
+### Chữ từ khoá FACE (vẽ bằng Remotion, không dùng phụ đề ASS)
+
+Bước `captions` chỉ chọn cụm; bước `panel` vẽ lớp chữ trong suốt `work/keys/<id>.webm` (VP8 có
+alpha) bằng composition `Keys`, `render` đè lên mặt người. Hai kiểu, tự chọn theo từng cụm:
+
+- **Dòng (`line`, mặc định):** một dòng Inter ExtraBold (800) cỡ ~112px ở 1080p, chữ trắng, bóng
+  đổ mềm, từ khoá gradient cam đất. Dòng được kéo ngang gần tới mép khung (lề 80px), **không bó
+  trong bề ngang người nói**; câu dài thì tự co cỡ cho vừa một dòng.
+- **Chồng (`stack`):** chữ dẫn nhỏ (~66px) + từ khoá cực to (~200px, Inter Black) — cho con số và
+  câu chốt ngắn, khoảng 1/3 số cụm (AI đánh `"big": true`; có chữ số thì tự bật). Chỉ dùng khi từ
+  khoá liền nhau và nằm **đầu hoặc cuối** cụm (từ khoá đứng đầu thì nằm trên chữ dẫn); từ khoá
+  nằm giữa cụm hoặc dài hơn 16 ký tự thì tự về kiểu dòng, vì tách ra đọc vô nghĩa.
+- Chữ hiện từng từ đúng lúc nói (mờ → rõ, trồi lên), từ khoá nảy nhẹ; hết cụm thì mờ đi.
 
 ## Bộ màu (cố định, kiểu Claude/Anthropic)
 
@@ -255,6 +269,12 @@ dựng lại đúng các đoạn đó.
   8 giây sau câu neo. Câu neo meme nên là đuôi câu chốt.
 - **Ghép video có meme:** đoạn có meme dựng thân trước (`seg/<id>.body.mov`) rồi mới cắt meme vào;
   mọi nhánh phải `setsar=1`, lệch SAR một chút (6479:6480) là `concat` từ chối.
+- **Chữ gradient chỉ được tô trong khung của nó:** dấu chồng tiếng Việt (ầ, ễ, ỗ) và đuôi chữ (g, y)
+  nhô ra ngoài sẽ mất. Mọi span gradient phải có đệm trên/dưới (`padding` + `margin` âm), và chữ
+  trắng cha có `textShadow` thì span gradient phải `textShadow: none`, không thì bóng làm đục màu.
+- **Lớp chữ trong suốt:** Remotion phải render `--codec=vp8 --image-format=png --pixel-format=yuva420p`
+  (mặc định jpeg là mất alpha), và ffmpeg phải đọc bằng `-c:v libvpx` trước `-i`, bộ giải mã vp8
+  mặc định bỏ kênh alpha.
 - **Mẫu showreel vẽ theo chiều cao thật của khung** (khung chính 1440x920, vùng BUBBLE 1520x1080
   cao hơn 16:9): đừng đặt vị trí theo `ART_H` cố định, sẽ hở dải trắng ở đáy.
 - **Dừng render giữa chừng:** chỉ diệt tiến trình node của Remotion, đừng `taskkill` toàn bộ

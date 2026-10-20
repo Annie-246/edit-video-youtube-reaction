@@ -177,8 +177,16 @@ def render_face(project: Path, cfg: dict, L: dict, item: dict, al: dict, out: Pa
     cmd = ["ffmpeg", "-v", "error", "-y", "-ss", f"{t0:.3f}", "-t", f"{t1 - t0 + 0.5:.3f}", "-i", str(rec)]
     fc: list[str] = []
     _join(parts, fc, per)
-    fc.append(f"[tv]format=yuv420p{_cap_filter(project, item)}[vc]")
-    _finish(cfg, cmd, fc, _full_cards(project, item, fps, cmd, fc, "[vc]", 1), nfr, dur, out)
+    keys = project / "work" / "keys" / f"{item['id']}.webm"
+    n_in = 1
+    if keys.exists():
+        # libvpx (not the native vp8 decoder) is what reads the alpha channel
+        cmd += ["-c:v", "libvpx", "-i", str(keys)]
+        fc += [f"[1:v]fps={fps},format=rgba[kl]", "[tv][kl]overlay=0:0:eof_action=pass,format=yuv420p[vc]"]
+        n_in = 2
+    else:
+        fc.append("[tv]format=yuv420p[vc]")
+    _finish(cfg, cmd, fc, _full_cards(project, item, fps, cmd, fc, "[vc]", n_in), nfr, dur, out)
 
 
 def _round_mask(path: Path, w: int, h: int, r: int, rgba: bool = False) -> Path:
