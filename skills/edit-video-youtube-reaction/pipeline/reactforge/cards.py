@@ -2,7 +2,8 @@
 
   FULL:  any light template as a full-frame card        → {"tpl": "...", ...}
   BEAT:  one line that should land                       → dark `title`
-  BREAK: a chapter title over a beat of silence          → dark `title`
+  BREAK: a chapter title over a beat of silence          → `chapter` (showreel style)
+  INTRO: / OUTRO: opening and closing stings             → `intro` / `outro`
 Statement cards (title / quote / equation) go dark by default; tool openers stay light.
 
 Static PNGs (graphics.py) stay as the fallback for when node/Remotion is not available;
@@ -15,6 +16,13 @@ from pathlib import Path
 from .common import load_project, read_json, write_json
 from .graphics import layout_for
 from .panel import parse_full, render_panel
+
+
+BREAK_SECS = {"intro": 3.4, "outro": 3.2}
+
+
+def break_secs(cfg: dict, it: dict) -> float:
+    return float(it.get("secs") or BREAK_SECS.get(it.get("tpl", ""), cfg["output"].get("break_secs", 2.6)))
 
 
 def _props(cfg: dict, L: dict, secs: float, style: str, src: dict) -> dict:
@@ -36,12 +44,14 @@ def main(project: Path, only: str | None = None, force: bool = False) -> None:
             continue
         jobs: list[tuple[Path, dict]] = []
         if it["type"] == "break":
-            secs = float(cfg["output"].get("break_secs", 2.6))
+            # showreel stings: chapter (BREAK:), intro (INTRO:), outro (OUTRO:)
+            tpl = it.get("tpl", "chapter")
+            pr = {"title": it["title"], "sub": it.get("sub", ""), "dark": True}
+            if tpl == "chapter":
+                pr["num"] = it.get("section", "")
             jobs.append((out_dir / f"{it['id']}.mp4",
                          {"width": L["w"], "height": L["h"], "fps": cfg["output"]["fps"],
-                          "scenes": [{"start": 0, "duration": round(secs, 3), "template": "title",
-                                      "props": {"kicker": f"Phần {it['section']}" if it.get("section") else "",
-                                                "title": it["title"], "dark": True}}]}))
+                          "scenes": [{"start": 0, "duration": round(break_secs(cfg, it), 3), "template": tpl, "props": pr}]}))
         elif it["type"] == "talk" and it.get("full"):
             timings = read_json(project / "work" / "full" / f"{it['id']}.json") \
                 if (project / "work" / "full" / f"{it['id']}.json").exists() else []

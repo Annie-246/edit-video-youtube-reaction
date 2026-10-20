@@ -4,7 +4,8 @@ Item types:
   talk  — presenter speaks (text = what anh reads; slide = left panel content)
   clip  — cut from the source video [CLIP mm:ss–mm:ss]
   score — scoreboard update (**Bảng điểm:** line)
-Optional lines inside a talk block:  SIDE: / FULL: / BEAT: (graphics, see SKILL.md)
+Optional lines inside a talk block:  SIDE: / FULL: / BEAT: (graphics), FACE: / BUBBLE: / MOTION:
+(screen mode of the talk), MEME: (meme cut in after a line) — see SKILL.md. INTRO: / OUTRO: / BREAK: are full-frame stings.
 Per section (anywhere under its "## N." heading):  INFO: kicker | title | sub   → the title card
 above the presenter, e.g. "INFO: Công cụ 2/6 | Agent Reach | Tìm lời phàn nàn của khách".
 Optional lines inside a clip paragraph: LABEL: text    NOTE: text
@@ -120,7 +121,14 @@ def parse_script(md_path: Path) -> list[dict]:
         if s.startswith("BREAK:"):
             # a silent full-frame chapter card; gives the ear a rest between sections
             close()
-            items.append({"type": "break", "section": sec_num, "title": s[6:].strip()})
+            items.append({"type": "break", "tpl": "chapter", "section": sec_num, "title": s[6:].strip()})
+            continue
+        if s.startswith(("INTRO:", "OUTRO:")):
+            # showreel-style sting at the very start / end: "INTRO: Tiêu đề | dòng phụ"
+            close()
+            parts = [x.strip() for x in s[6:].split("|")]
+            items.append({"type": "break", "tpl": s[:5].lower(), "section": sec_num,
+                          "title": parts[0], "sub": parts[1] if len(parts) > 1 else ""})
             continue
         if s.startswith("**→") or s.startswith("→"):  # production note to anh, not spoken
             continue
@@ -160,6 +168,14 @@ def parse_script(md_path: Path) -> list[dict]:
         if cur is not None:
             if s.startswith("GFX:"):  # old corner-panel line: the white layout has one main frame
                 cur.setdefault("side", []).append(s[4:].strip()); continue
+            if s.startswith(("FACE:", "BUBBLE:", "MOTION:")):
+                # how this talk fills the screen (default: the white layout)
+                #   FACE   presenter full screen, keyword captions only (Greg Isenberg style)
+                #   BUBBLE b-roll / graphics full screen, presenter in a small rounded bubble
+                #   MOTION graphics full screen, voice only — no presenter on screen
+                cur["mode"] = s.split(":", 1)[0].lower(); continue
+            if s.startswith("MEME:"):
+                cur.setdefault("memes", []).append(s[5:].strip()); continue
             if s.startswith("SIDE:"):
                 cur.setdefault("side", []).append(s[5:].strip()); continue
             if s.startswith("FULL:"):
@@ -215,11 +231,11 @@ def main(project: Path) -> list[dict]:
           f"{len(items)-len(talks)-len(clips)-len(breaks)} score")
     for it in items:
         if it["type"] == "talk":
-            print(f"  {it['id']} talk  [{it['section']}] {len(it['text'].split())} từ | slide: {it['slide']['keyword']} | screens: {len(it['screens'])}")
+            print(f"  {it['id']} talk  [{it['section']}] {len(it['text'].split())} từ | {it.get('mode', 'layout')} | meme: {len(it.get('memes') or [])}")
         elif it["type"] == "clip":
             print(f"  {it['id']} clip  {it['start']:.0f}s–{it['end']:.0f}s ({it['end']-it['start']:.0f}s)")
         elif it["type"] == "break":
-            print(f"  {it['id']} break \u2014 {it['title']}")
+            print(f"  {it['id']} {it.get('tpl', 'chapter')} \u2014 {it['title']}")
         else:
             print(f"  score {[ (e['col'], e['claim'][:30]) for e in it['entries'] ]}")
     return items

@@ -22,6 +22,9 @@ def layout_for(width: int) -> dict:
         # source clips play full screen, no presenter, no frame
         "clip": {"x": 0, "y": 0, "w": r(1920), "h": r(1080), "r": 0},
         "head": dict(head), "pip": dict(head),
+        # BUBBLE mode: presenter in a small rounded card hugging the right edge, mid-height
+        "bubble": {"x": r(1540), "y": r(300), "w": e(340), "h": e(400), "r": r(28)},
+        "bubble_area": e(1520),   # content width left of the bubble; the strip behind it is blurred fill
         "info": {"x": r(1520), "y": r(40), "w": e(360), "h": e(176), "r": r(24)},
         # word captions sit in a short white pill straddling the bottom edge of the main frame
         "cap": {"x": r(260), "y": r(921), "w": e(1000), "h": e(78), "r": r(39)},

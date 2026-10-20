@@ -4,9 +4,9 @@ Một composition duy nhất `Main` (`src/light/`). Mỗi cảnh vẽ trên artb
 theo khung: khung chính 1440x920 cạnh người nói, hoặc thẻ full 1920x1080.
 
 - **Màu:** nhấn bằng cam trơn `#D97757`, chữ `#141413`. Nền cảnh là gradient be – cam nhạt.
-  Không dùng gradient nhiều màu, không dùng vòng tròn lan toả.
+  Không dùng gradient nhiều màu. Ngoại lệ duy nhất: bộ showreel bên dưới (gradient cùng tông cam đất).
 - **Nền đen:** chỉ dùng cho vài cảnh cần nhấn (`"dark": true`). Mặc định thẻ FULL dạng
-  `title`, `quote`, `equation` và mọi `BEAT:` / `BREAK:` có nền đen.
+  `title`, `quote`, `equation` và mọi `BEAT:` có nền đen; `BREAK:` dùng mẫu `chapter`.
 - **Font:** Inter. Viết hoa đầu câu, không viết hoa toàn bộ. Line-height từ 1.24 trở lên.
 - **Chuyển động:** chữ hiện dần từng từ (bỏ mờ, trồi lên), thẻ trồi lên lần lượt, con trỏ tay bấm,
   chữ gõ từng ký tự, số đếm lên. Hai video mẫu nằm ở `templates/samples/`.
@@ -46,6 +46,19 @@ BEAT: @"câu neo" {"title":"…"}                  ← thẻ chốt nền đen
 | `commands` | lệnh / phím tắt | `kicker`, `title`, `commands:[{cmd,desc,icon}]` |
 | `form` | công cụ cho xem kết quả trước, xin thông tin sau | `kicker`, `title`, `rows:[{label,value}]`, `result`, `cta` |
 | `recap` | điểm lại nhiều mục, sáng lần lượt | `kicker`, `title`, `items:[{icon,name,desc}]` |
+
+**Bộ showreel / kiểu Greg (nền tối ấm, tự vẽ nền, dùng hạn chế):**
+
+| Mẫu | Dùng khi | Props chính |
+|---|---|---|
+| `horizon` | một câu chốt trên vành hành tinh phát sáng cam | `kicker`, `title` (có `*nhấn*`) |
+| `agenda` | mục lục / danh sách hiện từng dòng (dòng mới xám rồi sáng) | `title`, `items:["…"]` |
+| `chapter` | màn chuyển phần (`BREAK:` tự dùng): số lớn bay vào, xuyên qua khi thoát | `num`, `kicker`, `title` |
+| `intro` | sting mở đầu (`INTRO:` tự dùng): chấm → vạch → chữ rơi từng ký tự | `title`, `sub` |
+| `outro` | sting kết (`OUTRO:` tự dùng): chữ trồi lên có bóng lặp, kết bằng chấm cam | `title`, `sub` |
+
+Hai mẫu `horizon`, `agenda` dùng được ở cả `SIDE:` (nhất là đoạn `MOTION:`) và `FULL:`.
+Đây là chỗ duy nhất được dùng gradient cam đất (`#F0B49A → #D97757 → #B5532F`) và quầng sáng.
 
 Mẫu nào cũng nhận thêm `"dark": true` để dùng nền đen.
 

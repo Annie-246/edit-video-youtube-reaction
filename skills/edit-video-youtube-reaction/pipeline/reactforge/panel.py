@@ -224,7 +224,10 @@ def main(project: Path, only: str | None = None, force: bool = False) -> None:
         if it.get("side"):
             scenes, notes = build_scenes(it["side"], ws, total)
             scenes = split_long(scenes, total)
-            props = {"width": S["w"], "height": S["h"], "fps": cfg["output"]["fps"], "scenes": scenes}
+            # BUBBLE / MOTION fill the whole screen with these scenes; the white layout has its frame
+            # (BUBBLE keeps the content clear of the presenter bubble on the right)
+            W, H = {"motion": (L["w"], L["h"]), "bubble": (L["bubble_area"], L["h"])}.get(it.get("mode"), (S["w"], S["h"]))
+            props = {"width": W, "height": H, "fps": cfg["output"]["fps"], "scenes": scenes}
             out = side_dir / f"{it['id']}.mp4"
             if out.exists() and not force and out.with_suffix(".json").exists() and read_json(out.with_suffix(".json")) == props:
                 print(f"{it['id']}: side graphic có sẵn")

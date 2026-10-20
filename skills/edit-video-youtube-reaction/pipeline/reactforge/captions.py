@@ -142,6 +142,45 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     return head + "\n".join(ev) + "\n"
 
 
+KEY_HL = "#E8916F"   # clay, lifted a touch so it reads on video
+
+
+def build_keyword_ass(L: dict, ws: list[dict], phrases: list[dict]) -> str:
+    """FACE / BUBBLE captions: short phrases at chest height, each word fading in from a blur as it
+    is spoken, highlighted words in clay. No box — a soft shadow carries it over the picture."""
+    from .keywords import shown
+    s = L["s"]
+    head = f"""[Script Info]
+ScriptType: v4.00+
+PlayResX: {L['w']}
+PlayResY: {L['h']}
+WrapStyle: 2
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Key,Be Vietnam Pro,{int(84 * s)},&H00FFFFFF,&H00FFFFFF,&H00000000,&H90000000,-1,0,0,0,100,100,0,0,1,0,{max(1, int(3 * s))},2,{int(120 * s)},{int(120 * s)},{int(150 * s)},1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+"""
+    hl = _ass_color(KEY_HL)[4:]
+    ev = []
+    for n, p in enumerate(phrases):
+        st = p["s"] - 0.05
+        en = p["e"] + 0.7
+        if n + 1 < len(phrases):
+            en = min(en, phrases[n + 1]["s"] - 0.1)
+        parts = []
+        for k in range(p["from"], p["to"] + 1):
+            t = max(0, int(round((ws[k]["s"] - st) * 1000)))
+            col = f"&H{hl}&" if k in p["hl"] else "&HFFFFFF&"
+            txt = shown(ws[k]["w"]).replace("{", "(").replace("}", ")")
+            parts.append(f"{{\\c{col}\\alpha&HFF&\\blur10\\t({t},{t + 220},\\alpha&H00&\\blur0)}}{txt}")
+        ev.append(f"Dialogue: 0,{sec_to_ass(st)},{sec_to_ass(en)},Key,,0,0,0,,{{\\fad(0,160)}}" + " ".join(parts))
+    return head + "\n".join(ev) + "\n"
+
+
 def remap_words(ws: list[dict], keep: list[list[float]]) -> list[dict]:
     """Move word times onto the cut timeline (0 = first kept frame); words inside a cut are dropped."""
     offs, acc = [], 0.0
@@ -188,6 +227,16 @@ def main(project: Path) -> None:
         if not al or al.get("start") is None:
             continue
         ws = timed_words_for(it, words, al)
+        mode = it.get("mode", "layout")
+        if mode in ("motion", "bubble"):
+            continue   # graphics / b-roll carry the screen; captions would clash with their text
+        if mode == "face":
+            from .keywords import pick
+            total = al.get("kept") or (al["end"] - al["start"])
+            phrases = pick(project, it, ws, total)
+            (out / f"{it['id']}.ass").write_text(build_keyword_ass(L, ws, phrases), encoding="utf-8")
+            print(f"{it['id']}: {len(phrases)} cụm từ khoá → captions/{it['id']}.ass  " + " · ".join(p["text"] for p in phrases[:4]))
+            continue
         (out / f"{it['id']}.ass").write_text(build_ass(L, cfg["style"]["accent"], ws, 0.0), encoding="utf-8")
         n_lines = len(group_lines(ws))
         print(f"{it['id']}: {len(ws)} từ → {n_lines} dòng chữ nhảy → captions/{it['id']}.ass")

@@ -1,6 +1,6 @@
 ---
 name: edit-video-youtube-reaction
-description: Edit Video Youtube Reaction — dựng video react/phân tích YouTube từ kịch bản markdown + bản quay đọc kịch bản + link video gốc. Bố cục trắng kiểu Claude/Anthropic (khung nội dung lớn, avatar dọc, tiêu đề phần màu cam, chữ nhảy theo từng từ), b-roll thật từ video gốc, motion graphic Remotion màu cam trơn, clip gốc full màn hình có phụ đề Việt, tự cắt vấp. Kích hoạt khi người dùng nói "edit video youtube reaction", "dựng video react", "ghép clip gốc với mặt người", hoặc gõ /reactforge.
+description: Edit Video Youtube Reaction — dựng video react/phân tích YouTube từ kịch bản markdown + bản quay đọc kịch bản + link video gốc. Bố cục trắng kiểu Claude/Anthropic (khung nội dung lớn, avatar dọc, tiêu đề phần màu cam, chữ nhảy theo từng từ) xen 3 chế độ kiểu Greg Isenberg (người nói full màn chỉ hiện từ khoá, b-roll full màn có ô mặt nhỏ, motion graphic full màn không người), b-roll thật từ video gốc, motion graphic Remotion màu cam đất, sting intro/chuyển phần/outro kiểu showreel, tự tìm và chèn meme kèm kho meme dùng lại, clip gốc full màn hình có phụ đề Việt, tự cắt vấp. Kích hoạt khi người dùng nói "edit video youtube reaction", "dựng video react", "ghép clip gốc với mặt người", hoặc gõ /reactforge.
 ---
 
 # Edit Video Youtube Reaction — dựng video react tự động
@@ -31,17 +31,39 @@ description: Edit Video Youtube Reaction — dựng video react/phân tích YouT
   phụ đề Việt ở dưới (chữ trắng trên dải mờ).
 - **Thẻ FULL:** chiếm trọn màn hình vài giây để nhấn một ý (mở đầu công cụ, câu chốt, con số).
 
+### Bốn chế độ cho một đoạn nói (đổi bằng một dòng trong đoạn)
+
+| Dòng | Màn hình | Chữ | Hợp với |
+|---|---|---|---|
+| *(không khai)* | bố cục trắng ở trên | chữ nhảy theo từng từ | phân tích có b-roll, mặc định |
+| `FACE:` | người nói **chiếm cả màn**; mỗi chỗ cắt và mỗi ~7 giây đổi cỡ cảnh rộng ↔ chặt (punch-in 1.15) | **chỉ cụm từ khoá** 2–5 từ ngang ngực, hiện từng chữ từ mờ sang rõ, 1–2 từ màu cam; AI tự chọn | hook, câu chuyện, kêu gọi |
+| `BUBBLE:` | các cảnh `SIDE:` (b-roll / đồ hoạ) chiếm cả màn, mặt người trong **ô bo góc nhỏ sát mép phải**; nội dung dựng trong vùng 1520px bên trái, dải sau ô mặt là chính cảnh đó làm mờ | không có | bình luận dài trên b-roll |
+| `MOTION:` | **chỉ motion graphic** full màn (các cảnh `SIDE:`), không có người | không có | giải thích bằng sơ đồ, mục lục, con số |
+
+- Mỗi video nên trộn: hook bằng `FACE:`, thân bài xen bố cục trắng / `BUBBLE:` / `MOTION:`.
+  Không để một chế độ chạy suốt video.
+- `FACE:` không dùng `SIDE:`; muốn chen đồ hoạ thì dùng `FULL:` / `BEAT:` hoặc meme.
+- `BUBBLE:` / `MOTION:` bắt buộc có `SIDE:` như bố cục trắng; mỗi cảnh ≤ 10 giây (`doctor` cảnh báo).
+- Cỡ cảnh `FACE:` chỉnh trong `project.json` → `recording.face: {"cx":0.5,"cy":0.45,"zoom":1.0,"punch":1.15}`;
+  ô mặt `BUBBLE:` → `recording.bubble: {"cx":0.5,"cy":0.42,"zoom":1.25}`. Bản quay 1080p phóng 1.15
+  hơi mềm; quay 4K thì thoải mái.
+- Từ khoá `FACE:` lưu ở `work/keywords/<id>.json` (sửa tay được, giữ nguyên khi lời không đổi).
+
 ## Bộ màu (cố định, kiểu Claude/Anthropic)
 
 - **Màu nhấn duy nhất:** cam trơn `#D97757`, dùng cho từ khoá, thẻ tiêu đề phần, nút, icon.
-  **Không dùng gradient nhiều màu**, không dùng hiệu ứng vòng tròn lan toả.
+  **Không dùng gradient nhiều màu.** Ngoại lệ: bộ showreel (`intro`, `chapter`, `outro`, `horizon`,
+  `agenda`) được dùng gradient cùng tông cam đất và quầng sáng trên nền than ấm.
 - **Chữ:** `#141413`, chữ phụ `#5E5D59`. Font Inter, viết hoa đầu câu, không viết hoa toàn bộ.
 - **Nền motion graphic:** gradient be `#F7F3EC` → cam nhạt `#F4DDCB`, thẻ trắng có bóng mềm.
 - **Nền đen** (`#1F1E1D`, chữ kem, nhấn cam): chỉ dùng cho vài cảnh cần nhấn. Mặc định các
-  thẻ FULL dạng `title`, `quote`, `equation` và mọi `BEAT:` / `BREAK:` có nền đen; các cảnh
+  thẻ FULL dạng `title`, `quote`, `equation` và mọi `BEAT:` có nền đen (`BREAK:` dùng `chapter`); các cảnh
   khác nền sáng. Muốn đổi thì thêm `"dark": true/false` vào cảnh đó.
 - **Chuyển động** theo 2 video mẫu ở `motion/templates/samples/`: chữ hiện dần từng từ, thẻ
   trồi lên lần lượt, con trỏ tay bấm, chữ gõ từng ký tự, số đếm lên.
+- **Showreel (dùng hạn chế, 3–5 lần một video):** `INTRO:` đầu video, `BREAK:` giữa các phần,
+  `OUTRO:` cuối video. Chữ rơi từng ký tự, số lớn bay vào, xuyên qua chữ khi thoát, sóng tròn lan,
+  chữ trồi có bóng lặp. Intro/outro có tiếng whoosh + tiếng trầm tự tổng hợp; `BREAK:` vẫn im lặng.
 
 ## Cài một lần
 
@@ -78,6 +100,8 @@ Mỗi video mới, hỏi đủ: (1) kịch bản (file `.md`, Google Doc hoặc 
 2. AI chạy Whisper bóc băng, cắt sạch vấp/lặp theo kịch bản.
 3. **Không dừng để duyệt cắt:** cắt và dựng một mạch tới bản cuối, trừ khi người dùng yêu cầu dừng.
 4. Áp note dựng của người dùng; không có note thì tự áp các quy tắc dưới đây.
+   Bước `memes` tự tìm chỗ chèn meme, tải meme, cất vào kho; **xem `work/memes_sheet.jpg`** rồi
+   bỏ / thay meme sai ý trước khi giao.
 5. Dựng graphic, b-roll, chữ nhảy, phụ đề clip, ghép và xuất `out/final.mp4`.
 6. Người dùng nghiệm thu và yêu cầu chỉnh thêm.
 
@@ -88,7 +112,8 @@ Mỗi video mới, hỏi đủ: (1) kịch bản (file `.md`, Google Doc hoặc 
 
 ## Quy tắc hình ảnh (khoá cứng)
 
-- **Luật 10 giây:** tối thiểu 10 giây có một hình mới. Pipeline tự đảm bảo: cảnh graphic
+- **Luật 10 giây:** tối thiểu 10 giây có một hình mới. Ở `FACE:`, mỗi cụm từ khoá mới, thẻ FULL
+  hoặc meme đều tính là một hình mới (AI chọn từ khoá giữ nhịp ≤ 9 giây, thiếu thì tự chèn). Pipeline tự đảm bảo: cảnh graphic
   nào dài quá 11 giây sẽ chạy 7 giây rồi tự chuyển sang b-roll cùng chủ đề (lấy mốc b-roll
   gần nhất phía trước trong đoạn đó). Vẫn nên khai cảnh dày: khoảng 6–9 giây một cảnh.
 - **Phân tích kịch bản trước, chọn graphic sau:** con số → `bignumber`/`equation`, quy trình →
@@ -140,6 +165,10 @@ video-cua-toi/
 | `BEAT: @"câu neo" {"title":"…"}` | thẻ chốt nền đen |
 | `BREAK: Tên phần` | màn chuyển nền đen, tiếng im hoàn toàn |
 | `---` | tách một đoạn nói thành hai |
+| `FACE:` / `BUBBLE:` / `MOTION:` | chế độ màn hình của đoạn nói (xem bảng bốn chế độ) |
+| `MEME: @"câu neo" {"q":"surprised pikachu","mood":"shock","secs":2,"mode":"part"}` | chèn meme ngay sau câu chứa câu neo (khai tay; AI vẫn tự chọn thêm) |
+| `INTRO: Tiêu đề \| dòng phụ` | sting mở đầu kiểu showreel (đặt trên cùng) |
+| `OUTRO: Tiêu đề \| dòng phụ` | sting kết (đặt cuối cùng) |
 
 - `@"câu neo"` dò trong lời thật đã khớp (3–5 từ, phải duy nhất trong đoạn). Không tìm thấy
   thì chia đều thời gian và in cảnh báo. Người dẫn hay nói lệch kịch bản: sau `align`, đọc lời
@@ -151,6 +180,24 @@ video-cua-toi/
   Slide trong video gốc thường đứng yên lâu, nên mỗi đoạn b-roll tự zoom trượt về một góc khác.
 
 Danh mục mẫu và props: [motion/TEMPLATES.md](motion/TEMPLATES.md).
+
+## Meme: tự tìm, tự chèn, cất vào kho
+
+- **Chọn chỗ:** sau `align`, AI đọc lời cả video, chọn khoảng 1 meme / 75 giây ở câu đùa, cú twist,
+  cú fail, con số sốc, câu hỏi tu từ (cách nhau ≥ 45 giây, tránh đoạn hướng dẫn nghiêm túc).
+  Kết quả ở `work/memes_auto.json`: sửa, xoá bớt, hoặc để `[]` nếu không muốn meme tự động.
+  `project.json` → `"memes": {"auto": false}` tắt hẳn phần tự chọn; dòng `MEME:` khai tay vẫn chạy.
+- **Tìm meme:** tra kho trước (trùng tên/tag ≥ 60% thì dùng lại), không có thì tìm clip meme ngắn
+  (≤ 20 giây) bằng `yt-dlp`, cuối cùng mới lấy ảnh template từ Imgflip. Meme nền xanh tự tách nền.
+- **Chèn:** ngắt nhịp. Lời người dẫn dừng ở cuối câu neo, meme chạy kèm tiếng của nó (clip
+  ≤ 4,5 giây chạy trọn) trên **nền đen, không bo thẻ**: `"mode":"full"` gần kín màn, `"part"` chiếm
+  khoảng nửa màn, lệch trái/phải xen kẽ. Hết meme thì người dẫn nói tiếp từ đúng khung đó.
+  Điểm chèn tính lại mỗi lần render nên `verify` cắt thêm vẫn không lệch.
+- **Kho:** `<thư mục làm việc>/meme-library/` (thư mục chứa `projects/`), chia theo cảm xúc
+  (`shock/ laugh/ facepalm/ win/ fail/ awkward/ confused/ sad/ hype/ cringe/`), kèm `index.csv`
+  (tên, tag, nguồn URL, độ dài, nền xanh, đã dùng ở video nào). Đổi chỗ: `"memes": {"library": "…"}`.
+- **Bản quyền:** meme cắt từ phim / show có thể dính Content ID. Ưu tiên meme hoạt hình / nền xanh;
+  `index.csv` giữ URL nguồn để kiểm lại.
 
 ```text
 ## 2. Agent Reach
@@ -170,8 +217,8 @@ python $RF --data "${CLAUDE_PLUGIN_DATA}" all projects/video-cua-toi
 python $RF --data "${CLAUDE_PLUGIN_DATA}" doctor projects/video-cua-toi   # KIỂM TRƯỚC KHI GIAO
 ```
 
-Các bước nối nhau: `plan → source → subs → align → captions → panel → cards → graphics →
-render → verify`. Sửa lẻ một đoạn rồi ghép lại:
+Các bước nối nhau: `plan → source → subs → align → captions → memes → panel → cards →
+graphics → render → verify`. Sửa lẻ một đoạn rồi ghép lại:
 
 ```powershell
 python $RF --data "${CLAUDE_PLUGIN_DATA}" panel  projects/video-cua-toi --only t03 --force
@@ -203,6 +250,13 @@ dựng lại đúng các đoạn đó.
 - **Phụ đề YouTube trả 429:** vẫn tải được video; phụ đề thì Whisper nghe clip.
 - **Khung nội dung cao hơn 16:9:** b-roll và clip luôn hiện đủ khung hình, dải trống lấp bằng
   chính video làm mờ. Đừng đổi sang crop, sẽ mất chữ ở hai mép.
+- **Kịch bản viết liền một đoạn, ít dấu chấm:** điểm chèn meme dựa vào dấu câu, chữ viết hoa mở câu
+  ("…diễn viên này Cũng không cần…") và quãng nghỉ; không thấy thì lấy quãng nghỉ dài nhất trong
+  8 giây sau câu neo. Câu neo meme nên là đuôi câu chốt.
+- **Ghép video có meme:** đoạn có meme dựng thân trước (`seg/<id>.body.mov`) rồi mới cắt meme vào;
+  mọi nhánh phải `setsar=1`, lệch SAR một chút (6479:6480) là `concat` từ chối.
+- **Mẫu showreel vẽ theo chiều cao thật của khung** (khung chính 1440x920, vùng BUBBLE 1520x1080
+  cao hơn 16:9): đừng đặt vị trí theo `ART_H` cố định, sẽ hở dải trắng ở đáy.
 - **Dừng render giữa chừng:** chỉ diệt tiến trình node của Remotion, đừng `taskkill` toàn bộ
   `node.exe` (sẽ giết cả các công cụ khác trên máy).
 

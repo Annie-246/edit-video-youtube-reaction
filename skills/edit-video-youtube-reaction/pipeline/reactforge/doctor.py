@@ -55,13 +55,28 @@ def check(project: Path) -> list[tuple[str, str, str]]:
             if not al or al.get("start") is None:
                 out.append((ERROR, tid, "chưa khớp lời (thiếu align) → đoạn này sẽ bị bỏ khỏi video"))
                 continue
-            if not _nonempty(work / "captions" / f"{tid}.ass"):
-                out.append((ERROR, tid, "thiếu chữ nhảy theo lời (captions/*.ass rỗng)"))
-            # white layout: the big frame is the Main render; without it the frame is empty
-            if not it.get("side"):
-                out.append((ERROR, tid, "không khai SIDE nào → khung chính trống suốt đoạn"))
+            mode = it.get("mode", "layout")
+            if mode in ("layout", "face") and not _nonempty(work / "captions" / f"{tid}.ass"):
+                out.append((ERROR, tid, "thiếu chữ theo lời (captions/*.ass rỗng)"))
+            # white layout / BUBBLE / MOTION show the Main render; without it the screen is empty
+            if mode == "face":
+                if it.get("side"):
+                    out.append((WARN, tid, "đoạn FACE không dùng SIDE — chuyển các cảnh đó thành FULL hoặc đổi chế độ"))
+                out += [(WARN, tid, m) for m in _face_gaps(work, tid, al)]
+            elif not it.get("side"):
+                out.append((ERROR, tid, "không khai SIDE nào → màn hình trống suốt đoạn"))
             elif not _nonempty(work / "side" / f"{tid}.mp4"):
-                out.append((ERROR, tid, f"khai {len(it['side'])} cảnh khung chính nhưng chưa dựng side/{tid}.mp4"))
+                out.append((ERROR, tid, f"khai {len(it['side'])} cảnh nhưng chưa dựng side/{tid}.mp4"))
+            elif mode in ("motion", "bubble") and (work / "side" / f"{tid}.json").exists():
+                sc = read_json(work / "side" / f"{tid}.json")["scenes"]
+                total = al.get("kept") or (al["end"] - al["start"])
+                for a, b in zip(sc, sc[1:] + [{"start": total}]):
+                    if b["start"] - a["start"] > 10.5 and a["template"] != "broll":
+                        out.append((WARN, tid, f"cảnh {a['template']} ở {a['start']:.0f}s đứng {b['start'] - a['start']:.0f}s (luật 10 giây)"))
+            mj = work / "memes" / f"{tid}.json"
+            for m in (read_json(mj) if mj.exists() else []):
+                if not Path(m["file"]).exists():
+                    out.append((ERROR, tid, f"meme \"{m['q']}\" mất file {m['file']} (chạy lại bước memes)"))
             for k, _ in enumerate(it.get("full") or []):
                 mp4 = work / "cards" / f"{tid}_full{k}.mp4"
                 png = work / "gfx" / f"{tid}_full{k}.png"
@@ -107,6 +122,20 @@ def check(project: Path) -> list[tuple[str, str, str]]:
     if uses_broll and not _nonempty(work / "public" / "screen.mp4"):
         out.append((ERROR, "-", "kịch bản dùng b-roll nhưng chưa có work/public/screen.mp4 (chạy bước source)"))
     return out
+
+
+def _face_gaps(work: Path, tid: str, al: dict) -> list[str]:
+    """10-second rule in FACE: a keyword phrase, a full-frame card or a meme each count as new."""
+    marks = [0.0, al.get("kept") or (al["end"] - al["start"])]
+    kw = work / "keywords" / f"{tid}.json"
+    if kw.exists():
+        marks += [p["s"] for p in read_json(kw)["phrases"]]
+    fj = work / "full" / f"{tid}.json"
+    if fj.exists():
+        marks += [c["start"] for c in read_json(fj)]
+    marks.sort()
+    return [f"{a:.0f}s–{b:.0f}s: {b - a:.0f}s không có từ khoá / thẻ mới (luật 10 giây)"
+            for a, b in zip(marks, marks[1:]) if b - a > 10.5]
 
 
 def report(problems: list[tuple[str, str, str]]) -> int:
