@@ -67,9 +67,11 @@ BEAT: @"câu neo" {"title":"…"}                  ← thẻ chốt nền đen
 
 **Bộ studio** (học từ reel agency: swipe ảnh, dải màu, thẻ nổi, chữ khổng lồ, giao diện 3D), vẽ lại bằng bộ màu cam đất. Dùng được ở `SIDE:` và `FULL:`:
 
-- **Mỗi mẫu có 2 bản sáng (nền kem) và tối (nền than ấm).** Không khai gì thì các cảnh studio
-  và `wall` **tự xen kẽ** sáng → tối → sáng theo thứ tự xuất hiện (trong `Main`), nên hai cảnh liền
-  nhau không cùng nền. Muốn cố định thì thêm `"dark": true` / `"dark": false` vào cảnh đó.
+- **Mỗi mẫu có 2 bản sáng (nền kem) và tối (nền than ấm), chọn linh hoạt theo ý câu nói:**
+  khoảnh khắc "wow", câu khẳng định lớn, chuyển ý gắt → `"dark": true`; đang giải thích, liệt kê,
+  hướng dẫn → `"dark": false`. Không khai thì lấy tông tự nhiên của mẫu: `float`, `orbit`, `bigtype`,
+  `typebar` tối; `swipe`, `strips`, `pills`, `ui3d`, `wall` sáng. Chốt an toàn: cảnh không khai thứ 3
+  liền nhau cùng tông thì tự đảo, để màn hình không đứng một tông quá lâu.
 - Ảnh trong `float` để **thẳng, góc vuông**, không bo, không viền sáng; chỉ có bóng đổ mềm.
 
 | Mẫu | Dùng khi | Props chính |

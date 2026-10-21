@@ -4,9 +4,11 @@ import { ART_W, DarkCtx, themeVars } from "./kit";
 
 // Light by default; a scene opts into the dark look with "dark": true.
 const DARK_DEFAULT = new Set<string>();
-// Studio / picture scenes come in a light and a dark look; unless a scene says "dark", they take
-// turns (light first) so back-to-back scenes never share a background.
-const ALTERNATE = new Set(["swipe", "strips", "float", "bigtype", "pills", "orbit", "typebar", "ui3d", "wall"]);
+// Studio / picture scenes come in a light and a dark look. Each has a natural tone (statement and
+// showcase scenes dark, explaining scenes light); a scene's own "dark" wins. Only guard: a third
+// unpinned scene in a row on the same tone flips, so the screen never sits on one look too long.
+const TONED = new Set(["swipe", "strips", "float", "bigtype", "pills", "orbit", "typebar", "ui3d", "wall"]);
+const DARK_NATURAL = new Set(["float", "orbit", "bigtype", "typebar"]);
 import { TEMPLATES } from "./templates";
 import { CUSTOM } from "../custom";
 
@@ -34,8 +36,12 @@ export const Main: React.FC<MainProps> = ({ width, height, fps, scenes }) => {
   // The artboard keeps its width and takes the frame's aspect, so taller frames get more room.
   const k = width / ART_W;
   const artH = Math.round(ART_W * height / width);
-  let turn = 0;
-  const tones = scenes.map((sc) => sc.props.dark ?? (ALTERNATE.has(sc.template) ? turn++ % 2 === 1 : DARK_DEFAULT.has(sc.template)));
+  const tones: boolean[] = [];
+  scenes.forEach((sc, i) => {
+    let d: boolean = sc.props.dark ?? (TONED.has(sc.template) ? DARK_NATURAL.has(sc.template) : DARK_DEFAULT.has(sc.template));
+    if (sc.props.dark === undefined && TONED.has(sc.template) && i >= 2 && tones[i - 1] === d && tones[i - 2] === d) d = !d;
+    tones.push(d);
+  });
   return (
     <AbsoluteFill style={{ background: "#fff", overflow: "hidden" }}>
       {scenes.map((sc, i) => {
