@@ -1,10 +1,20 @@
 {
   "name": "edit-video-youtube-reaction",
   "displayName": "Edit Video Youtube Reaction",
-  "description": "Dựng video react/phân tích YouTube: cắt vấp, chữ nhảy theo từ, phụ đề Việt, motion graphic Remotion, thẻ full màn hình.",
-  "author": { "name": "Annie-246", "url": "https://github.com/Annie-246" },
+  "description": "Dựng video react/phân tích YouTube: cắt vấp, bố cục trắng + 3 chế độ FACE/BUBBLE/MOTION, chữ từ khoá, phụ đề Việt, motion graphic Remotion (bộ studio sáng/tối), tự chèn meme, logo và ảnh thật.",
+  "author": {
+    "name": "Annie-246",
+    "url": "https://github.com/Annie-246"
+  },
   "homepage": "https://github.com/Annie-246/edit-video-youtube-reaction",
   "repository": "https://github.com/Annie-246/edit-video-youtube-reaction",
   "license": "MIT",
-  "keywords": ["video", "youtube", "reaction", "remotion", "ffmpeg", "vietnamese"]
+  "keywords": [
+    "video",
+    "youtube",
+    "reaction",
+    "remotion",
+    "ffmpeg",
+    "vietnamese"
+  ]
 }

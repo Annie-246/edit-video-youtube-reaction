@@ -5,6 +5,17 @@ Plugin Claude Code dựng video YouTube dạng react/phân tích: từ kịch b�
 khung nội dung lớn (b-roll thật + motion graphic màu cam trơn), avatar dọc, thẻ tiêu đề phần,
 chữ nhảy theo từng từ, clip gốc full màn hình có phụ đề Việt, tự cắt vấp.
 
+Ngoài bố cục trắng còn có:
+
+- **3 chế độ màn hình kiểu Greg Isenberg:** `FACE` (người nói full màn, chỉ hiện cụm từ khoá),
+  `BUBBLE` (nội dung trong khung bo góc trên nền lưới, ô mặt nhỏ bên phải), `MOTION` (motion
+  graphic tràn màn, không người).
+- **Tự chèn meme** (tìm, tải, cất vào kho `meme-library/`), **logo thương hiệu** được nhắc tên
+  (kho `logo-library/`) và **ảnh thật** minh hoạ.
+- **Bộ motion studio:** swipe ảnh, dải màu, ảnh trôi, chữ khổng lồ, nút viên thuốc, quỹ đạo,
+  thanh gõ prompt, giao diện app 3D; mỗi mẫu có bản sáng / tối.
+- Sting chuyển phần và outro kiểu showreel.
+
 ## Cài đặt
 
 Trong Claude Code:
@@ -47,6 +58,9 @@ Lần chạy đầu plugin tự tạo venv Python + cài Remotion vào thư mụ
 Lần đầu dùng, Claude sẽ xin **API key Gemini miễn phí** (lấy tại https://aistudio.google.com/apikey)
 để tự sinh ảnh minh hoạ chèn vào video, rồi lưu vào `~/.env`. Không đưa khoá vẫn dựng được,
 chỉ không có ảnh AI.
+
+Khuyên có thêm `PEXELS_API_KEY` (miễn phí, lấy ngay tại https://www.pexels.com/api/) trong `~/.env`
+để ảnh minh hoạ tự chèn là ảnh stock đẹp; không có thì lấy từ Openverse / Wikimedia (ít và cũ hơn).
 
 ## Dùng
 
