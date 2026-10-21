@@ -65,6 +65,19 @@ BEAT: @"câu neo" {"title":"…"}                  ← thẻ chốt nền đen
 | `stack` | ảnh thật bay vào từ hai bên, chồng thành xấp như ảnh in | `images:[…]` (≤ 5), `caption`, `kicker` |
 | `wall` | tường ảnh 3D nghiêng, các cột cuộn ngược chiều nhau (nền tối) | `images:[…]` (lặp nếu ít), `title`, `caption` |
 
+**Bộ studio** (học từ reel agency: swipe ảnh, dải màu, thẻ nổi, chữ khổng lồ, giao diện 3D), vẽ lại bằng bộ màu cam đất. Dùng được ở `SIDE:` và `FULL:`:
+
+| Mẫu | Dùng khi | Props chính |
+|---|---|---|
+| `swipe` | nhiều ảnh / màn hình app: các hàng ảnh dọc trượt ngang ngược chiều, ảnh nào lướt qua điểm nhấn thì phồng to | `images:[…]` (≥ 6), `kicker`, `rows` (2–4) |
+| `strips` | một công cụ làm nhiều việc: dải màu dọc trồi lên xếp quạt, mỗi dải một nhãn + ảnh | `title`, `items:[{label,src}]` (≤ 9) |
+| `float` | khoe nhiều sản phẩm / dự án: thẻ ảnh trôi lơ lửng nền tối, câu chính gõ trong khung chọn nét đứt | `images:[…]`, `title`, `kicker` |
+| `bigtype` | một câu cực ngắn cần đập vào mắt: chữ khổng lồ trên nền cam, hai dòng chữ mờ chạy ngược chiều | `text` (≤ 20 ký tự), `echo` (chữ nền) |
+| `pills` | 2–6 bước / tính năng ngắn: nút viên thuốc nền than rơi vào lần lượt, nút cuối màu cam | `title`, `items:[{icon,label}]` |
+| `orbit` | một nền tảng kết nối nhiều người / công cụ: tâm phát sáng, avatar quay trên 3 quỹ đạo | `center` (ảnh logo) hoặc `icon`, `items:[{src|icon}]`, `title` |
+| `typebar` | prompt / câu tìm kiếm trên ảnh: thanh trắng gõ chữ trên ảnh lớn | `src`, `text`, `kicker` |
+| `ui3d` | demo một phần mềm: giao diện nghiêng 3D dựng dần, bảng trợ lý trượt vào, máy quay lao vào nút, con trỏ bấm | `app`, `title`, `rows:[{label,value,pct}]`, `panel:{title,items}`, `cta` |
+
 Hai mẫu `horizon`, `agenda` dùng được ở cả `SIDE:` (nhất là đoạn `MOTION:`) và `FULL:`.
 Đây là chỗ duy nhất được dùng gradient cam đất (`#F0B49A → #D97757 → #B5532F`) và quầng sáng.
 

@@ -21,7 +21,7 @@ from .common import load_env, load_project, read_json, run, write_json
 UA = {"User-Agent": "reactforge/1.0 (video editing pipeline; local use)"}   # Wikimedia rejects anonymous agents
 EVERY = 30.0          # about one photo moment per this many seconds of content-frame talk
 LOGO_SECS, PHOTO_SECS = 3.2, 4.5
-PHOTO_TPL = ["stack", "wall", "photo"]   # rotated so two photo moments never look the same
+PHOTO_TPL = ["stack", "swipe", "wall", "photo"]   # rotated so two photo moments never look the same
 
 SPOT = """Bạn là editor video YouTube tiếng Việt. Khung nội dung của video cần HÌNH THẬT để minh hoạ lời người dẫn, không chỉ đồ hoạ.
 Đầu vào: lời người dẫn của từng đoạn (mã đoạn, rồi lời kèm mốc giây).
@@ -241,11 +241,12 @@ def main(project: Path, force: bool = False) -> None:
             scene = {"template": "logo", "secs": LOGO_SECS, "props": {"src": str(f), "name": brand}}
         elif v.get("kind") == "photo" and v.get("q"):
             tpl = PHOTO_TPL[n_photo % len(PHOTO_TPL)]
-            fs = fetch_photos(project / "assets" / "auto", v["q"], 8 if tpl == "wall" else 4)
+            fs = fetch_photos(project / "assets" / "auto", v["q"], 8 if tpl in ("wall", "swipe") else 4)
             if not fs:
                 print(f"⚠ không tìm được ảnh \"{v['q']}\" — bỏ qua"); continue
             n_photo += 1
-            scene = {"template": tpl, "secs": PHOTO_SECS, "props": {"images": [str(x) for x in fs], "caption": v.get("caption", "")}}
+            cap = {"kicker": v.get("caption", "")} if tpl == "swipe" else {"caption": v.get("caption", "")}
+            scene = {"template": tpl, "secs": PHOTO_SECS, "props": {"images": [str(x) for x in fs], **cap}}
         else:
             continue
         per.setdefault(v["id"], []).append({"at": v["at"], **scene})

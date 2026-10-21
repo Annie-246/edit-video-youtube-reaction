@@ -213,7 +213,7 @@ Danh mục mẫu và props: [motion/TEMPLATES.md](motion/TEMPLATES.md).
   gộp thành `logos`.
 - **Ảnh:** `PEXELS_API_KEY` (miễn phí, ảnh stock đẹp, nên có) → Openverse → Wikimedia Commons.
   Không có khoá Pexels thì chỉ nhận ảnh mà tiêu đề/tag chứa **đủ** từ khoá; không có thì bỏ
-  trống, không chèn ảnh sai. Ảnh lưu `assets/auto/`. Mẫu xoay vòng `stack` → `wall` → `photo`.
+  trống, không chèn ảnh sai. Ảnh lưu `assets/auto/`. Mẫu xoay vòng `stack` → `swipe` → `wall` → `photo`.
 - **Chèn:** cắt vào đúng lúc nói câu neo (logo 3,2 giây, ảnh 4,5 giây), cảnh đang chạy bị ngắt
   sẽ chạy tiếp sau đó (b-roll nối đúng mốc). Bỏ qua chỗ cách đầu/cuối cảnh khai tay < 1,5 giây.
 
@@ -296,6 +296,9 @@ dựng lại đúng các đoạn đó.
 - **Đừng `loudnorm` tiếng meme:** nhiều clip meme mở đầu bằng vài giây im lặng; `loudnorm` kéo tiếng
   rè đó lên 0 dB. Đo `volumedetect` đúng đoạn sẽ phát: dưới −50 dB coi như meme câm (không hạ giọng),
   còn lại chỉnh bằng `volume` về −20 dB (tăng tối đa +12 dB) + `alimiter`.
+- **Props Remotion phình to làm sập trình duyệt:** ảnh được nhúng base64 vào props, PNG gốc 2–8 MB
+  nhân với số cảnh dùng lại ảnh đó là ra props hơn 100 MB, Chrome headless chết giữa chừng. Ảnh
+  đưa vào cảnh nên là JPEG ≤ 1600px (bước `visuals` tự làm); ảnh tự chuẩn bị thì thu nhỏ trước.
 - **Imgflip trả 403** nếu không gửi User-Agent. Wikimedia cũng chặn agent mặc định của urllib.
 - **Openverse không khoá:** `page_size` tối đa 20 (lớn hơn trả 401), và xếp hạng rất lỏng ("two
   people talking" ra ảnh sa mạc): phải lọc theo tiêu đề/tag.
