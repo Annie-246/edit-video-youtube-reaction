@@ -38,13 +38,15 @@ description: Edit Video Youtube Reaction — dựng video react/phân tích YouT
 | *(không khai)* | bố cục trắng ở trên | chữ nhảy theo từng từ | phân tích có b-roll, mặc định |
 | `FACE:` | người nói **chiếm cả màn**; mỗi chỗ cắt và mỗi ~7 giây đổi cỡ cảnh rộng ↔ chặt (punch-in 1.15) | **chỉ cụm từ khoá** 2–5 từ, AI tự chọn (xem "Chữ từ khoá FACE") | hook, câu chuyện, kêu gọi |
 | `BUBBLE:` | **nền lưới trắng**; các cảnh `SIDE:` trong một khung bo góc lớn 1500x1000 bên trái, mặt người trong **ô bo góc nhỏ 336x400 bên phải**. Cả hai khung có viền cam gradient (`#F0B49A → #D97757 → #B5532F`) và bóng đổ mềm phía dưới | không có | bình luận dài trên b-roll |
-| `MOTION:` | **nền lưới trắng**; chỉ motion graphic trong một khung bo góc 1840x1000 (viền cam gradient, bóng đổ), không có người | không có | giải thích bằng sơ đồ, mục lục, con số |
+| `MOTION:` | **chỉ motion graphic tràn kín màn** 1920x1080, không có người nên **không nền lưới, không khung** | không có | giải thích bằng sơ đồ, mục lục, con số |
 
 - Mỗi video nên trộn: hook bằng `FACE:`, thân bài xen bố cục trắng / `BUBBLE:` / `MOTION:`.
   Không để một chế độ chạy suốt video.
 - `FACE:` không dùng `SIDE:`; muốn chen đồ hoạ thì dùng `FULL:` / `BEAT:` hoặc meme.
 - `BUBBLE:` / `MOTION:` bắt buộc có `SIDE:` như bố cục trắng; mỗi cảnh ≤ 10 giây (`doctor` cảnh báo).
-- Viền và bóng của `BUBBLE:` / `MOTION:` vẽ một lần thành `work/gfx/rim_<chế độ>_<cỡ>.png`
+- **Nền lưới trắng chỉ dành cho khung có mặt người** (bố cục trắng, `BUBBLE:`). Khung không người
+  (`MOTION:`, thẻ `FULL:`, clip gốc, chuyển phần) tràn kín màn.
+- Viền và bóng của `BUBBLE:` vẽ một lần thành `work/gfx/rim_<chế độ>_<cỡ>.png`
   (kích thước khung ở `layout_for` → `screen`, `bubble`, `rim`, `shadow`). Bố cục trắng gốc giữ nguyên.
 - Cỡ cảnh `FACE:` chỉnh trong `project.json` → `recording.face: {"cx":0.5,"cy":0.45,"zoom":1.0,"punch":1.15}`;
   ô mặt `BUBBLE:` → `recording.bubble: {"cx":0.5,"cy":0.42,"zoom":1.25}`. Bản quay 1080p phóng 1.15
@@ -312,8 +314,8 @@ dựng lại đúng các đoạn đó.
 - **Lớp chữ trong suốt:** Remotion phải render `--codec=vp8 --image-format=png --pixel-format=yuva420p`
   (mặc định jpeg là mất alpha), và ffmpeg phải đọc bằng `-c:v libvpx` trước `-i`, bộ giải mã vp8
   mặc định bỏ kênh alpha.
-- **Mẫu showreel vẽ theo chiều cao thật của khung** (khung chính 1440x920, khung MOTION 1840x1000
-  rộng hơn 16:9): đừng đặt vị trí theo `ART_H` cố định, sẽ hở dải trắng ở đáy.
+- **Mẫu showreel vẽ theo chiều cao thật của khung** (khung chính 1440x920, khung BUBBLE 1500x1000
+  cao hơn 16:9): đừng đặt vị trí theo `ART_H` cố định, sẽ hở dải trắng ở đáy.
 - **Dừng render giữa chừng:** chỉ diệt tiến trình node của Remotion, đừng `taskkill` toàn bộ
   `node.exe` (sẽ giết cả các công cụ khác trên máy).
 

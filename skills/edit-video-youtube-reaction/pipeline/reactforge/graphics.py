@@ -22,10 +22,11 @@ def layout_for(width: int) -> dict:
         # source clips play full screen, no presenter, no frame
         "clip": {"x": 0, "y": 0, "w": r(1920), "h": r(1080), "r": 0},
         "head": dict(head), "pip": dict(head),
-        # BUBBLE / MOTION: the scenes sit in one big rounded card on the white grid (orange gradient
-        # rim, soft shadow underneath); BUBBLE adds the presenter in a small card on the right
+        # Only frames with the presenter sit on the white grid. BUBBLE: the scenes in one big rounded
+        # card (orange gradient rim, soft shadow underneath), presenter in a small card on the right.
+        # MOTION has no presenter: the scenes fill the screen.
         "screen": {"bubble": {"x": r(40), "y": r(40), "w": e(1500), "h": e(1000), "r": r(30)},
-                   "motion": {"x": r(40), "y": r(40), "w": e(1840), "h": e(1000), "r": r(30)}},
+                   "motion": {"x": 0, "y": 0, "w": r(1920), "h": r(1080), "r": 0}},
         "bubble": {"x": r(1562), "y": r(300), "w": e(336), "h": e(400), "r": r(28)},
         "rim": max(2, r(5)), "shadow": {"dy": r(20), "blur": r(22), "alpha": 0.36},
         "info": {"x": r(1520), "y": r(40), "w": e(360), "h": e(176), "r": r(24)},

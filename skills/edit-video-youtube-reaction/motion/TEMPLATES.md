@@ -63,15 +63,20 @@ BEAT: @"câu neo" {"title":"…"}                  ← thẻ chốt nền đen
 | `logo` | nhắc tên một thương hiệu / app: ô trắng viền cam gradient bật ra, tên hiện bên cạnh | `src`, `name`, `desc` |
 | `logos` | nhiều thương hiệu nhắc liền nhau: các ô logo bật lần lượt thành hàng | `items:[{src,name}]`, `title`, `kicker` |
 | `stack` | ảnh thật bay vào từ hai bên, chồng thành xấp như ảnh in | `images:[…]` (≤ 5), `caption`, `kicker` |
-| `wall` | tường ảnh 3D nghiêng, các cột cuộn ngược chiều nhau (nền tối) | `images:[…]` (lặp nếu ít), `title`, `caption` |
+| `wall` | tường ảnh 3D nghiêng, các cột cuộn ngược chiều nhau (sáng / tối xen kẽ) | `images:[…]` (lặp nếu ít), `title`, `caption` |
 
 **Bộ studio** (học từ reel agency: swipe ảnh, dải màu, thẻ nổi, chữ khổng lồ, giao diện 3D), vẽ lại bằng bộ màu cam đất. Dùng được ở `SIDE:` và `FULL:`:
+
+- **Mỗi mẫu có 2 bản sáng (nền kem) và tối (nền than ấm).** Không khai gì thì các cảnh studio
+  và `wall` **tự xen kẽ** sáng → tối → sáng theo thứ tự xuất hiện (trong `Main`), nên hai cảnh liền
+  nhau không cùng nền. Muốn cố định thì thêm `"dark": true` / `"dark": false` vào cảnh đó.
+- Ảnh trong `float` để **thẳng, góc vuông**, không bo, không viền sáng; chỉ có bóng đổ mềm.
 
 | Mẫu | Dùng khi | Props chính |
 |---|---|---|
 | `swipe` | nhiều ảnh / màn hình app: các hàng ảnh dọc trượt ngang ngược chiều, ảnh nào lướt qua điểm nhấn thì phồng to | `images:[…]` (≥ 6), `kicker`, `rows` (2–4) |
 | `strips` | một công cụ làm nhiều việc: dải màu dọc trồi lên xếp quạt, mỗi dải một nhãn + ảnh | `title`, `items:[{label,src}]` (≤ 9) |
-| `float` | khoe nhiều sản phẩm / dự án: thẻ ảnh trôi lơ lửng nền tối, câu chính gõ trong khung chọn nét đứt | `images:[…]`, `title`, `kicker` |
+| `float` | khoe nhiều sản phẩm / dự án: ảnh thẳng góc vuông trôi lơ lửng, câu chính gõ trong khung chọn nét đứt | `images:[…]`, `title`, `kicker` |
 | `bigtype` | một câu cực ngắn cần đập vào mắt: chữ khổng lồ trên nền cam, hai dòng chữ mờ chạy ngược chiều | `text` (≤ 20 ký tự), `echo` (chữ nền) |
 | `pills` | 2–6 bước / tính năng ngắn: nút viên thuốc nền than rơi vào lần lượt, nút cuối màu cam | `title`, `items:[{icon,label}]` |
 | `orbit` | một nền tảng kết nối nhiều người / công cụ: tâm phát sáng, avatar quay trên 3 quỹ đạo | `center` (ảnh logo) hoặc `icon`, `items:[{src|icon}]`, `title` |

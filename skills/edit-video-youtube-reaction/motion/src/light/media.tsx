@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill, Img, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
-import { BlobBg, Card, FONT, Kicker, L, Words, ease, useIn } from "./kit";
+import { BlobBg, Card, FONT, Kicker, L, Words, ease, useDark, useIn } from "./kit";
 import type { TplProps } from "./templates";
 
 /**
@@ -134,8 +134,10 @@ const WallT: React.FC<TplProps> = ({ images = [], caption, kicker, title, dur })
   const cols = 5, rows = 6, tw = 300, th = 200, gap = 22;
   const intro = interpolate(f, [0, 24], [0, 1], { ...clamp, easing: ease });
   const tp = useIn(10);
+  const dark = useDark();
+  const bg = dark ? "31,30,29" : "247,243,236";   // charcoal or cream, the light / dark look
   return (
-    <AbsoluteFill style={{ background: "#1F1E1D", overflow: "hidden", fontFamily: FONT }}>
+    <AbsoluteFill style={{ background: `rgb(${bg})`, overflow: "hidden", fontFamily: FONT }}>
       <div style={{ position: "absolute", left: "50%", top: "50%", width: cols * (tw + gap), height: rows * (th + gap), marginLeft: -cols * (tw + gap) / 2, marginTop: -rows * (th + gap) / 2,
         transform: `perspective(1400px) rotateX(${22 - 6 * intro}deg) rotateZ(${-10 + 2 * intro}deg) scale(${1.25 - 0.1 * intro})`, display: "flex", gap }}>
         {Array.from({ length: cols }).map((_, c) => {
@@ -147,7 +149,7 @@ const WallT: React.FC<TplProps> = ({ images = [], caption, kicker, title, dur })
                 const k = (c * 3 + r) % Math.max(1, list.length);
                 const appear = interpolate(f, [2 + ((c * 7 + r * 3) % 14), 14 + ((c * 7 + r * 3) % 14)], [0, 1], clamp);
                 return (
-                  <div key={r} style={{ width: tw, height: th, borderRadius: 16, overflow: "hidden", opacity: appear, transform: `scale(${0.85 + 0.15 * appear})`, boxShadow: "0 16px 40px rgba(0,0,0,0.45)", background: "#2A2927" }}>
+                  <div key={r} style={{ width: tw, height: th, borderRadius: 16, overflow: "hidden", opacity: appear, transform: `scale(${0.85 + 0.15 * appear})`, boxShadow: dark ? "0 16px 40px rgba(0,0,0,0.45)" : "0 16px 40px rgba(80,40,20,0.22)", background: dark ? "#2A2927" : "#EADBCB" }}>
                     {list.length ? <Img src={list[k]} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : null}
                   </div>
                 );
@@ -156,11 +158,11 @@ const WallT: React.FC<TplProps> = ({ images = [], caption, kicker, title, dur })
           );
         })}
       </div>
-      <div style={{ position: "absolute", inset: 0, background: "radial-gradient(70% 70% at 50% 50%, rgba(31,30,29,0) 40%, rgba(31,30,29,0.85) 100%)" }} />
+      <div style={{ position: "absolute", inset: 0, background: `radial-gradient(70% 70% at 50% 50%, rgba(${bg},0) 40%, rgba(${bg},0.85) 100%)` }} />
       {title ? (
         <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", opacity: tp, transform: `scale(${0.9 + 0.1 * tp})` }}>
-          <div style={{ padding: "22px 40px", borderRadius: 24, background: "rgba(31,30,29,0.78)", boxShadow: "0 0 0 2px rgba(217,119,87,0.6), 0 20px 60px rgba(0,0,0,0.5)" }}>
-            <Words text={title} delay={12} size={54} weight={800} color="#FAF9F5" />
+          <div style={{ padding: "22px 40px", borderRadius: 24, background: dark ? "rgba(31,30,29,0.78)" : "rgba(255,255,255,0.88)", boxShadow: `0 0 0 2px rgba(217,119,87,0.6), 0 20px 60px ${dark ? "rgba(0,0,0,0.5)" : "rgba(80,40,20,0.25)"}` }}>
+            <Words text={title} delay={12} size={54} weight={800} color={dark ? "#FAF9F5" : "#141413"} />
           </div>
         </div>
       ) : null}

@@ -235,15 +235,23 @@ def _card_plate(path: Path, L: dict, cards: list[dict]) -> Path:
 
 
 def render_screen(project: Path, cfg: dict, L: dict, item: dict, al: dict, out: Path) -> None:
-    """BUBBLE / MOTION: the scenes play in one big rounded card on the white grid (orange gradient
-    rim, shadow underneath), no captions. BUBBLE adds the presenter in a small card on the right;
-    MOTION is voice only."""
+    """BUBBLE: the scenes play in a big rounded card on the white grid (orange gradient rim, shadow
+    underneath), the presenter in a small card on the right. MOTION has no presenter, so no grid
+    either: the scenes fill the screen, voice only. No captions in both."""
     fps = cfg["output"]["fps"]; g = project / "work" / "gfx"
     mode = item.get("mode"); C = L["screen"][mode]; B = L["bubble"]
     rec = project / "work" / "recording.mp4"
     keep, t0, t1, nfr, dur = _snap(al, fps)
     side = project / "work" / "side" / f"{item['id']}.mp4"
-    cards = [C] + ([B] if mode == "bubble" else [])
+    if mode == "motion":
+        cmd = ["ffmpeg", "-v", "error", "-y", "-ss", f"{t0:.3f}", "-t", f"{t1 - t0 + 0.5:.3f}", "-i", str(rec), "-i", str(side)]
+        fc: list[str] = []
+        _join(keep, fc)
+        fc += [f"[1:v]fps={fps},scale={L['w']}:{L['h']}:force_original_aspect_ratio=increase,crop={L['w']}:{L['h']},setsar=1,"
+               f"trim=duration={dur:.6f}[vc]", "[tv]nullsink"]
+        _finish(cfg, cmd, fc, _full_cards(project, item, fps, cmd, fc, "[vc]", 2), nfr, dur, out)
+        return
+    cards = [C, B]
     # cached by name, so the names carry the sizes
     plate = _card_plate(g / f"rim_{mode}_{C['w']}x{C['h']}.png", L, cards)
     cmask = _round_mask(g / f"mask_card_{C['w']}x{C['h']}.png", C["w"], C["h"], C["r"])
@@ -253,17 +261,12 @@ def render_screen(project: Path, cfg: dict, L: dict, item: dict, al: dict, out: 
     _join(keep, fc)
     fc += [f"[1:v]fps={fps},scale={C['w']}:{C['h']}:force_original_aspect_ratio=increase,crop={C['w']}:{C['h']},setsar=1[sv]",
            "[4:v]format=gray[sm]", "[sv][sm]alphamerge[sa]", f"[bp][sa]overlay={C['x']}:{C['y']}:eof_action=repeat,setsar=1[base]"]
-    if mode == "bubble":
-        rc = cfg["recording"]; bc = rc.get("bubble", {})
-        crop = _crop(float(bc.get("cx", rc.get("cx", 0.5))), float(bc.get("cy", 0.42)), float(bc.get("zoom", 1.25)), B["w"] / B["h"])
-        cmd += ["-loop", "1", "-i", str(_round_mask(g / f"mask_face_{B['w']}x{B['h']}.png", B["w"], B["h"], B["r"]))]
-        fc += [f"[tv]fps={fps},{crop},scale={B['w']}:{B['h']},setsar=1[hv]", "[5:v]format=gray[hm]", "[hv][hm]alphamerge[ha]",
-               f"[base][ha]overlay={B['x']}:{B['y']}:shortest=1[vc]"]
-        n_in = 6
-    else:
-        fc += ["[tv]nullsink", f"[base]trim=duration={dur:.6f}[vc]"]
-        n_in = 5
-    _finish(cfg, cmd, fc, _full_cards(project, item, fps, cmd, fc, "[vc]", n_in), nfr, dur, out)
+    rc = cfg["recording"]; bc = rc.get("bubble", {})
+    crop = _crop(float(bc.get("cx", rc.get("cx", 0.5))), float(bc.get("cy", 0.42)), float(bc.get("zoom", 1.25)), B["w"] / B["h"])
+    cmd += ["-loop", "1", "-i", str(_round_mask(g / f"mask_face_{B['w']}x{B['h']}.png", B["w"], B["h"], B["r"]))]
+    fc += [f"[tv]fps={fps},{crop},scale={B['w']}:{B['h']},setsar=1[hv]", "[5:v]format=gray[hm]", "[hv][hm]alphamerge[ha]",
+           f"[base][ha]overlay={B['x']}:{B['y']}:shortest=1[vc]"]
+    _finish(cfg, cmd, fc, _full_cards(project, item, fps, cmd, fc, "[vc]", 6), nfr, dur, out)
 
 
 DUCK = 0.28     # presenter level while a meme with sound plays over the talk

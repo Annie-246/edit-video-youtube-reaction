@@ -4,6 +4,9 @@ import { ART_W, DarkCtx, themeVars } from "./kit";
 
 // Light by default; a scene opts into the dark look with "dark": true.
 const DARK_DEFAULT = new Set<string>();
+// Studio / picture scenes come in a light and a dark look; unless a scene says "dark", they take
+// turns (light first) so back-to-back scenes never share a background.
+const ALTERNATE = new Set(["swipe", "strips", "float", "bigtype", "pills", "orbit", "typebar", "ui3d", "wall"]);
 import { TEMPLATES } from "./templates";
 import { CUSTOM } from "../custom";
 
@@ -31,6 +34,8 @@ export const Main: React.FC<MainProps> = ({ width, height, fps, scenes }) => {
   // The artboard keeps its width and takes the frame's aspect, so taller frames get more room.
   const k = width / ART_W;
   const artH = Math.round(ART_W * height / width);
+  let turn = 0;
+  const tones = scenes.map((sc) => sc.props.dark ?? (ALTERNATE.has(sc.template) ? turn++ % 2 === 1 : DARK_DEFAULT.has(sc.template)));
   return (
     <AbsoluteFill style={{ background: "#fff", overflow: "hidden" }}>
       {scenes.map((sc, i) => {
@@ -40,9 +45,9 @@ export const Main: React.FC<MainProps> = ({ width, height, fps, scenes }) => {
         return (
           <Sequence key={i} from={from} durationInFrames={dur} layout="none">
             <SceneWrap>
-              <DarkCtx.Provider value={sc.props.dark ?? DARK_DEFAULT.has(sc.template)}>
+              <DarkCtx.Provider value={tones[i]}>
                 <div style={{ position: "absolute", left: 0, top: 0, width: ART_W, height: artH, transform: `scale(${k})`, transformOrigin: "0 0", color: "var(--ink)",
-                  ...themeVars(sc.props.dark ?? DARK_DEFAULT.has(sc.template)) }}>
+                  ...themeVars(tones[i]) }}>
                   <T {...sc.props} dur={dur} seed={i * 1.7} />
                 </div>
               </DarkCtx.Provider>
