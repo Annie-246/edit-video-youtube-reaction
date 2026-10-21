@@ -5,7 +5,7 @@ Item types:
   clip  — cut from the source video [CLIP mm:ss–mm:ss]
   score — scoreboard update (**Bảng điểm:** line)
 Optional lines inside a talk block:  SIDE: / FULL: / BEAT: (graphics), FACE: / BUBBLE: / MOTION:
-(screen mode of the talk), MEME: (meme cut in after a line) — see SKILL.md. INTRO: / OUTRO: / BREAK: are full-frame stings.
+(screen mode of the talk), MEME: (meme cut in after a line) — see SKILL.md. OUTRO: / BREAK: are full-frame stings.
 Per section (anywhere under its "## N." heading):  INFO: kicker | title | sub   → the title card
 above the presenter, e.g. "INFO: Công cụ 2/6 | Agent Reach | Tìm lời phàn nàn của khách".
 Optional lines inside a clip paragraph: LABEL: text    NOTE: text
@@ -123,11 +123,11 @@ def parse_script(md_path: Path) -> list[dict]:
             close()
             items.append({"type": "break", "tpl": "chapter", "section": sec_num, "title": s[6:].strip()})
             continue
-        if s.startswith(("INTRO:", "OUTRO:")):
-            # showreel-style sting at the very start / end: "INTRO: Tiêu đề | dòng phụ"
+        if s.startswith("OUTRO:"):
+            # showreel-style closing sting: "OUTRO: Tiêu đề | dòng phụ"
             close()
             parts = [x.strip() for x in s[6:].split("|")]
-            items.append({"type": "break", "tpl": s[:5].lower(), "section": sec_num,
+            items.append({"type": "break", "tpl": "outro", "section": sec_num,
                           "title": parts[0], "sub": parts[1] if len(parts) > 1 else ""})
             continue
         if s.startswith("**→") or s.startswith("→"):  # production note to anh, not spoken

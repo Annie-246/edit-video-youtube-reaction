@@ -54,8 +54,16 @@ BEAT: @"câu neo" {"title":"…"}                  ← thẻ chốt nền đen
 | `horizon` | một câu chốt trên vành hành tinh phát sáng cam | `kicker`, `title` (có `*nhấn*`) |
 | `agenda` | mục lục / danh sách hiện từng dòng (dòng mới xám rồi sáng) | `title`, `items:["…"]` |
 | `chapter` | màn chuyển phần (`BREAK:` tự dùng): số lớn bay vào, xuyên qua khi thoát | `num`, `kicker`, `title` |
-| `intro` | sting mở đầu (`INTRO:` tự dùng): chấm → vạch → chữ rơi từng ký tự | `title`, `sub` |
 | `outro` | sting kết (`OUTRO:` tự dùng): chữ trồi lên có bóng lặp, kết bằng chấm cam | `title`, `sub` |
+
+**Ảnh thật và logo** (bước `visuals` tự chèn; khai tay bằng `SIDE:` cũng được):
+
+| Mẫu | Dùng khi | Props chính |
+|---|---|---|
+| `logo` | nhắc tên một thương hiệu / app: ô trắng viền cam gradient bật ra, tên hiện bên cạnh | `src`, `name`, `desc` |
+| `logos` | nhiều thương hiệu nhắc liền nhau: các ô logo bật lần lượt thành hàng | `items:[{src,name}]`, `title`, `kicker` |
+| `stack` | ảnh thật bay vào từ hai bên, chồng thành xấp như ảnh in | `images:[…]` (≤ 5), `caption`, `kicker` |
+| `wall` | tường ảnh 3D nghiêng, các cột cuộn ngược chiều nhau (nền tối) | `images:[…]` (lặp nếu ít), `title`, `caption` |
 
 Hai mẫu `horizon`, `agenda` dùng được ở cả `SIDE:` (nhất là đoạn `MOTION:`) và `FULL:`.
 Đây là chỗ duy nhất được dùng gradient cam đất (`#F0B49A → #D97757 → #B5532F`) và quầng sáng.

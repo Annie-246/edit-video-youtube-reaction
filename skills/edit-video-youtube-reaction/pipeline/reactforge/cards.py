@@ -3,7 +3,7 @@
   FULL:  any light template as a full-frame card        → {"tpl": "...", ...}
   BEAT:  one line that should land                       → dark `title`
   BREAK: a chapter title over a beat of silence          → `chapter` (showreel style)
-  INTRO: / OUTRO: opening and closing stings             → `intro` / `outro`
+  OUTRO: closing sting                                   → `outro`
 Statement cards (title / quote / equation) go dark by default; tool openers stay light.
 
 Static PNGs (graphics.py) stay as the fallback for when node/Remotion is not available;
@@ -18,7 +18,7 @@ from .graphics import layout_for
 from .panel import parse_full, render_panel
 
 
-BREAK_SECS = {"intro": 3.4, "outro": 3.2}
+BREAK_SECS = {"outro": 3.2}
 
 
 def break_secs(cfg: dict, it: dict) -> float:
@@ -44,7 +44,7 @@ def main(project: Path, only: str | None = None, force: bool = False) -> None:
             continue
         jobs: list[tuple[Path, dict]] = []
         if it["type"] == "break":
-            # showreel stings: chapter (BREAK:), intro (INTRO:), outro (OUTRO:)
+            # showreel stings: chapter (BREAK:), outro (OUTRO:)
             tpl = it.get("tpl", "chapter")
             pr = {"title": it["title"], "sub": it.get("sub", ""), "dark": True}
             if tpl == "chapter":

@@ -154,7 +154,55 @@ def split_long(scenes: list[dict], total: float) -> list[dict]:
     return out
 
 
-IMG_EXT = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".gif": "image/gif"}
+def insert_auto(scenes: list[dict], autos: list[dict], ws: list[dict], total: float) -> list[dict]:
+    """Cut the AI-picked logos / photos (work/visuals/<id>.json) into the scene list at their
+    anchor phrase; the interrupted scene resumes after them. Logos named within a few seconds of
+    each other share one `logos` scene. Skipped where a planned scene starts too close."""
+    timed = []
+    for a in autos:
+        t = find_phrase(a["at"], ws)
+        if t is None:
+            print(f'   ⚠ không thấy câu neo hình tự chèn "{a["at"]}" — bỏ')
+        elif t < total - 2.0:
+            timed.append({**a, "t": t})
+    timed.sort(key=lambda a: a["t"])
+    merged: list[dict] = []
+    for a in timed:
+        p = merged[-1] if merged else None
+        if p and a["template"] == "logo" and p["template"] in ("logo", "logos") and a["t"] - p["t"] < p["secs"]:
+            items = p["props"].get("items") or [{"src": p["props"]["src"], "name": p["props"]["name"]}]
+            p.update(template="logos", secs=p["secs"] + 1.0, props={"items": items + [{"src": a["props"]["src"], "name": a["props"]["name"]}]})
+        else:
+            merged.append(dict(a))
+    out = [dict(s) for s in scenes]
+    for a in merged:
+        t = a["t"]
+        i = max((k for k, s in enumerate(out) if s["start"] <= t), default=None)
+        if i is None:
+            continue
+        s = out[i]
+        end = s["start"] + s["duration"]
+        nxt = out[i + 1]["start"] if i + 1 < len(out) else total
+        if t - s["start"] < MIN_SCENE or nxt - t < MIN_SCENE or s.get("auto"):
+            continue
+        secs = min(a["secs"], nxt - t)
+        rest = nxt - (t + secs)
+        if 0 < rest < 2.0:
+            secs += rest; rest = 0   # too short to resume: the picture stays a little longer
+        s["duration"] = round(t - s["start"], 3)
+        new = [{"start": round(t, 3), "duration": round(secs if rest > 0 else end - t, 3), "template": a["template"], "props": a["props"], "auto": True}]
+        if rest > 0:
+            props = dict(s["props"])
+            if s["template"] == "broll" and "at" in props:
+                props["at"] = round(float(props["at"]) + (t + secs - s["start"]), 2)
+            new.append({"start": round(t + secs, 3), "duration": round(end - t - secs, 3), "template": s["template"], "props": props})
+        out[i + 1:i + 1] = new
+    for s in out:
+        s.pop("auto", None)
+    return out
+
+
+IMG_EXT = {".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".gif": "image/gif"}
 
 
 def _inline_images(v, base: Path | None):
@@ -245,10 +293,13 @@ def main(project: Path, only: str | None = None, force: bool = False) -> None:
             print(f"{it['id']}: {len(cards)} thẻ toàn màn hình — " + " · ".join(f"{c['start']:.0f}s ({c['secs']:.1f}s)" for c in cards))
         if it.get("side"):
             scenes, notes = build_scenes(it["side"], ws, total)
+            vis = project / "work" / "visuals" / f"{it['id']}.json"
+            if vis.exists():
+                scenes = insert_auto(scenes, read_json(vis), ws, total)
             scenes = split_long(scenes, total)
-            # BUBBLE / MOTION fill the whole screen with these scenes; the white layout has its frame
-            # (BUBBLE keeps the content clear of the presenter bubble on the right)
-            W, H = {"motion": (L["w"], L["h"]), "bubble": (L["bubble_area"], L["h"])}.get(it.get("mode"), (S["w"], S["h"]))
+            # BUBBLE / MOTION draw into their big card on the grid; the white layout into its frame
+            C = L["screen"].get(it.get("mode"), S)
+            W, H = C["w"], C["h"]
             props = {"width": W, "height": H, "fps": cfg["output"]["fps"], "scenes": scenes}
             out = side_dir / f"{it['id']}.mp4"
             if out.exists() and not force and out.with_suffix(".json").exists() and read_json(out.with_suffix(".json")) == props:

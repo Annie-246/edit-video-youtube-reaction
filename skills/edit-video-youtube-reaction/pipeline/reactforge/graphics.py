@@ -22,9 +22,12 @@ def layout_for(width: int) -> dict:
         # source clips play full screen, no presenter, no frame
         "clip": {"x": 0, "y": 0, "w": r(1920), "h": r(1080), "r": 0},
         "head": dict(head), "pip": dict(head),
-        # BUBBLE mode: presenter in a small rounded card hugging the right edge, mid-height
-        "bubble": {"x": r(1540), "y": r(300), "w": e(340), "h": e(400), "r": r(28)},
-        "bubble_area": e(1520),   # content width left of the bubble; the strip behind it is blurred fill
+        # BUBBLE / MOTION: the scenes sit in one big rounded card on the white grid (orange gradient
+        # rim, soft shadow underneath); BUBBLE adds the presenter in a small card on the right
+        "screen": {"bubble": {"x": r(40), "y": r(40), "w": e(1500), "h": e(1000), "r": r(30)},
+                   "motion": {"x": r(40), "y": r(40), "w": e(1840), "h": e(1000), "r": r(30)}},
+        "bubble": {"x": r(1562), "y": r(300), "w": e(336), "h": e(400), "r": r(28)},
+        "rim": max(2, r(5)), "shadow": {"dy": r(20), "blur": r(22), "alpha": 0.36},
         "info": {"x": r(1520), "y": r(40), "w": e(360), "h": e(176), "r": r(24)},
         # word captions sit in a short white pill straddling the bottom edge of the main frame
         "cap": {"x": r(260), "y": r(921), "w": e(1000), "h": e(78), "r": r(39)},

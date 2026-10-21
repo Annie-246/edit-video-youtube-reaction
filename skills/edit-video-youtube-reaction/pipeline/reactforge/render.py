@@ -200,38 +200,69 @@ def _round_mask(path: Path, w: int, h: int, r: int, rgba: bool = False) -> Path:
     return path
 
 
+RIM = ((240, 180, 154), (217, 119, 87), (181, 83, 47))   # #F0B49A → #D97757 → #B5532F, top-left → bottom-right
+
+
+def _inside(x: int, y: int, w: int, h: int, r: int) -> str:
+    """geq expression: 1 inside the rounded rectangle, 0 outside."""
+    X, Y = f"(X-{x})", f"(Y-{y})"
+    return (f"between({X}\\,0\\,{w - 1})*between({Y}\\,0\\,{h - 1})*"
+            f"lte(pow(max(max({r}-{X}\\,{X}-{w - 1 - r})\\,0)\\,2)+pow(max(max({r}-{Y}\\,{Y}-{h - 1 - r})\\,0)\\,2)\\,{r * r})")
+
+
+def _card_plate(path: Path, L: dict, cards: list[dict]) -> Path:
+    """Full-frame RGBA layer for BUBBLE / MOTION: a soft shadow under each card and the card's
+    orange gradient rim. The card content is laid on top, so only the rim stays visible."""
+    if path.exists():
+        return path
+    W, H, k, S = L["w"], L["h"], L["rim"], L["shadow"]
+    drops = "+".join(_inside(c["x"], c["y"] + S["dy"], c["w"], c["h"], c["r"]) for c in cards)
+    fc = [f"color=black@0:s={W}x{H},format=rgba,geq=r=20:g=20:b=19:a='{int(255 * S['alpha'])}*min(1\\,{drops})',"
+          f"gblur=sigma={S['blur']}[l0]"]
+    for n, c in enumerate(cards):
+        # each card runs the whole gradient across its own diagonal
+        t = f"((X-{c['x']}+Y-{c['y']})/{c['w'] + c['h']})"
+        def ch(i: int) -> str:
+            a, b, d = RIM[0][i], RIM[1][i], RIM[2][i]
+            return f"'clip(if(lt({t}\\,0.5)\\,{a}+({b - a})*{t}*2\\,{b}+({d - b})*({t}*2-1))\\,0\\,255)'"
+        inside = _inside(c["x"] - k, c["y"] - k, c["w"] + 2 * k, c["h"] + 2 * k, c["r"] + k)
+        fc.append(f"color=black@0:s={W}x{H},format=rgba,geq=r={ch(0)}:g={ch(1)}:b={ch(2)}:a='255*{inside}'[r{n}]")
+        fc.append(f"[l{n}][r{n}]overlay=0:0:format=auto,format=rgba[l{n + 1}]")
+    fc = ";".join(fc)[:-len(f"[l{len(cards)}]")]
+    path.parent.mkdir(parents=True, exist_ok=True)
+    run(["ffmpeg", "-v", "error", "-y", "-filter_complex", fc, "-frames:v", "1", str(path)])
+    return path
+
+
 def render_screen(project: Path, cfg: dict, L: dict, item: dict, al: dict, out: Path) -> None:
-    """BUBBLE / MOTION: the scenes fill the screen, no captions. BUBBLE adds the presenter in a
-    small rounded card on the right edge; MOTION is voice only."""
-    fps = cfg["output"]["fps"]; W, H = L["w"], L["h"]; g = project / "work" / "gfx"
+    """BUBBLE / MOTION: the scenes play in one big rounded card on the white grid (orange gradient
+    rim, shadow underneath), no captions. BUBBLE adds the presenter in a small card on the right;
+    MOTION is voice only."""
+    fps = cfg["output"]["fps"]; g = project / "work" / "gfx"
+    mode = item.get("mode"); C = L["screen"][mode]; B = L["bubble"]
     rec = project / "work" / "recording.mp4"
     keep, t0, t1, nfr, dur = _snap(al, fps)
     side = project / "work" / "side" / f"{item['id']}.mp4"
-    cmd = ["ffmpeg", "-v", "error", "-y", "-ss", f"{t0:.3f}", "-t", f"{t1 - t0 + 0.5:.3f}", "-i", str(rec), "-i", str(side)]
-    fc: list[str] = []
+    cards = [C] + ([B] if mode == "bubble" else [])
+    # cached by name, so the names carry the sizes
+    plate = _card_plate(g / f"rim_{mode}_{C['w']}x{C['h']}.png", L, cards)
+    cmask = _round_mask(g / f"mask_card_{C['w']}x{C['h']}.png", C["w"], C["h"], C["r"])
+    cmd = ["ffmpeg", "-v", "error", "-y", "-ss", f"{t0:.3f}", "-t", f"{t1 - t0 + 0.5:.3f}", "-i", str(rec), "-i", str(side),
+           "-loop", "1", "-i", str(_bg(project, L)), "-loop", "1", "-i", str(plate), "-loop", "1", "-i", str(cmask)]
+    fc = [f"[2:v]fps={fps},format=rgb24,trim=duration={dur + 1:.3f}[bg]", "[3:v]format=rgba[pl]", "[bg][pl]overlay=0:0:shortest=1[bp]"]
     _join(keep, fc)
-    if item.get("mode") == "bubble":
-        # content keeps clear of the bubble; the strip behind it is the same picture, blurred
-        A = L["bubble_area"]
-        fc += [f"[1:v]fps={fps},setsar=1,trim=duration={dur + 1:.3f},split[s0][s1]",
-               f"[s0]scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},gblur=sigma=40,eq=brightness=-0.06[blur]",
-               f"[s1]scale={A}:{H}:force_original_aspect_ratio=decrease,pad={A}:{H}:(ow-iw)/2:(oh-ih)/2:color=black@0,format=rgba[sharp]",
-               "[blur][sharp]overlay=0:0,setsar=1[base]"]
-    else:
-        fc.append(f"[1:v]fps={fps},scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},setsar=1,trim=duration={dur + 1:.3f}[base]")
-    if item.get("mode") == "bubble":
-        B = L["bubble"]; ring = 3
+    fc += [f"[1:v]fps={fps},scale={C['w']}:{C['h']}:force_original_aspect_ratio=increase,crop={C['w']}:{C['h']},setsar=1[sv]",
+           "[4:v]format=gray[sm]", "[sv][sm]alphamerge[sa]", f"[bp][sa]overlay={C['x']}:{C['y']}:eof_action=repeat,setsar=1[base]"]
+    if mode == "bubble":
         rc = cfg["recording"]; bc = rc.get("bubble", {})
         crop = _crop(float(bc.get("cx", rc.get("cx", 0.5))), float(bc.get("cy", 0.42)), float(bc.get("zoom", 1.25)), B["w"] / B["h"])
-        cmd += ["-loop", "1", "-i", str(_round_mask(g / "mask_bubble.png", B["w"], B["h"], B["r"])),
-                "-loop", "1", "-i", str(_round_mask(g / "plate_bubble.png", B["w"] + 2 * ring, B["h"] + 2 * ring, B["r"] + ring, rgba=True))]
-        fc += [f"[tv]fps={fps},{crop},scale={B['w']}:{B['h']},setsar=1[hv]", "[2:v]format=gray[hm]", "[hv][hm]alphamerge[ha]",
-               f"[base][3:v]overlay={B['x'] - ring}:{B['y'] - ring}[b1]",
-               f"[b1][ha]overlay={B['x']}:{B['y']}:shortest=1[vc]"]
-        n_in = 4
+        cmd += ["-loop", "1", "-i", str(_round_mask(g / f"mask_face_{B['w']}x{B['h']}.png", B["w"], B["h"], B["r"]))]
+        fc += [f"[tv]fps={fps},{crop},scale={B['w']}:{B['h']},setsar=1[hv]", "[5:v]format=gray[hm]", "[hv][hm]alphamerge[ha]",
+               f"[base][ha]overlay={B['x']}:{B['y']}:shortest=1[vc]"]
+        n_in = 6
     else:
         fc += ["[tv]nullsink", f"[base]trim=duration={dur:.6f}[vc]"]
-        n_in = 2
+        n_in = 5
     _finish(cfg, cmd, fc, _full_cards(project, item, fps, cmd, fc, "[vc]", n_in), nfr, dur, out)
 
 
@@ -317,14 +348,14 @@ def render_clip(project: Path, cfg: dict, L: dict, item: dict, meta: dict, pip_s
 
 
 def render_break(project: Path, cfg: dict, L: dict, item: dict, out: Path) -> None:
-    """A full-frame card: chapter breaks are silent (they rest the ear); the intro / outro stings
-    get a synthesised whoosh + low hit timed to the title slam."""
+    """A full-frame card: chapter breaks are silent (they rest the ear); the outro sting gets a
+    synthesised whoosh + low hit."""
     from .cards import break_secs
     fps = cfg["output"]["fps"]
     secs = break_secs(cfg, item)
     nfr = max(1, int(round(secs * fps))); dur = round(nfr / fps, 6)
     tpl = item.get("tpl", "chapter")
-    hit = {"intro": 22 / fps, "outro": 0.05}.get(tpl)
+    hit = 0.05 if tpl == "outro" else None
     audio = "anullsrc=r=48000:cl=stereo" if hit is None else (
         f"aevalsrc='0.35*(random(0)-0.5)*exp(-pow(t-{hit - 0.12:.3f},2)/0.012)"
         f"+gte(t,{hit:.3f})*0.8*sin(2*PI*(42*(t-{hit:.3f})+4*(1-exp(-12*(t-{hit:.3f})))))*exp(-3*(t-{hit:.3f}))'"

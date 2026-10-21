@@ -3,6 +3,7 @@ import { AbsoluteFill, Img, OffthreadVideo, interpolate, staticFile, useCurrentF
 import { ART_H, ART_W, BlobBg, Card, Cursor, FONT, GRAD, GradText, Kicker, L, Pill, Rings, Stage, Typed, Words, ease, lerp, useIn } from "./kit";
 import { Icon, IconTile } from "./icons";
 import { REEL } from "./reel";
+import { MEDIA } from "./media";
 
 type Any = Record<string, any>;
 export type TplProps = Any & { dur: number; seed: number };
@@ -662,6 +663,7 @@ export const TEMPLATES: Record<string, React.FC<TplProps>> = {
   form: FormT,
   recap: RecapT,
   ...REEL,
+  ...MEDIA,
 };
 
 export { ART_W, ART_H, FONT, BlobBg };

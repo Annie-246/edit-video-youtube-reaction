@@ -3,7 +3,7 @@ import { Easing, interpolate, spring, useCurrentFrame, useVideoConfig } from "re
 import { ART_W, FONT, Words } from "./kit";
 
 /**
- * Showreel-grade full-frame cards, used sparingly: intro sting, chapter breaks, outro, and the
+ * Showreel-grade full-frame cards, used sparingly: chapter breaks, outro, and the
  * two warm-dark statement cards learnt from the Greg Isenberg sample (horizon, agenda).
  * Same palette as the rest of the kit: clay accent on warm charcoal, cream text.
  * Every template here draws its own dark background over the whole artboard.
@@ -100,38 +100,6 @@ const ChapterT: React.FC<P> = ({ num = "", kicker, title = "", dur }) => {
   );
 };
 
-/* ---------- intro: dot stretches into a line, title letters slam in, zoom-through out ---------- */
-const IntroT: React.FC<P> = ({ title = "", sub, dur }) => {
-  const f = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const dot = spring({ frame: f, fps, config: { damping: 8, stiffness: 160 } });
-  const exit = useExit(dur, 10);
-  const chars = Array.from(title);
-  const size = chars.length > 22 ? 70 : chars.length > 12 ? 96 : 140;
-  const per = chars.length > 12 ? 1 : 2;   // long titles slam faster so the sub line gets its time
-  const last = 22 + chars.length * per;
-  return (
-    <Fill bg={R.deep}>
-      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", ...exit }}>
-        <div style={{ position: "absolute", left: CX - lerp(f, [10, 22], [8, 460]), top: "50%", marginTop: -3 + lerp(f, [22, 34], [0, size * 0.62]), width: lerp(f, [10, 22], [16, 920]), height: lerp(f, [10, 22], [16, 4]),
-          borderRadius: 99, background: GRAD, transform: `scale(${f < 10 ? dot : 1})`, boxShadow: `0 0 30px ${R.clay}` }} />
-        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", maxWidth: 1080 }}>
-          {chars.map((ch, i) => {
-            const s = 22 + i * per;
-            const q = spring({ frame: f - s, fps, config: { damping: 11, stiffness: 210 } });
-            return (
-              <span key={i} style={{ display: "inline-block", whiteSpace: "pre", fontSize: size, fontWeight: 900, letterSpacing: -2, lineHeight: 1.1, opacity: f < s ? 0 : 1,
-                transform: `translateY(${(1 - q) * size * 0.7}px) scale(${1 + (1 - q) * 0.6}) rotate(${(1 - q) * (i % 2 ? -12 : 12)}deg)`, filter: `blur(${lerp(f, [s, s + 7], [12, 0])}px)`,
-                ...(i % 5 === 1 && ch.trim() ? { color: "transparent", WebkitTextStroke: `3px ${R.clay}` } : {}) }}>{ch}</span>
-            );
-          })}
-        </div>
-        {sub ? <div style={{ marginTop: size * 0.45 }}><Words text={sub} delay={last + 4} per={3} size={30} weight={500} color={R.sand} /></div> : null}
-      </div>
-    </Fill>
-  );
-};
-
 /* ---------- outro: shockwave, masked letters rise with an echo trail, ends on the clay dot ---------- */
 const OutroT: React.FC<P> = ({ title = "", sub, dur }) => {
   const f = useCurrentFrame();
@@ -163,4 +131,4 @@ const OutroT: React.FC<P> = ({ title = "", sub, dur }) => {
   );
 };
 
-export const REEL: Record<string, React.FC<P>> = { horizon: HorizonT, agenda: AgendaT, chapter: ChapterT, intro: IntroT, outro: OutroT };
+export const REEL: Record<string, React.FC<P>> = { horizon: HorizonT, agenda: AgendaT, chapter: ChapterT, outro: OutroT };
