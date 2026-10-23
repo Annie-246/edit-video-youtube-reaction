@@ -89,6 +89,7 @@ alpha) bằng composition `Keys`, `render` đè lên mặt người. Hai kiểu,
 
 Mọi SFX chèn vào video **bắt buộc theo `references/sound-effects-guide.md`** (bảng luật L1–L23, Phần 2). Đọc file đó trước khi chèn tiếng.
 
+- Guide chỉ dùng làm quy tắc (khi nào chèn, loại gì, đặt ở đâu). **Nguồn lấy file SFX vẫn là myinstants trước, ElevenLabs sau**; các kho trong cột "Nghe thử" của guide chỉ để nghe tham khảo, không phải nguồn tải.
 - Mỗi SFX phải trỏ về một sự kiện L1–L22. Không có sự kiện thì không tiếng. Điểm cắt thường / jump cut dọn lời (L23) mặc định **im lặng**.
 - SFX nhỏ hơn giọng; chỉ Impact/Boom được nhỉnh hơn nhưng không át lời. Một khoảnh khắc chỉ một SFX chính; cùng loại sự kiện dùng cùng một mẫu tiếng.
 - Mật độ talking head: khoảng 3–6 điểm SFX mỗi phút ở đoạn có nhiều phần tử hiện, đoạn nói liền mạch gần như 0; Impact lớn 1–3 lần cả video.
