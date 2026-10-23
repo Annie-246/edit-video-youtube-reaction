@@ -94,7 +94,6 @@ Mọi SFX chèn vào video **bắt buộc theo `references/sound-effects-guide.m
 - Mật độ talking head: khoảng 3–6 điểm SFX mỗi phút ở đoạn có nhiều phần tử hiện, đoạn nói liền mạch gần như 0; Impact lớn 1–3 lần cả video.
 - Không đặt đỉnh SFX đè lên âm tiết bắt buộc nghe rõ (giá, số, hướng dẫn).
 - Dựng xong phải liệt kê lại toàn bộ SFX đã chèn kèm mốc thời gian và mã luật (L-số) để kiểm tra.
-- Quy tắc này thay mọi mặc định cũ về SFX (ví dụ "whoosh mỗi lần đổi cảnh", `sfx_budget`). Chỉ đổi khi chủ kênh yêu cầu.
 
 ## Cài một lần
 
