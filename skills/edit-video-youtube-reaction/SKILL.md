@@ -249,6 +249,41 @@ SIDE: @"trả tiền cho phần mềm" flow {"title":"Có phần mềm, vẫn *l
 FULL: @"Đừng vội cho rằng" {"secs":4,"tpl":"title","kicker":"Greg lưu ý","title":"Có người phàn nàn chưa chắc *có người trả tiền*"}
 ```
 
+## archive.org: nguồn ưu tiên cho b-roll, nhạc nền, ảnh, tài liệu cũ (không dùng cho SFX)
+
+Khi cần **b-roll, video minh họa, nhạc nền, ảnh, sách/tài liệu cũ, bản lưu trang web**, tìm ở
+archive.org **trước** (sau khi tra kho `meme-library/` / `assets/`), rồi mới sang nguồn khác (Pexels, Openverse,
+Wikimedia, yt-dlp). Logo thương hiệu vẫn theo đường logo ở trên.
+
+- **Tìm:** `https://archive.org/advancedsearch.php?q=<từ khoá> AND mediatype:(movies OR audio OR image OR texts)&fl[]=identifier&fl[]=title&fl[]=licenseurl&rows=20&output=json`.
+  Xem file trong mục: `https://archive.org/metadata/<identifier>`. Tải: `https://archive.org/download/<identifier>/<tên file>` bằng `curl`/`yt-dlp`.
+  Không cài thêm gói nào (không cần `ia` CLI). Bản lưu trang web: `https://archive.org/wayback/available?url=<url>&timestamp=<YYYYMMDD>`.
+- **Chọn theo loại:** nhạc nền → `mediatype:audio` (kho `opensource_audio`, Free Music Archive); SFX **không** lấy ở đây (xem mục SFX bên dưới); b-roll → `mediatype:movies`
+  (kho `prelinger`, `opensource_movies`, tin tức/quảng cáo cũ); ảnh → `mediatype:image` (Flickr Commons, ảnh scan);
+  sách/tài liệu → `mediatype:texts` (chụp trang cần minh hoạ, đưa vào mẫu `photo`/`stack`); trang web cũ → Wayback (chụp màn hình bằng Playwright).
+- **Bản quyền (cứng):** chỉ dùng mục có **public domain / CC0 / CC BY / CC BY-SA** (xem `licenseurl` hoặc trường `rights`). `licenseurl` do người upload tự khai nên **không đáng tin** (từng thấy bản cover ca nhạc và series phim thương mại bị gắn CC0): chỉ lấy từ kho có kiểm duyệt như `prelinger`, hoặc mục có nguồn gốc rõ ràng.
+  Không rõ quyền thì bỏ, không dùng. CC BY/BY-SA phải ghi credit trong mô tả video. Mỗi file dùng ghi một dòng vào
+  `assets/archive-credits.csv` (identifier, tên file, license, URL, đã dùng ở đâu) để kiểm lại.
+- **Chất lượng:** xem/nghe thử trước khi chèn. Video cũ độ phân giải thấp thì chỉ dùng ở chế độ `GFX:`/`part` hoặc
+  nền mờ, không kéo `FULL:`. Tải về cache vào `assets/archive/`,
+  không gọi mạng lúc render.
+- **Không tìm thấy mục hợp lệ:** bỏ trống hoặc dùng nguồn khác, không chèn thứ sai ý hay không rõ quyền.
+
+## SFX (hiệu ứng âm thanh): myinstants trước, ElevenLabs sau
+
+**Không lấy SFX từ archive.org** (người dùng đã nghe thử và không ưng). Khi cần SFX (whoosh, ting, pop, ding, boom, click, meme sound…):
+
+1. **Tra kho có sẵn trước** (`assets/sfx/`, SFX đã dùng ở dự án trước). Trùng tên/tag thì dùng lại.
+2. **myinstants.com (ưu tiên, miễn phí):** tìm bằng `curl -sL -A "Mozilla/5.0" "https://www.myinstants.com/en/search/?name=<từ khoá tiếng Anh>"`,
+   lấy đường dẫn `/media/sounds/<tên>.mp3` trong HTML (mỗi nút phát có một đường dẫn), tải `https://www.myinstants.com/media/sounds/<tên>.mp3`.
+   Danh mục gốc: https://www.myinstants.com/en/categories/sound%20effects/us/. Nghe thử/đo `volumedetect` trước khi dùng, chọn clip ngắn (≤ 3 giây), sạch, không nhạc nền kèm.
+3. **Không có cái hợp ý → tự tạo bằng ElevenLabs free:** https://elevenlabs.io/sound-effects (nhập mô tả tiếng Anh ngắn, ví dụ "soft cinematic whoosh, short").
+   Trang cần đăng nhập và có hạn mức credit miễn phí: dùng trình duyệt đã đăng nhập của người dùng; chưa đăng nhập hoặc hết credit thì **báo người dùng**, không tự đăng ký tài khoản, không lách hạn mức.
+   Kiểm điều khoản của gói đang dùng (gói free có thể yêu cầu ghi nguồn ElevenLabs); có yêu cầu thì ghi vào mô tả video.
+4. **Ghi nguồn:** mỗi SFX dùng thì ghi một dòng vào `assets/sfx/sfx-credits.csv` (tên, nguồn: myinstants URL hoặc "ElevenLabs + prompt", đã dùng ở đâu).
+   myinstants là kho người dùng tự đăng, một số clip cắt từ phim/game/meme: **ưu tiên hiệu ứng thuần** (whoosh, ting, click, pop), tránh clip lấy từ nhạc/phim có bản quyền, và nhớ Content ID.
+5. Đưa SFX vào dự án: chuẩn hoá về mức đồng đều với giọng (`volumedetect`, gain trong `GAIN_DB`), whoosh bắt đầu sớm ~0,18 giây để đỉnh rơi đúng điểm cắt.
+
 ## Chạy
 
 ```powershell
