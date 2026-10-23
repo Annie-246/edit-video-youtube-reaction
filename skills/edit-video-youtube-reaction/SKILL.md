@@ -85,6 +85,17 @@ alpha) bằng composition `Keys`, `render` đè lên mặt người. Hai kiểu,
   **Không có intro**: video vào thẳng lời người dẫn. Số lớn bay vào, xuyên qua chữ khi thoát, sóng
   tròn lan, chữ trồi có bóng lặp. Outro có tiếng whoosh + tiếng trầm tự tổng hợp; `BREAK:` im lặng.
 
+## Quy tắc SFX (khoá cứng)
+
+Mọi SFX chèn vào video **bắt buộc theo `references/sound-effects-guide.md`** (bảng luật L1–L23, Phần 2). Đọc file đó trước khi chèn tiếng.
+
+- Mỗi SFX phải trỏ về một sự kiện L1–L22. Không có sự kiện thì không tiếng. Điểm cắt thường / jump cut dọn lời (L23) mặc định **im lặng**.
+- SFX nhỏ hơn giọng; chỉ Impact/Boom được nhỉnh hơn nhưng không át lời. Một khoảnh khắc chỉ một SFX chính; cùng loại sự kiện dùng cùng một mẫu tiếng.
+- Mật độ talking head: khoảng 3–6 điểm SFX mỗi phút ở đoạn có nhiều phần tử hiện, đoạn nói liền mạch gần như 0; Impact lớn 1–3 lần cả video.
+- Không đặt đỉnh SFX đè lên âm tiết bắt buộc nghe rõ (giá, số, hướng dẫn).
+- Dựng xong phải liệt kê lại toàn bộ SFX đã chèn kèm mốc thời gian và mã luật (L-số) để kiểm tra.
+- Quy tắc này thay mọi mặc định cũ về SFX (ví dụ "whoosh mỗi lần đổi cảnh", `sfx_budget`). Chỉ đổi khi chủ kênh yêu cầu.
+
 ## Cài một lần
 
 Máy cần sẵn trên PATH: `ffmpeg`, `ffprobe`, `yt-dlp`, `node` (>= 20), `python` (>= 3.11).
