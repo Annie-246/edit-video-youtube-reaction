@@ -95,6 +95,31 @@ Lần chạy đầu plugin tự tạo venv Python + cài Remotion vào thư mụ
 (`~/.claude/plugins/data/...`), không mất khi plugin cập nhật. Quy trình chi tiết ở
 [skills/edit-video-youtube-reaction/SKILL.md](skills/edit-video-youtube-reaction/SKILL.md).
 
+## Muốn tự chỉnh sửa skill?
+
+Repo này chỉ chủ repo được sửa. Bạn không push được vào đây và repo không nhận pull request
+chỉnh sửa. Muốn đổi theo ý mình thì làm bản riêng:
+
+1. **Đừng sửa thẳng trong thư mục plugin** (`~/.claude/plugins/cache/...`): lần tự cập nhật
+   kế tiếp sẽ ghi đè mất hết.
+2. Bấm **Fork** trên GitHub (hoặc tải repo về), rồi nhờ Claude:
+
+   > Clone skill trong https://github.com/<tài-khoản-của-bạn>/edit-video-youtube-reaction vào
+   > `~/.claude/skills/` làm bản riêng của mình — làm theo mục "Muốn tự chỉnh sửa skill?" trong README.
+
+3. Từ đó bạn sửa thoải mái trên bản của mình. Bản riêng **không tự cập nhật** theo repo gốc;
+   muốn lấy tính năng mới thì tự kéo về (GitHub có nút **Sync fork**).
+
+**Hướng dẫn cho Claude khi cài bản riêng:**
+
+- Chép thư mục `skills/edit-video-youtube-reaction/` vào `~/.claude/skills/<tên-mới>/` (đặt tên
+  khác, ví dụ `edit-video-youtube-reaction-rieng`) và đổi `name:` trong `SKILL.md` cho khớp.
+- Trong `SKILL.md`, thay mọi `${CLAUDE_PLUGIN_ROOT}/skills/edit-video-youtube-reaction` bằng
+  đường dẫn tuyệt đối tới thư mục vừa chép, và bỏ `--data "${CLAUDE_PLUGIN_DATA}"` (dữ liệu sẽ
+  nằm ở `~/.edit-video-youtube-reaction`).
+- Nếu máy đang cài bản plugin, hỏi người dùng có muốn tắt nó không (`/plugin` → tắt
+  `edit-video-youtube-reaction`) để hai bản không cùng nhận một yêu cầu.
+
 ## Cập nhật plugin (người bảo trì)
 
 Sửa file trong repo → commit → push lên `main`. Plugin không khai `version`, nên mọi commit
