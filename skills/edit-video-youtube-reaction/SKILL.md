@@ -217,27 +217,21 @@ Danh mục mẫu và props: [motion/TEMPLATES.md](motion/TEMPLATES.md).
 
 Áp cho mọi đoạn có khung nội dung (bố cục trắng, `BUBBLE:`, `MOTION:`; `FACE:` không có).
 
-- **Chọn chỗ:** sau `align`, AI đọc lời và chọn (1) **mọi thương hiệu / app / công ty được nhắc tên**,
-  mỗi tên một lần ở lần nhắc đầu, và (2) khoảng 1 chỗ / 30 giây có **thứ cụ thể nhìn thấy được**
-  (đồ vật, sản phẩm, địa điểm, kiểu người), không chọn ý trừu tượng hay thao tác phần mềm.
-  Kết quả ở `work/visuals_auto.json` (sửa, xoá, hoặc `[]`). `"visuals": {"auto": false}` tắt hẳn.
-- **Logo:** kho `logo-library/` (cạnh `meme-library/`) → Wikimedia Commons (file mang đúng tên
-  hãng, ưu tiên SVG) → Simple Icons. Hiện bằng mẫu `logo`; hai hãng nhắc cách nhau < 3 giây
-  gộp thành `logos`.
-- **Ảnh:** `PEXELS_API_KEY` (miễn phí, ảnh stock đẹp, nên có) → Openverse → Wikimedia Commons.
-  Không có khoá Pexels thì chỉ nhận ảnh mà tiêu đề/tag chứa **đủ** từ khoá; không có thì bỏ
-  trống, không chèn ảnh sai. Ảnh lưu `assets/auto/`. Mẫu xoay vòng `stack` → `swipe` → `wall` → `photo`.
-- **Chèn:** cắt vào đúng lúc nói câu neo (logo 3,2 giây, ảnh 4,5 giây), cảnh đang chạy bị ngắt
-  sẽ chạy tiếp sau đó (b-roll nối đúng mốc). Bỏ qua chỗ cách đầu/cuối cảnh khai tay < 1,5 giây.
-
-## Meme: tự tìm, tự chèn, cất vào kho
-
-- **Chọn chỗ:** sau `align`, AI đọc lời cả video, chọn khoảng 1 meme / 75 giây ở câu đùa, cú twist,
-  cú fail, con số sốc, câu hỏi tu từ (cách nhau ≥ 45 giây, tránh đoạn hướng dẫn nghiêm túc).
+- **Chọn chỗ:** sau `align`, AI đọc lời cả video, chọn khoảng **1 meme / 20 giây** (cách nhau ≥ 12 giây,
+  rải đều từ đầu tới cuối) ở câu đùa, cú twist, cú fail, con số sốc, câu hỏi tu từ, khoảnh khắc "wow";
+  tránh đoạn hướng dẫn nghiêm túc và lời kêu gọi. **Mọi video đều phải bóc kịch bản và chèn meme**, không
+  bỏ bước này. `q` là **từ khoá tiếng Anh** hợp ý câu nói ("mind blown", "facepalm", "money rain"…).
   Kết quả ở `work/memes_auto.json`: sửa, xoá bớt, hoặc để `[]` nếu không muốn meme tự động.
   `project.json` → `"memes": {"auto": false}` tắt hẳn phần tự chọn; dòng `MEME:` khai tay vẫn chạy.
-- **Tìm meme:** tra kho trước (trùng tên/tag ≥ 60% thì dùng lại), không có thì tìm clip meme ngắn
-  (≤ 20 giây) bằng `yt-dlp`, cuối cùng mới lấy ảnh template từ Imgflip. Meme nền xanh tự tách nền.
+- **Tìm meme (theo thứ tự):** (1) tra kho (trùng tên/tag ≥ 60% thì dùng lại); (2) **GIF trong ô GIF của
+  Telegram** (`reactforge/tgmeme.py`, đăng nhập bằng tài khoản Telegram của người dùng); (3) clip meme
+  ngắn ≤ 20 giây bằng `yt-dlp`; (4) ảnh template Imgflip. Meme nền xanh tự tách nền. Meme rộng < 1100 px
+  tự chuyển sang `part` (nửa màn) để khỏi vỡ hạt.
+  - **Cài Telegram một lần:** `pip install telethon`; lấy `api_id`/`api_hash` ở my.telegram.org → ghi vào
+    `~/.claude/telegram-gif/.env` (`TG_API_ID=…`, `TG_API_HASH=…`); chạy
+    `python -m reactforge.tgmeme login` (nhập số điện thoại + OTP). File `session.session` cùng thư mục
+    là chìa khoá tài khoản: **không đưa vào repo, không gửi ai**. Thiếu bất cứ thứ gì thì tự rơi về (3).
+    Nếu GIF Telegram không ra, kiểm tra bằng `python -m reactforge.tgmeme search "facepalm"`.
 - **Chèn:** **đè lên lời, không ngắt nhịp**, ngay sau câu chứa câu neo. Meme hiện trên **nền đen,
   không bo thẻ**: `"mode":"full"` gần kín màn, `"part"` chiếm khoảng nửa màn, lệch trái/phải xen kẽ;
   người dẫn vẫn nói tiếp bên dưới. Meme **có tiếng** thì phát tiếng của nó và hạ giọng người dẫn

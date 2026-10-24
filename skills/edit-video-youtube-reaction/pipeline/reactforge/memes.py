@@ -3,8 +3,8 @@
   1. spot   AI reads every talk and picks the few moments that earn a meme (punchline, twist,
             fail, shocking number…) → work/memes_auto.json (edit or empty it freely).
             Manual `MEME: @"câu neo" {"q":"surprised pikachu"}` lines in the script always count.
-  2. fetch  library first (reuse), else a short meme clip found with yt-dlp, else an Imgflip
-            template image. Everything downloaded lands in the meme library with a row in
+  2. fetch  library first (reuse), else a GIF from Telegram's GIF panel (tgmeme.py, the user's own
+            login), else a short meme clip found with yt-dlp, else an Imgflip template image. Everything downloaded lands in the meme library with a row in
             index.csv, so later videos reuse it.
   3. place  render.py lays each meme over the talk right after the sentence its anchor phrase
             belongs to: on black, no card; the presenter keeps talking (voice ducked under a
@@ -22,7 +22,8 @@ from .common import load_project, read_json, run, write_json, ffprobe_duration
 MOODS = ["shock", "laugh", "facepalm", "win", "fail", "awkward", "confused", "sad", "hype", "cringe"]
 FIELDS = ["file", "mood", "name", "tags", "source", "duration", "green", "still", "audio", "added", "used_in"]
 MAX_CLIP = 20.0     # longer search hits are compilations, not a meme
-EVERY = 75.0        # about one meme per this many seconds of talk
+EVERY = 20.0        # about one meme per this many seconds of talk
+GAP = 12            # min seconds between two memes
 STARTERS = {"và", "nhưng", "cũng", "còn", "thì", "đấy", "đây", "đó", "mình", "anh", "thế", "vì", "nên", "sau",
             "tiếp", "bây", "ok", "điều", "kết", "tất", "nghe", "cứ", "trong", "khi", "nếu", "vậy", "rồi"}
 
@@ -30,9 +31,9 @@ SPOT = """Bạn là editor video YouTube react tiếng Việt, chuyên chèn MEM
 Đầu vào: lời người dẫn của từng đoạn (mã đoạn, rồi lời kèm mốc giây).
 Chọn những khoảnh khắc ĐÁNG chèn meme: câu đùa / châm biếm, cú twist bất ngờ, thất bại / ngớ ngẩn, con số gây sốc, câu hỏi tu từ, khoảnh khắc "wow", sự bối rối, ăn mừng.
 Quy tắc:
-- Tối đa {n} meme cho cả video, hai meme cách nhau ít nhất 45 giây.
+- Chọn ĐỦ {n} meme cho cả video (đừng chọn ít hơn trừ khi lời quá nghiêm túc), hai meme cách nhau ít nhất {gap} giây, rải đều từ đầu tới cuối.
 - KHÔNG chèn vào chỗ giải thích nghiêm túc cần tập trung, hướng dẫn từng bước, lời kêu gọi đăng ký / mua.
-- Meme phải là meme quốc tế nổi tiếng, dễ nhận ra, tìm được trên YouTube (vd "surprised pikachu", "this is fine dog", "visible confusion", "stonks", "sad violin", "vine boom", "michael scott no", "shocked guy", "math lady", "success kid", "drake no yes", "coffin dance").
+- "q" là TỪ KHOÁ TIẾNG ANH để tìm trong kho GIF của Telegram (giống Tenor/Giphy): cảm xúc / phản ứng ngắn gọn khớp ý câu nói (vd "mind blown", "facepalm", "money rain", "nervous sweating", "slow clap", "crying laughing", "eye roll", "this is fine"), hoặc tên meme nổi tiếng, dễ nhận ra (vd "surprised pikachu", "this is fine dog", "visible confusion", "stonks", "sad violin", "vine boom", "michael scott no", "shocked guy", "math lady", "success kid", "drake no yes", "coffin dance").
 - "at" là 3–6 từ LIÊN TIẾP chép NGUYÊN VĂN từ lời của đoạn đó, nằm trong câu ngay trước chỗ chèn.
 - "mode": "full" khi meme là khoảnh khắc chính, "part" khi chỉ là phản ứng nhỏ.
 Trả về DUY NHẤT JSON: {{"memes":[{{"id":"t03","at":"...","q":"<tên meme tiếng Anh>","mood":"{moods}","secs":<1.2–3>,"mode":"full|part","why":"≤12 từ"}}]}}"""
@@ -95,6 +96,15 @@ def _has_audio(p: Path) -> bool:
     return bool(r.stdout.strip())
 
 
+def _width(p: Path) -> int:
+    r = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width", "-of", "csv=p=0", str(p)],
+                       capture_output=True, text=True)
+    try:
+        return int(r.stdout.strip().split()[0])
+    except (ValueError, IndexError):
+        return 0
+
+
 def _is_green(p: Path, still: bool) -> bool:
     """A green-screen meme: over a quarter of a sample frame is near pure green."""
     ss = [] if still else ["-ss", f"{min(1.0, ffprobe_duration(p) / 3):.2f}"]
@@ -131,6 +141,14 @@ def _from_youtube(q: str, dest: Path) -> tuple[Path, str] | None:
     return (out, url) if out.exists() else None
 
 
+def _from_telegram(q: str, dest: Path) -> tuple[Path, str] | None:
+    from . import tgmeme
+    got = tgmeme.search(q, dest)
+    if got and ffprobe_duration(got[0]) > MAX_CLIP:
+        return None
+    return got
+
+
 _IMGFLIP: list[dict] | None = None
 UA = {"User-Agent": "Mozilla/5.0 (reactforge meme fetch)"}   # Imgflip answers 403 to urllib's default
 
@@ -163,7 +181,7 @@ def fetch(lib: Path, rows: list[dict], m: dict, project_name: str) -> dict | Non
         (lib / mood).mkdir(exist_ok=True)
         dest = lib / mood / _slug(m["q"])
         got = None
-        for src in ((_from_imgflip,) if want_still else (_from_youtube, _from_imgflip)):
+        for src in ((_from_imgflip,) if want_still else (_from_telegram, _from_youtube, _from_imgflip)):
             try:
                 got = src(m["q"], dest)
             except Exception as e:
@@ -200,7 +218,7 @@ def spot(project: Path, plan: list[dict], words: list[dict], align: dict) -> lis
         lines = [f"[{ws[k]['s']:.0f}s] " + " ".join(w["w"] for w in ws[k:k + 12]) for k in range(0, len(ws), 12)]
         blocks.append(f"## {it['id']}\n" + "\n".join(lines))
     n = max(1, round(total / EVERY))
-    text, _ = ask(project, SPOT.format(n=n, moods="|".join(MOODS)), "\n\n".join(blocks), max_tokens=3000)
+    text, _ = ask(project, SPOT.format(n=n, gap=GAP, moods="|".join(MOODS)), "\n\n".join(blocks), max_tokens=6000)
     return _extract_json(text).get("memes", [])[:n]
 
 
@@ -275,7 +293,7 @@ def main(project: Path, force: bool = False) -> None:
         if not int(row["still"] or 0) and row["duration"] and float(row["duration"]) <= 4.5:
             secs = float(row["duration"])   # a short clip plays whole: the punch is usually at the end
         per.setdefault(m["id"], []).append({"at": m["at"], "q": m["q"], "file": str(f), "secs": round(min(secs, 6.0), 2),
-                                            "ss": float(m.get("ss", 0)), "mode": m.get("mode", "full"),
+                                            "ss": float(m.get("ss", 0)), "mode": "part" if m.get("mode", "full") == "full" and 0 < _width(f) < 1100 else m.get("mode", "full"),
                                             "green": bool(int(row["green"] or 0)), "still": bool(int(row["still"] or 0)),
                                             "audio": bool(int(row["audio"] or 0))})
     write_index(lib, rows)
