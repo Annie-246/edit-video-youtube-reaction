@@ -11,6 +11,14 @@ import asyncio, os
 from pathlib import Path
 
 
+MAX_UPSCALE = 1.4          # a meme is never shown bigger than this x its own pixels (blur standard)
+PART_BOX = (1113, 713)     # the "part" box in a 1920x1080 frame (render.py: 58% x 66%)
+
+
+def sharp_enough(w: int, h: int, box: tuple[int, int] = PART_BOX) -> bool:
+    return w > 0 and h > 0 and min(box[0] / w, box[1] / h) <= MAX_UPSCALE
+
+
 def _dir() -> Path:
     return Path(os.environ.get("REACTFORGE_TG_DIR") or Path.home() / ".claude" / "telegram-gif")
 
@@ -39,8 +47,11 @@ async def _search(q: str, dest: Path, max_secs: float) -> Path | None:
             doc = getattr(r, "document", None)
             if doc is None:
                 continue
-            dur = next((a.duration for a in doc.attributes if hasattr(a, "duration")), 0)
+            va = next((a for a in doc.attributes if hasattr(a, "duration")), None)
+            dur, w, h = (va.duration, getattr(va, "w", 0), getattr(va, "h", 0)) if va else (0, 0, 0)
             if dur and dur > max_secs:
+                continue
+            if not sharp_enough(w, h):   # too small: would look blurry, try the next result
                 continue
             got = await r.download_media(file=str(dest))
             return Path(got) if got else None

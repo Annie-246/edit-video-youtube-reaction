@@ -21,6 +21,7 @@ from .common import load_project, read_json, run, write_json, ffprobe_duration
 
 MOODS = ["shock", "laugh", "facepalm", "win", "fail", "awkward", "confused", "sad", "hype", "cringe"]
 FIELDS = ["file", "mood", "name", "tags", "source", "duration", "green", "still", "audio", "added", "used_in"]
+MAX_UPSCALE = 1.4   # blur standard: never show a meme bigger than 1.4x its own pixels
 MAX_CLIP = 20.0     # longer search hits are compilations, not a meme
 EVERY = 20.0        # about one meme per this many seconds of talk
 GAP = 12            # min seconds between two memes
@@ -96,13 +97,20 @@ def _has_audio(p: Path) -> bool:
     return bool(r.stdout.strip())
 
 
-def _width(p: Path) -> int:
-    r = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width", "-of", "csv=p=0", str(p)],
+def _dims(p: Path) -> tuple[int, int]:
+    r = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height", "-of", "csv=p=0", str(p)],
                        capture_output=True, text=True)
     try:
-        return int(r.stdout.strip().split()[0])
+        w, h = r.stdout.strip().split()[0].split(",")[:2]
+        return int(w), int(h)
     except (ValueError, IndexError):
-        return 0
+        return 0, 0
+
+
+def _mode_for(f: Path, want: str) -> str:
+    """"full" only when the meme is sharp enough to fill the 1920x1080 frame; otherwise "part"."""
+    w, h = _dims(f)
+    return "part" if want == "full" and w and not (min(1920 / w, 1080 / h) <= MAX_UPSCALE) else want
 
 
 def _is_green(p: Path, still: bool) -> bool:
@@ -293,7 +301,7 @@ def main(project: Path, force: bool = False) -> None:
         if not int(row["still"] or 0) and row["duration"] and float(row["duration"]) <= 4.5:
             secs = float(row["duration"])   # a short clip plays whole: the punch is usually at the end
         per.setdefault(m["id"], []).append({"at": m["at"], "q": m["q"], "file": str(f), "secs": round(min(secs, 6.0), 2),
-                                            "ss": float(m.get("ss", 0)), "mode": "part" if m.get("mode", "full") == "full" and 0 < _width(f) < 1100 else m.get("mode", "full"),
+                                            "ss": float(m.get("ss", 0)), "mode": _mode_for(f, m.get("mode", "full")),
                                             "green": bool(int(row["green"] or 0)), "still": bool(int(row["still"] or 0)),
                                             "audio": bool(int(row["audio"] or 0))})
     write_index(lib, rows)

@@ -4,7 +4,7 @@ import math, re, subprocess
 from pathlib import Path
 from .common import load_project, read_json, run, ffprobe_duration, pick_encoder, escape_ffmpeg_path, FONT_DIR
 from .graphics import layout_for
-from .memes import place_memes
+from .memes import place_memes, _dims, MAX_UPSCALE
 
 
 def _enc(cfg) -> list[str]:
@@ -303,6 +303,10 @@ def render_memes(project: Path, cfg: dict, L: dict, memes: list[dict], body: Pat
         part = m.get("mode") == "part"
         bw, bh = (int(W * 0.58) // 2 * 2, int(H * 0.66) // 2 * 2) if part else (W, H)
         x = f"(W-w)/2{'-' if k % 2 else '+'}{int(W * 0.17)}" if part else "(W-w)/2"
+        if not m.get("still"):   # blur standard: never enlarge a clip past MAX_UPSCALE x its own pixels
+            sw, sh = _dims(Path(m["file"]))
+            if sw and sh and min(bw / sw, bh / sh) > MAX_UPSCALE:
+                bw, bh = int(sw * MAX_UPSCALE) // 2 * 2, int(sh * MAX_UPSCALE) // 2 * 2
         key = ",colorkey=0x00FF00:0.32:0.12" if m.get("green") else ""
         fc.append(f"color=c=black:s={W}x{H}:r={fps}:d={md + 0.5:.3f}[mb{k}]")
         fc.append(f"[{n}:v]fps={fps},scale={bw}:{bh}:force_original_aspect_ratio=decrease,setsar=1,format=rgba{key}[mk{k}]")

@@ -225,8 +225,8 @@ Danh mục mẫu và props: [motion/TEMPLATES.md](motion/TEMPLATES.md).
   `project.json` → `"memes": {"auto": false}` tắt hẳn phần tự chọn; dòng `MEME:` khai tay vẫn chạy.
 - **Tìm meme (theo thứ tự):** (1) tra kho (trùng tên/tag ≥ 60% thì dùng lại); (2) **GIF trong ô GIF của
   Telegram** (`reactforge/tgmeme.py`, đăng nhập bằng tài khoản Telegram của người dùng); (3) clip meme
-  ngắn ≤ 20 giây bằng `yt-dlp`; (4) ảnh template Imgflip. Meme nền xanh tự tách nền. Meme rộng < 1100 px
-  tự chuyển sang `part` (nửa màn) để khỏi vỡ hạt.
+  ngắn ≤ 20 giây bằng `yt-dlp`; (4) ảnh template Imgflip. Meme nền xanh tự tách nền. **Chuẩn độ nét:** không bao giờ phóng meme quá 1,4 lần số điểm ảnh gốc (Telegram bỏ kết quả quá nhỏ
+  và thử kết quả kế tiếp; `full` chỉ khi đủ nét, không thì `part`; render tự khoá mức phóng).
   - **Cài Telegram một lần:** `pip install telethon`; lấy `api_id`/`api_hash` ở my.telegram.org → ghi vào
     `~/.claude/telegram-gif/.env` (`TG_API_ID=…`, `TG_API_HASH=…`); chạy
     `python -m reactforge.tgmeme login` (nhập số điện thoại + OTP). File `session.session` cùng thư mục
