@@ -243,10 +243,32 @@ def render_keys(project: Path, cfg: dict, L: dict, it: dict, ws: list[dict], tot
     kw = project / "work" / "keywords" / f"{it['id']}.json"
     if not kw.exists():
         print(f"   ⚠ {it['id']}: chưa có từ khoá (chạy bước captions)"); return
+    overs = []
+    for line in it.get("over") or []:
+        o = parse_full(line)
+        if not o or "tpl" not in o["props"]:
+            print(f"   ⚠ {it['id']}: dòng OVER không đọc được: {line[:60]}"); continue
+        t = find_phrase(o["at"], ws) if o["at"] else 0.0
+        if t is None:
+            print(f'   ⚠ {it["id"]}: không thấy câu "{o["at"]}" — đặt OVER ở đầu đoạn'); t = 0.0
+        pr = dict(o["props"]); tpl = pr.pop("tpl"); secs = float(pr.pop("secs", 3.0))
+        overs.append({"s": round(t, 3), "e": round(min(total, t + secs), 3), "tpl": tpl, "props": pr})
+    phrases = keys_props(read_json(kw)["phrases"], ws)
+    # an OVER that fills the bottom (stats, dots) or the whole frame (blurtitle) wins over keyword lines
+    busy = [(o["s"], o["e"]) for o in overs if o["tpl"] in ("stats", "dots", "blurtitle")]
+    kept = []
+    for p in phrases:
+        if any(s <= p["s"] < e for s, e in busy):
+            continue   # starts under an OVER: drop it
+        nxt = min((s for s, _ in busy if p["s"] < s < p["e"]), default=None)
+        kept.append({**p, "e": nxt} if nxt is not None else p)   # runs into one: end it there
+    phrases = kept
     props = {"width": L["w"], "height": L["h"], "fps": cfg["output"]["fps"], "total": round(total, 3),
-             "phrases": keys_props(read_json(kw)["phrases"], ws)}
+             "phrases": phrases, "overs": overs}
     out = project / "work" / "keys" / f"{it['id']}.webm"
     out.parent.mkdir(parents=True, exist_ok=True)
+    # render.py blurs the presenter under a blurtitle
+    write_json(out.with_name(f"{it['id']}.blur.json"), [[o["s"], o["e"]] for o in overs if o["tpl"] == "blurtitle"])
     if out.exists() and not force and out.with_suffix(".json").exists() and read_json(out.with_suffix(".json")) == props:
         print(f"{it['id']}: lớp từ khoá có sẵn"); return
     render_panel(props, out, composition="Keys", extra=KEYS_ARGS)

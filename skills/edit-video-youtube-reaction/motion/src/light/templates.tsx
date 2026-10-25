@@ -5,6 +5,7 @@ import { Icon, IconTile } from "./icons";
 import { REEL } from "./reel";
 import { MEDIA } from "./media";
 import { STUDIO } from "./studio";
+import { LEARN } from "./learn";
 
 type Any = Record<string, any>;
 export type TplProps = Any & { dur: number; seed: number };
@@ -666,6 +667,7 @@ export const TEMPLATES: Record<string, React.FC<TplProps>> = {
   ...REEL,
   ...MEDIA,
   ...STUDIO,
+  ...LEARN,
 };
 
 export { ART_W, ART_H, FONT, BlobBg };

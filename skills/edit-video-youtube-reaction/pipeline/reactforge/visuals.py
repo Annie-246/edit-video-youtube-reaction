@@ -187,7 +187,8 @@ def spot(project: Path, plan: list[dict], words: list[dict], align: dict) -> lis
     blocks, total = [], 0.0
     for it in plan:
         al = align.get(it["id"])
-        if it["type"] != "talk" or it.get("mode") == "face" or not al or al.get("start") is None:
+        # logos and photos are graphics, and graphics only go full screen: MOTION talks only
+        if it["type"] != "talk" or it.get("mode") != "motion" or not al or al.get("start") is None:
             continue
         ws = timed_words_for(it, words, al)
         total += al.get("kept") or (al["end"] - al["start"])
@@ -227,8 +228,9 @@ def main(project: Path, force: bool = False) -> None:
     per: dict[str, list[dict]] = {}
     seen: set[str] = set()
     n_photo = 0
+    motion = {it["id"] for it in plan if it.get("type") == "talk" and it.get("mode") == "motion"}
     for v in read_json(auto):
-        if not v.get("id") or not v.get("at"):
+        if not v.get("id") or not v.get("at") or v["id"] not in motion:
             continue
         if v.get("kind") == "logo":
             brand = v.get("brand", "").strip()

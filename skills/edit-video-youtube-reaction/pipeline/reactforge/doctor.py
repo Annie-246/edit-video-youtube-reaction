@@ -16,6 +16,16 @@ from pathlib import Path
 from .common import load_project, read_json
 
 ERROR, WARN = "LỖI", "lưu ý"
+# the only scenes an avatar layout (white layout / BUBBLE) may frame: screen recordings
+SCREEN_TPL = {"broll", "screen", "rec"}
+
+
+def _side_tpl(line: str) -> str:
+    """Template name of a SIDE line: `@"câu neo" tpl {…}` or `tpl {…}`."""
+    s = line.strip()
+    if s.startswith("@"):
+        s = s[s.find('"', 2) + 1:] if s.count('"') >= 2 else s[1:]
+    return (s.split() or [""])[0]
 
 
 def _dur(path: Path, stream: str) -> float | None:
@@ -60,6 +70,14 @@ def check(project: Path) -> list[tuple[str, str, str]]:
                 out.append((ERROR, tid, "thiếu chữ theo lời (captions/*.ass rỗng)"))
             if mode == "face" and not _nonempty(work / "keys" / f"{tid}.webm"):
                 out.append((ERROR, tid, "thiếu lớp chữ từ khoá keys/*.webm (chạy captions rồi panel)"))
+            if mode != "face" and it.get("over"):
+                out.append((WARN, tid, "OVER chỉ chạy ở đoạn FACE — các dòng OVER ở đây bị bỏ qua"))
+            if mode in ("layout", "bubble"):
+                # avatar layouts frame screen recordings only; motion graphics always go full screen
+                bad = sorted({t for t in (_side_tpl(l) for l in it.get("side") or []) if t not in SCREEN_TPL})
+                if bad:
+                    out.append((ERROR, tid, f"bố cục avatar ({mode}) chỉ dùng cho quay màn hình, có cảnh {', '.join(bad)} → "
+                                            "tách sang đoạn MOTION: hoặc FULL:"))
             # white layout / BUBBLE / MOTION show the Main render; without it the screen is empty
             if mode == "face":
                 if it.get("side"):

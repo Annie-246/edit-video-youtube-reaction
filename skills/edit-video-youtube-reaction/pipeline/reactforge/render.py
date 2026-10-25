@@ -178,14 +178,22 @@ def render_face(project: Path, cfg: dict, L: dict, item: dict, al: dict, out: Pa
     fc: list[str] = []
     _join(parts, fc, per)
     keys = project / "work" / "keys" / f"{item['id']}.webm"
+    blur_p = keys.with_name(f"{item['id']}.blur.json")
+    spans = read_json(blur_p) if blur_p.exists() else []
+    base = "[tv]"
+    if spans:
+        # OVER blurtitle: the presenter goes soft behind the title, in and out with it
+        on = "+".join(f"between(t\\,{s:.3f}\\,{e:.3f})" for s, e in spans)
+        fc.append(f"[tv]split[bsa][bsb];[bsb]boxblur=22:2[bsc];[bsa][bsc]overlay=0:0:enable='{on}'[tvblur]")
+        base = "[tvblur]"
     n_in = 1
     if keys.exists():
         # libvpx (not the native vp8 decoder) is what reads the alpha channel
         cmd += ["-c:v", "libvpx", "-i", str(keys)]
-        fc += [f"[1:v]fps={fps},format=rgba[kl]", "[tv][kl]overlay=0:0:eof_action=pass,format=yuv420p[vc]"]
+        fc += [f"[1:v]fps={fps},format=rgba[kl]", f"{base}[kl]overlay=0:0:eof_action=pass,format=yuv420p[vc]"]
         n_in = 2
     else:
-        fc.append("[tv]format=yuv420p[vc]")
+        fc.append(f"{base}format=yuv420p[vc]")
     _finish(cfg, cmd, fc, _full_cards(project, item, fps, cmd, fc, "[vc]", n_in), nfr, dur, out)
 
 

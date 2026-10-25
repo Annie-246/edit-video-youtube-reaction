@@ -13,6 +13,9 @@ theo khung: khung chính 1440x920 cạnh người nói, hoặc thẻ full 1920x1
 - **Nhấn từ khoá:** bọc từ khoá trong `*…*` ở `title`, ví dụ `"Đừng gửi *email lạnh* nữa"`.
   Dấu câu ngay sau dấu sao vẫn được: `"Bán *gói định kỳ*, đừng bán lẻ"`.
 
+**Luật bố cục:** mọi mẫu motion graphic chạy **full màn** (đoạn `MOTION:` hoặc thẻ `FULL:` / `BEAT:`).
+Bố cục avatar (bố cục trắng, `BUBBLE:`) chỉ nhận `broll` / `screen` / `rec`; `doctor` chặn mẫu khác.
+
 ## Cách gọi trong kịch bản
 
 ```text
@@ -85,6 +88,32 @@ BEAT: @"câu neo" {"title":"…"}                  ← thẻ chốt nền đen
 | `typebar` | prompt / câu tìm kiếm trên ảnh: thanh trắng gõ chữ trên ảnh lớn | `src`, `text`, `kicker` |
 | `ui3d` | demo một phần mềm: giao diện nghiêng 3D dựng dần, bảng trợ lý trượt vào, máy quay lao vào nút, con trỏ bấm | `app`, `title`, `rows:[{label,value,pct}]`, `panel:{title,items}`, `cta` |
 
+**Bộ học từ video mẫu** (`src/light/learn.tsx`, xem `references/tu-duy-dung-motion.md` để biết khi nào dùng).
+Ảnh (`src`) đi theo đường ảnh như các mẫu khác.
+
+| Mẫu | Dùng khi | Props chính |
+|---|---|---|
+| `pricecut` | giá cũ bị gạch → giá mới đếm về đích | `kicker`, `title`, `old`, `oldNote`, `from`, `value`, `prefix`, `suffix`, `note`, `decimals` |
+| `receipt` | tổng kết chi phí / thời gian: từng dòng hiện, dòng Tổng đếm lên rồi tô cam | `kicker`, `title`, `tag`, `items:[{label,value}]`, `total:{label,value,prefix,suffix,decimals}` |
+| `calendar` | hạn chót, ngày ra mắt: khoanh một ngày, các ngày sau mờ đi | `kicker`, `title`, `month`, `year`, `days`, `start` (thứ của ngày 1, 0 = CN), `mark`, `tag` |
+| `countdown` | ưu đãi sắp hết: ngày / giờ / phút / giây chạy | `kicker`, `title`, `days`, `hours`, `mins`, `secs` |
+| `lock` | sắp đóng / bị khoá: ổ khoá rơi xuống card sản phẩm, card tối đi | `kicker`, `name`, `sub`, `src` hoặc `icon`, `label` |
+| `tracker` | video nhiều bước: bước đã qua có tick, bước hiện tại sáng, thời gian dưới mỗi bước | `kicker`, `title`, `current` (0-based), `steps:[{label,icon,time}]` |
+| `hub` | công cụ nhận gì, làm ra gì: đầu vào chạy vào tâm, đầu ra bật ra | `kicker`, `title`, `inputs:[{icon,label}]`, `center:{icon|src,label}`, `outputs:[…]` |
+| `folder` | AI tự sắp xếp / khối lượng dữ liệu: folder mở ra thư mục con, rồi con số lớn | `kicker`, `name`, `items:[…]` (≤ 6), `count`, `unit` |
+| `transcript` | đọc từng chữ, cắt chỗ nghỉ: `{1.4s}` trong `text` thành viên "Nghỉ 1.4s" bị gạch | `kicker`, `title`, `text` |
+| `scriptclip` | kế hoạch dựng: dòng kịch bản được khoanh, cảnh tương ứng bên cạnh | `kicker`, `lines:[…]`, `active`, `src`, `label` |
+| `reveal` | "có 2 thứ…": thẻ 2 úp dấu "?" rồi lật ra (lật ở `at` × thời lượng) | `kicker`, `title`, `items:[{icon,title,sub}]` (2), `at` |
+| `linechart` | xu hướng / giữ chân: đường tự vẽ, điểm cuối được khoanh, nét đứt để so | `kicker`, `title`, `points:[…]`, `base:[…]`, `labels:[…]`, `highlight`, `note` |
+| `beforeafter` | trước (nhỏ, đen trắng) và sau (to, màu) | `kicker`, `title`, `before:{src,label,sub}`, `after:{…}` |
+| `promptui` | gõ prompt trong cửa sổ app, mỗi dòng lệnh bật một thẻ minh hoạ bên cạnh | `app`, `greet`, `per` (khung/dòng), `lines:[{text,card:{icon|src,label}}]` |
+| `progress` | đang xuất / đang xử lý: thanh chạy tới 100 % rồi hiện tick | `kicker`, `title`, `label`, `done`, `from`, `to` |
+| `doctilt` | ảnh chụp tài liệu thật trên mặt phẳng nghiêng, có viên nhãn tên | `src`, `label` |
+| `comments` | bằng chứng xã hội: tường bình luận trôi, con số lớn đè giữa | `items:[{name,text}]`, `big`, `sub` |
+
+Lớp `OVER:` đè lên người nói ở đoạn `FACE:` (`stats`, `dots`, `status`, `blurtitle`) nằm trong
+`src/light/keys.tsx`; props xem SKILL.md mục "Lớp OVER".
+
 Hai mẫu `horizon`, `agenda` dùng được ở cả `SIDE:` (nhất là đoạn `MOTION:`) và `FULL:`.
 Đây là chỗ duy nhất được dùng gradient cam đất (`#F0B49A → #D97757 → #B5532F`) và quầng sáng.
 
@@ -93,7 +122,7 @@ Mẫu nào cũng nhận thêm `"dark": true` để dùng nền đen.
 **Icon** (dùng cho `icon`): link video play doc slides bot search chat mail gift money chart
 globe mic calendar user users check x sparkle store question shield layout phone clock
 sheet rocket repeat wand box calc sofa drop target flame code heart bell thumb arrow palette
-translate community
+translate lock folder brain community
 
 ## Tự code mẫu mới
 

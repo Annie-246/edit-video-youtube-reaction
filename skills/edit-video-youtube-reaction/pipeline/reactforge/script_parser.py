@@ -4,7 +4,7 @@ Item types:
   talk  — presenter speaks (text = what anh reads; slide = left panel content)
   clip  — cut from the source video [CLIP mm:ss–mm:ss]
   score — scoreboard update (**Bảng điểm:** line)
-Optional lines inside a talk block:  SIDE: / FULL: / BEAT: (graphics), FACE: / BUBBLE: / MOTION:
+Optional lines inside a talk block:  SIDE: / FULL: / BEAT: / OVER: (graphics), FACE: / BUBBLE: / MOTION:
 (screen mode of the talk), MEME: (meme cut in after a line) — see SKILL.md. OUTRO: / BREAK: are full-frame stings.
 Per section (anywhere under its "## N." heading):  INFO: kicker | title | sub   → the title card
 above the presenter, e.g. "INFO: Công cụ 2/6 | Agent Reach | Tìm lời phàn nàn của khách".
@@ -180,6 +180,9 @@ def parse_script(md_path: Path) -> list[dict]:
                 cur.setdefault("side", []).append(s[5:].strip()); continue
             if s.startswith("FULL:"):
                 cur.setdefault("full", []).append(s[5:].strip()); continue
+            if s.startswith("OVER:"):
+                # FACE only: a graphic laid over the presenter (stats / dots / status / blurtitle)
+                cur.setdefault("over", []).append(s[5:].strip()); continue
             if s.startswith("BEAT:"):
                 # same machinery as FULL, different tone — the name is for whoever writes the
                 # script: it marks a place to let a line land, not another fact to show.

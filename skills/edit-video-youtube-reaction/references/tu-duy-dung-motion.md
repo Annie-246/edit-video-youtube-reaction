@@ -13,10 +13,11 @@ Không hỏi "hiệu ứng nào đẹp". Hỏi: **người xem cần gì ở câ
 
 | Người xem cần | Cho họ | Trong skill này |
 |---|---|---|
-| **Tin** (quan điểm, lời khuyên, kêu gọi, chuyện cá nhân) | mặt người, chữ từ khoá | `FACE:` |
-| **Thấy** (thao tác, công cụ, kết quả, bằng chứng) | giao diện / b-roll / ảnh thật toàn khung | `broll`, `ui3d`, `search`, `typebar`, `chat`, `stack`, `MOTION:` |
-| **Hiểu** (khái niệm trừu tượng, quan hệ, quy trình) | sơ đồ, ẩn dụ bằng icon | `flow`, `steps`, `pills`, `orbit`, `compare` |
-| **Nhớ** (con số, câu chốt, luận điểm) | một con số / một câu lớn | `bignumber`, `equation`, `title`, `BEAT:`, `horizon`, `bigtype` |
+| **Tin** (quan điểm, lời khuyên, kêu gọi, chuyện cá nhân) | mặt người, chữ từ khoá | `FACE:` (+ `OVER:` `dots` / `stats` / `blurtitle`) |
+| **Thấy** (thao tác thật trên màn hình) | quay màn hình trong bố cục avatar | bố cục trắng / `BUBBLE:` với `broll`, `screen`, `rec` |
+| **Thấy** (giao diện dựng lại, kết quả, bằng chứng) | graphic full màn | `MOTION:` với `promptui`, `ui3d`, `search`, `typebar`, `chat`, `stack`, `doctilt`, `beforeafter`, `comments` |
+| **Hiểu** (khái niệm trừu tượng, quan hệ, quy trình) | sơ đồ, ẩn dụ bằng icon, full màn | `MOTION:` với `hub`, `flow`, `steps`, `pills`, `orbit`, `compare`, `tracker` |
+| **Nhớ** (con số, câu chốt, luận điểm) | một con số / một câu lớn, full màn | `MOTION:` / `FULL:` với `bignumber`, `pricecut`, `receipt`, `equation`, `title`, `horizon`, `bigtype`; `BEAT:` |
 | Không cần gì thêm (câu đệm, chuyển ý ngắn) | giữ nguyên cảnh đang chạy | không khai cảnh mới |
 
 Tác giả video mẫu tự giải thích hai lựa chọn của mình: "chọn animation UI toàn màn hình **để người
@@ -36,11 +37,15 @@ Video mẫu: chỉ ~39% khung có mặt người, nhưng **không chia đều**.
 
 - Hook: `FACE:` nhưng câu tuyên bố đầu tiên phải có bằng chứng thấy được trong ~5 giây đầu
   (`FULL:` ảnh / b-roll kết quả, hoặc `bignumber`). Tuyên bố khó tin mà không có hình là mất người xem.
-- Đoạn hướng dẫn, demo, kể lại video gốc: bố cục trắng hoặc `MOTION:`, cảnh dày 6–9 giây.
-- Đoạn nhận định, "điều này nghĩa là gì với bạn", kêu gọi: `FACE:` với từ khoá; chỉ chen `FULL:` /
-  `BEAT:` cho đúng một câu luận điểm.
+- **Luật bố cục (khoá cứng):** motion graphic luôn full màn (`MOTION:` / `FULL:` / `BEAT:`); bố cục
+  avatar (bố cục trắng, `BUBBLE:`) chỉ để chạy quay màn hình. Xoay vòng ba kiểu: người full màn ·
+  motion full màn · bố cục avatar + quay màn hình.
+- Đoạn demo trên màn hình thật, kể lại video gốc: bố cục avatar + `broll` / `screen`.
+- Đoạn người dẫn tự giải thích, ví dụ, con số: `MOTION:`, cảnh dày 6–9 giây.
+- Đoạn nhận định, "điều này nghĩa là gì với bạn", kêu gọi: `FACE:` với từ khoá; số liệu / bước 1-2-3 /
+  câu luận điểm thì `OVER:` đè lên người thay vì cắt sang thẻ.
 - **Không để quá ~40 giây liền không thấy mặt người.** Video mẫu đuối nhất ở chỗ này (9:06–9:54,
-  14:00–15:10 thành "slideshow"). Đoạn `MOTION:` dài thì chèn một đoạn `BUBBLE:` hoặc `FACE:` ngắn.
+  14:00–15:10 thành "slideshow"). Đoạn `MOTION:` dài thì tách bằng `---` và chen một đoạn `FACE:` ngắn.
 - Trung vị của video mẫu: một lần hiện mặt ~5,5 giây, một lần graphic ~9 giây.
 
 ## 3. Khi nào tạo motion graphic (danh sách kích hoạt)
@@ -50,16 +55,25 @@ Video mẫu: chỉ ~39% khung có mặt người, nhưng **không chia đều**.
 
 | Câu thoại có | Dạng | Ví dụ ở video mẫu |
 |---|---|---|
-| Con số đo được (giờ, tiền, %, số lượng) | `bignumber` đếm lên; hai số liên quan → `equation` | 0:06 "12 hours / 4.5 billion tokens" đếm lên |
-| Cũ vs mới, trước vs sau, giá gốc vs giá mới | `compare`, `bars`, `equation` | 5:33 giá $1,200 gạch → $299; 17:00 $400–750 vs ≈ $20 |
-| Thao tác trên phần mềm, gõ prompt | `ui3d`, `typebar`, `chat`, `search` (dựng lại, không chiếu màn hình thô nếu chữ nhỏ / rối) | 2:15 cửa sổ Claude Code dựng lại, mỗi ý lệnh bật một thẻ minh hoạ |
-| Khái niệm trừu tượng / quan hệ giữa các thứ | `flow` với icon ẩn dụ | 1:12 "Claude là bộ não, cần tay chân (plugin)" |
-| Quy trình nhiều bước | `steps` (≤ 4), `pills`, xếp dọc nếu dài | 15:12 bảy bước kèm thời gian từng bước |
-| Mục lục / "trong video này" | `agenda` ở đầu; `BREAK:` mỗi phần; `recap` ở cuối | 0:23 ba thẻ chương; dãy 7 thẻ quay lại ~2 phút một lần |
-| "Ba điều cần nhớ" | `steps` / `pills`, hoặc ở `FACE:` để từ khoá đánh số | 16:12 chấm 1-2-3 dưới mặt người |
-| Hạn chót, thời gian | `bignumber` (số ngày), `title` | 5:30 đếm ngược 20 ngày; 5:42 lịch khoanh ngày 15 |
-| Câu luận điểm của cả video | `BEAT:` hoặc từ khoá `FACE:` hiện từng từ | 18:06 "2027 the next big wave…" hiện từng từ trên ngực người nói |
-| Tên công cụ / thương hiệu lần đầu | `logo`, `tool` | 1:30 thẻ Remotion cạnh người nói |
+| Con số đo được (giờ, tiền, %, số lượng) | `bignumber` đếm lên; hai số liên quan → `equation`; đang ở `FACE:` → `OVER: stats` | 0:06 "12 hours / 4.5 billion tokens" đếm lên trên mặt người |
+| Giá cũ → giá mới, chi phí giảm | `pricecut` | 5:33 giá $1,200 gạch → $299; 19:24 đếm lùi về giá mới |
+| Tổng kết chi phí / thời gian nhiều mục | `receipt` | 16:06 hoá đơn "Time & cost", dòng Tổng đếm lên |
+| Cũ vs mới, so sánh nhiều thứ | `compare`, `bars`, `beforeafter` | 17:00 $400–750 vs ≈ $20; 5:21 Before / After |
+| Thao tác trên phần mềm, gõ prompt | `promptui` (mỗi dòng lệnh một thẻ minh hoạ), `ui3d`, `typebar`, `chat`, `search` | 2:15 cửa sổ Claude Code dựng lại, mỗi ý lệnh bật một thẻ minh hoạ |
+| Tài liệu / kế hoạch thật | `doctilt`, `scriptclip` | 7:30 Figma nghiêng 3D; 7:57 dòng kịch bản cạnh clip |
+| Khái niệm trừu tượng / công cụ nhận gì làm ra gì | `hub`, `flow` với icon ẩn dụ | 1:12–1:18 "Claude là bộ não", tài liệu chạy vào, việc bật ra |
+| Khối lượng dữ liệu, "AI tự sắp xếp" | `folder` | 3:12 thư mục mở ra hàng trăm thư mục con |
+| Cắt ậm ừ, AI đọc lời | `transcript` | 6:39 transcript từng chữ, nhãn Pause |
+| Quy trình nhiều bước | `steps` (≤ 4), `pills`, `tracker` (video nhiều chương) | 15:12 bảy bước kèm thời gian từng bước |
+| Mục lục / "trong video này" | `agenda` ở đầu; `tracker` hoặc `BREAK:` mỗi phần; `recap` ở cuối | 0:23 ba thẻ chương; dãy 7 thẻ quay lại ~2 phút một lần |
+| "Ba điều cần nhớ" | `OVER: dots` ở `FACE:`; hoặc `steps` / `pills` ở `MOTION:` | 16:12 chấm 1-2-3 dưới mặt người |
+| "Có 2 thứ…", gợi tò mò ý sau | `reveal` | 17:45 thẻ 2 úp dấu "?" rồi lật |
+| Xu hướng, tăng trưởng, giữ chân | `linechart` | 17:39 đường retention |
+| Hạn chót, khuyến mãi | `calendar`, `countdown`, `lock` | 5:30 đếm ngược; 5:42 lịch khoanh ngày 15; 19:18 ổ khoá rơi |
+| Đang chờ xử lý / xuất xong | `progress`; ở `FACE:` → `OVER: status` | 7:27 thanh Export xanh; 9:21 "40 minutes to process" |
+| Bằng chứng xã hội, kết quả học viên | `comments`, `beforeafter` | 4:48 tường bình luận + "$2,000/mo" |
+| Câu luận điểm của cả video | `OVER: blurtitle` (người nói nhoè phía sau) hoặc `BEAT:` | 0:51, 3:48 chữ trên nền mặt nhoè; 18:06 câu luận điểm |
+| Tên công cụ / thương hiệu lần đầu | `logo`, `tool` (full màn) | 1:30 thẻ Remotion |
 | "Tôi không ngồi máy / cuộc sống thật" | ảnh / b-roll đời thường (`photo`, `stack`) | 12:42 b-roll quay thật duy nhất của video |
 
 **Không tạo** khi: câu chuyển ý ngắn, câu cảm thán, câu đang giữ cảm xúc cá nhân (để mặt người làm việc),
@@ -115,4 +129,6 @@ Hai loại graphic, hai luật khác nhau (đo trên video mẫu bằng mốc t�
 3. Cụm `*nhấn*` có đúng một cụm, là từ cảm xúc / kết quả / con số?
 4. Câu neo: con số → neo vào 3–5 từ trước số; câu chữ → neo vào đầu câu.
 5. Icon / tên mục có trùng với lần xuất hiện trước của cùng khái niệm?
-6. Đoạn này đã bao lâu không thấy mặt người? Quá ~40 giây thì chen `BUBBLE:` / `FACE:`.
+6. Đoạn này đã bao lâu không thấy mặt người? Quá ~40 giây thì tách đoạn và chen `FACE:`.
+7. Graphic có đang nằm trong bố cục avatar không? Có thì chuyển sang `MOTION:` / `FULL:` (bố cục avatar
+   chỉ cho quay màn hình).

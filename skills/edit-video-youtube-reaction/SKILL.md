@@ -14,7 +14,7 @@ description: Edit Video Youtube Reaction — dựng video react/phân tích YouT
 ┌──────────────────────────────────────────────┐ ┌──────────────┐
 │                                              │ │ Công cụ 2/6  │ ← thẻ tiêu đề phần: nền cam trơn,
 │        KHUNG NỘI DUNG 1440x920               │ │ Agent Reach  │   chữ trắng (dòng INFO: của phần)
-│   b-roll thật / motion graphic / ảnh         │ └──────────────┘
+│   chỉ quay màn hình / b-roll thật            │ └──────────────┘
 │   (nền gradient be → cam nhạt)               │ ┌──────────────┐
 │                                              │ │              │
 │                                              │ │   AVATAR     │ ← mặt người dẫn, khung dọc 360x724
@@ -25,25 +25,49 @@ description: Edit Video Youtube Reaction — dựng video react/phân tích YouT
         nền: lưới trắng (pipeline/assets/bg-grid.png)
 ```
 
-- **Khi người dẫn nói:** khung nội dung chạy b-roll thật từ video gốc, xen với motion graphic.
-  Chữ nhảy nằm trong thanh trắng: chữ đã đọc màu đen, chữ chưa đọc màu xám.
+- **Bố cục trắng này chỉ dùng cho source quay màn hình** (`broll`, `screen`, `rec`). Nó không phải
+  theme chính. Chữ nhảy nằm trong thanh trắng: chữ đã đọc màu đen, chữ chưa đọc màu xám.
 - **Khi phát clip gốc:** clip **chiếm trọn màn hình**, không avatar, không khung, chỉ có
   phụ đề Việt ở dưới (chữ trắng trên dải mờ).
 - **Thẻ FULL:** chiếm trọn màn hình vài giây để nhấn một ý (mở đầu công cụ, câu chốt, con số).
+
+### Luật bố cục (khoá cứng)
+
+- **Đoạn nào có motion graphic thì motion graphic phải full màn:** đoạn `MOTION:` hoặc thẻ `FULL:` /
+  `BEAT:`. Không đặt motion graphic (title, flow, logo, ảnh, số liệu…) vào khung nhỏ cạnh avatar.
+- **Bố cục có người dạng card nhỏ** (bố cục trắng, `BUBBLE:`) **chỉ dùng với source quay màn hình.**
+- Video xoay vòng linh hoạt giữa ba thứ: **người nói full màn** (`FACE:`, có thể kèm `OVER:`) ·
+  **motion graphic full màn** (`MOTION:`) · **bố cục avatar + quay màn hình** (mặc định / `BUBBLE:`).
+  Không để một kiểu chạy suốt video.
+- `doctor` chặn đoạn bố cục trắng / `BUBBLE:` có `SIDE:` không phải `broll` / `screen` / `rec`.
+  Bước `visuals` (tự chèn logo, ảnh) chỉ chèn vào đoạn `MOTION:`.
 
 ### Bốn chế độ cho một đoạn nói (đổi bằng một dòng trong đoạn)
 
 | Dòng | Màn hình | Chữ | Hợp với |
 |---|---|---|---|
-| *(không khai)* | bố cục trắng ở trên | chữ nhảy theo từng từ | phân tích có b-roll, mặc định |
-| `FACE:` | người nói **chiếm cả màn**; mỗi chỗ cắt và mỗi ~7 giây đổi cỡ cảnh rộng ↔ chặt (punch-in 1.15) | **chỉ cụm từ khoá** 2–5 từ, AI tự chọn (xem "Chữ từ khoá FACE") | hook, câu chuyện, kêu gọi |
-| `BUBBLE:` | **nền lưới trắng**; các cảnh `SIDE:` trong một khung bo góc lớn 1500x1000 bên trái, mặt người trong **ô bo góc nhỏ 336x400 bên phải**. Cả hai khung có viền cam gradient (`#F0B49A → #D97757 → #B5532F`) và bóng đổ mềm phía dưới | không có | bình luận dài trên b-roll |
-| `MOTION:` | **chỉ motion graphic tràn kín màn** 1920x1080, không có người nên **không nền lưới, không khung** | không có | giải thích bằng sơ đồ, mục lục, con số |
+| *(không khai)* | bố cục trắng ở trên, **chỉ chạy quay màn hình** | chữ nhảy theo từng từ | thuật lại / demo trên quay màn hình |
+| `FACE:` | người nói **chiếm cả màn**; mỗi chỗ cắt và mỗi ~7 giây đổi cỡ cảnh rộng ↔ chặt (punch-in 1.15) | **chỉ cụm từ khoá** 2–5 từ, AI tự chọn (xem "Chữ từ khoá FACE"), cộng lớp `OVER:` nếu khai | hook, câu chuyện, quan điểm, kêu gọi |
+| `BUBBLE:` | **nền lưới trắng**; quay màn hình trong một khung bo góc lớn 1500x1000 bên trái, mặt người trong **ô bo góc nhỏ 336x400 bên phải**. Cả hai khung có viền cam gradient (`#F0B49A → #D97757 → #B5532F`) và bóng đổ mềm phía dưới | không có | bình luận dài trên quay màn hình |
+| `MOTION:` | **chỉ motion graphic tràn kín màn** 1920x1080, không có người nên **không nền lưới, không khung** | không có | **mọi đoạn có motion graphic**: sơ đồ, số liệu, logo, mục lục, câu chốt |
 
-- Mỗi video nên trộn: hook bằng `FACE:`, thân bài xen bố cục trắng / `BUBBLE:` / `MOTION:`.
-  Không để một chế độ chạy suốt video.
-- `FACE:` không dùng `SIDE:`; muốn chen đồ hoạ thì dùng `FULL:` / `BEAT:` hoặc meme.
+- Mỗi video nên trộn: hook bằng `FACE:`, thân bài xen `FACE:` / `MOTION:` / bố cục avatar + quay màn hình.
+  Một đoạn nói vừa cần graphic vừa cần quay màn hình thì tách bằng `---` thành hai đoạn.
+- `FACE:` không dùng `SIDE:`; muốn chen đồ hoạ thì dùng `OVER:` (đè lên người), `FULL:` / `BEAT:` hoặc meme.
 - `BUBBLE:` / `MOTION:` bắt buộc có `SIDE:` như bố cục trắng; mỗi cảnh ≤ 10 giây (`doctor` cảnh báo).
+
+### Lớp `OVER:` (chỉ ở đoạn `FACE:`)
+
+Graphic đè lên người nói, cùng lớp trong suốt với chữ từ khoá. Cú pháp như `FULL:`:
+`OVER: @"câu neo" {"secs":3,"tpl":"<mẫu>", …}`. Lớp nào chiếm mép dưới hoặc cả khung (`stats`, `dots`,
+`blurtitle`) thì cụm từ khoá trùng giờ tự nhường (cắt ngắn hoặc bỏ).
+
+| Mẫu | Dùng khi | Props |
+|---|---|---|
+| `stats` | 2–3 con số dưới ngực, đếm lên cùng lúc, lóe cam khi chạm đích (hook có số liệu) | `items:[{label,value,prefix,suffix,decimals}]` |
+| `dots` | "3 điều cần nhớ" mà vẫn giữ mặt người: ô số 1-2-3, câu của ý hiện tại, viên kết quả các ý đã qua | `n`, `active`, `text`, `pills:[…]` |
+| `status` | nhãn trạng thái nhỏ phía trên ("6 giờ", "Đang dựng…") | `text`, `spin`, `side:"right"` |
+| `blurtitle` | câu lớn đặt trên chính người nói, **người nói tự nhoè** suốt lớp này (thay cho cắt hẳn sang thẻ) | `kicker`, `title` (có `*nhấn*`) |
 - **Nền lưới trắng chỉ dành cho khung có mặt người** (bố cục trắng, `BUBBLE:`). Khung không người
   (`MOTION:`, thẻ `FULL:`, clip gốc, chuyển phần) tràn kín màn.
 - Viền và bóng của `BUBBLE:` vẽ một lần thành `work/gfx/rim_<chế độ>_<cỡ>.png`
@@ -152,6 +176,11 @@ Mỗi video mới, hỏi đủ: (1) kịch bản (file `.md`, Google Doc hoặc 
 - **Phân tích kịch bản trước, chọn graphic sau:** con số → `bignumber`/`equation`, quy trình →
   `steps`/`flow`, so sánh → `compare`/`bars`, danh sách → `checklist`, câu chốt → `title`,
   tin nhắn/AI hỏi đáp → `chat`/`questions`. Hai cảnh liền nhau không cùng dạng.
+  Bộ mẫu học từ video mẫu: giá cũ → giá mới `pricecut`, tổng chi phí/thời gian `receipt`, hạn chót
+  `calendar`/`countdown`/`lock`, video nhiều bước `tracker`, công cụ nhận gì làm ra gì `hub`, khối
+  lượng dữ liệu `folder`, cắt ậm ừ `transcript`, kế hoạch dựng `scriptclip`, gợi tò mò ý thứ hai
+  `reveal`, xu hướng `linechart`, trước/sau `beforeafter`, gõ prompt `promptui`, đang xuất / chờ xử lý
+  `progress`, tài liệu thật `doctilt`, bằng chứng xã hội `comments`.
 - **Tư duy chọn cảnh (đọc `references/tu-duy-dung-motion.md` trước khi khai cảnh):**
   - Mỗi câu hỏi "người xem cần **tin / thấy / hiểu / nhớ**?": tin → `FACE:`; thấy → b-roll / giao
     diện / ảnh thật; hiểu → sơ đồ, icon ẩn dụ; nhớ → con số / câu chốt. Không cần gì → không cảnh mới.
@@ -163,7 +192,8 @@ Mỗi video mới, hỏi đủ: (1) kịch bản (file `.md`, Google Doc hoặc 
   - Một khái niệm giữ một icon suốt video; video nhiều phần thì `agenda` sau hook, `recap` cuối khớp
     đúng các mục đã hứa.
 - **Xen b-roll thật:** đoạn thuật lại lời/việc của nhân vật trong video gốc thì dùng `broll`
-  đúng khúc đó; đoạn người dẫn tự giải thích, ví dụ, kêu gọi thì dùng graphic.
+  đúng khúc đó (bố cục avatar); đoạn người dẫn tự giải thích, ví dụ thì dùng graphic **full màn**
+  (`MOTION:` / `FULL:`); đoạn quan điểm, kêu gọi thì `FACE:`.
 - **Nhân vật được nhắc tên lần đầu phải hiện hình:** cắt chân dung từ video gốc (khung nhìn
   rõ mặt) vào `assets/`, dùng mẫu `person`.
 - **Ảnh minh hoạ:** cả video chỉ khoảng 5–7 ảnh, đặt ở chỗ có câu chuyện, dùng `photo` với chuỗi ảnh.
@@ -203,8 +233,9 @@ video-cua-toi/
 | `## N. Tiêu đề` | mở một phần mới |
 | `INFO: Công cụ 2/6 \| Agent Reach \| Tìm lời phàn nàn của khách` | chữ trên thẻ tiêu đề phần (trên avatar). Không khai thì hiện "Phần N" + tiêu đề |
 | `[CLIP 0:05:32–0:05:57]` | phát clip gốc full màn hình kèm phụ đề Việt |
-| `SIDE: @"câu neo" <mẫu> {json}` | cảnh trong khung nội dung, bắt đầu đúng lúc người dẫn nói câu neo, chạy tới cảnh sau |
+| `SIDE: @"câu neo" <mẫu> {json}` | cảnh của đoạn, bắt đầu đúng lúc người dẫn nói câu neo, chạy tới cảnh sau. Đoạn `MOTION:` → mẫu motion bất kỳ (full màn); bố cục trắng / `BUBBLE:` → chỉ `broll` / `screen` / `rec` |
 | `FULL: @"câu neo" {"secs":4,"tpl":"<mẫu>",…}` | thẻ chiếm trọn màn hình vài giây |
+| `OVER: @"câu neo" {"secs":3,"tpl":"stats",…}` | graphic đè lên người nói, chỉ ở đoạn `FACE:` (xem "Lớp OVER") |
 | `BEAT: @"câu neo" {"title":"…"}` | thẻ chốt nền đen |
 | `BREAK: Tên phần` | màn chuyển nền đen, tiếng im hoàn toàn |
 | `---` | tách một đoạn nói thành hai |
@@ -215,7 +246,7 @@ video-cua-toi/
 - `@"câu neo"` dò trong lời thật đã khớp (3–5 từ, phải duy nhất trong đoạn). Không tìm thấy
   thì chia đều thời gian và in cảnh báo. Người dẫn hay nói lệch kịch bản: sau `align`, đọc lời
   thật trong `work/align_report.md` rồi sửa câu neo cho khớp.
-- Mọi đoạn nói **phải có ít nhất một `SIDE:`**, nếu không `doctor` chặn vì khung nội dung trống.
+- Mọi đoạn nói không phải `FACE:` **phải có ít nhất một `SIDE:`**, nếu không `doctor` chặn vì khung nội dung trống.
 - Dòng `GFX:` của kịch bản cũ vẫn chạy, được gộp vào `SIDE:`.
 - B-roll: `SIDE: @"câu" broll {"at": 330, "caption": "Agent Reach"}` (giây trong video gốc).
   Lấy mẫu khung hình video gốc thành bảng ảnh (mỗi 15 giây) và đọc transcript để chọn đúng mốc.
@@ -225,7 +256,7 @@ Danh mục mẫu và props: [motion/TEMPLATES.md](motion/TEMPLATES.md).
 
 ## Ảnh thật và logo: tự tìm, tự chèn
 
-Áp cho mọi đoạn có khung nội dung (bố cục trắng, `BUBBLE:`, `MOTION:`; `FACE:` không có).
+Logo và ảnh thật là graphic nên chỉ tự chèn vào đoạn `MOTION:` (full màn). Bố cục avatar chỉ chạy quay màn hình; `FACE:` không có.
 
 - **Chọn chỗ:** sau `align`, AI đọc lời cả video, chọn khoảng **1 meme / 20 giây** (cách nhau ≥ 12 giây,
   rải đều từ đầu tới cuối) ở câu đùa, cú twist, cú fail, con số sốc, câu hỏi tu từ, khoảnh khắc "wow";
@@ -259,9 +290,23 @@ Danh mục mẫu và props: [motion/TEMPLATES.md](motion/TEMPLATES.md).
 INFO: Công cụ 2/6 | Agent Reach | Tìm lời phàn nàn của khách
 FULL: {"secs":3.6,"tpl":"tool","num":"02","name":"Agent Reach","icon":"search","desc":"AI đọc YouTube, Reddit, X giúp bạn","tag":"Repo GitHub · Miễn phí"}
 SIDE: broll {"at": 300, "caption": "Tìm ý tưởng, nghiên cứu thị trường"}
+
+(lời thuật lại phần Greg demo trên màn hình…)
+
+---
+
+MOTION:
 SIDE: @"những cơ hội kinh doanh tốt" title {"kicker":"Insight","title":"Cơ hội tốt nhất nằm trong *lời phàn nàn* của khách"}
 SIDE: @"trả tiền cho phần mềm" flow {"title":"Có phần mềm, vẫn *làm tay*","nodes":[{"icon":"calendar","label":"Phần mềm xếp lịch"},{"icon":"sheet","label":"Xuất ra Excel"},{"icon":"calc","label":"Tự tính lương"}]}
-FULL: @"Đừng vội cho rằng" {"secs":4,"tpl":"title","kicker":"Greg lưu ý","title":"Có người phàn nàn chưa chắc *có người trả tiền*"}
+
+(lời người dẫn tự giải thích…)
+
+---
+
+FACE:
+OVER: @"Đừng vội cho rằng" {"secs":3,"tpl":"blurtitle","kicker":"Greg lưu ý","title":"Có người phàn nàn chưa chắc *có người trả tiền*"}
+
+(lời nhận định của người dẫn…)
 ```
 
 ## archive.org: nguồn ưu tiên cho b-roll, nhạc nền, ảnh, tài liệu cũ (không dùng cho SFX)
