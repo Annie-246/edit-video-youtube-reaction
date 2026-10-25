@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill, Easing, Sequence, interpolate, useCurrentFrame } from "remotion";
-import { FONT } from "./kit";
+import { FONT, LitText } from "./kit";
 
 /**
  * Keyword captions for FACE talks, rendered as a transparent layer over the presenter.
@@ -14,11 +14,9 @@ export type KeyWord = { w: string; t: number; hl: boolean };
 export type KeyPhrase = { s: number; e: number; style: "line" | "stack"; words: KeyWord[] };
 export type KeysProps = { width: number; height: number; fps: number; total: number; phrases: KeyPhrase[]; overs?: Over[] };
 
-const GRAD = "linear-gradient(180deg, #FFBE9C 0%, #F0875E 50%, #D97757 100%)";
 // Lifting the words off a busy picture (a white shirt is the worst case) takes both: a soft black
 // band rising from the bottom while a phrase is up, and a tight shadow stack hugging each glyph.
 const SHADOW = "0 0 3px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.6), 0 6px 24px rgba(0,0,0,.55), 0 14px 60px rgba(0,0,0,.5)";
-const GRAD_SHADOW = "drop-shadow(0 0 2px rgba(0,0,0,.65)) drop-shadow(0 3px 10px rgba(0,0,0,.6)) drop-shadow(0 10px 36px rgba(0,0,0,.5))";
 const cl = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
 const EXPO = Easing.bezier(0.16, 1, 0.3, 1);
 const W = 1920, H = 1080, SIDE = 80;   // design space; scaled to the output size
@@ -26,12 +24,11 @@ const W = 1920, H = 1080, SIDE = 80;   // design space; scaled to the output siz
 /** Width estimate for Inter heavy (fonts load async, so no DOM measuring): ~0.6 em per char. */
 const fit = (text: string, size: number, em = 0.6) => Math.min(size, (W - 2 * SIDE) / Math.max(1, text.length * em));
 
-const Grad: React.FC<{ children: React.ReactNode; style?: React.CSSProperties }> = ({ children, style }) => (
-  // padding keeps diacritics / descenders inside the painted box; negative margin cancels it
-  <span style={{ display: "inline-block", padding: "0.28em 0.08em 0.22em", margin: "-0.28em -0.08em -0.22em", backgroundImage: GRAD,
-    WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", textShadow: "none",
-    filter: GRAD_SHADOW, ...style }}>{children}</span>
-);
+const Grad: React.FC<{ children: React.ReactNode; style?: React.CSSProperties }> = ({ children, style }) => {
+  // same lit orange as the motion graphics, plus a soft dark copy underneath so the word reads over
+  // any shirt; the letters themselves stay filter-free and crisp. Taller padding for the big type.
+  return <LitText style={style} glow={0.55} shade pad={[0.28, 0.08, 0.22]}>{children}</LitText>;
+};
 
 /** A black gradient from the bottom edge, in and out with the phrase. */
 const Band: React.FC<{ len: number; tall: boolean }> = ({ len, tall }) => {

@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill, Sequence, interpolate, useCurrentFrame } from "remotion";
-import { ART_W, DarkCtx, themeVars } from "./kit";
+import { ART_W, CueCtx, DarkCtx, themeVars } from "./kit";
 
 // Whole-video theme: dark (charcoal + warm clay glow, like the reference). A scene can still pin
 // the light look with "dark": false. With THEME = "light" the old per-template tones come back.
@@ -54,12 +54,14 @@ export const Main: React.FC<MainProps> = ({ width, height, fps, scenes }) => {
         return (
           <Sequence key={i} from={from} durationInFrames={dur} layout="none">
             <SceneWrap>
+              <CueCtx.Provider value={Array.isArray(sc.props.cue) ? sc.props.cue : undefined}>
               <DarkCtx.Provider value={tones[i]}>
                 <div style={{ position: "absolute", left: 0, top: 0, width: ART_W, height: artH, transform: `scale(${k})`, transformOrigin: "0 0", color: "var(--ink)",
                   ...themeVars(tones[i]) }}>
                   <T {...sc.props} dur={dur} seed={i * 1.7} />
                 </div>
               </DarkCtx.Provider>
+              </CueCtx.Provider>
             </SceneWrap>
           </Sequence>
         );

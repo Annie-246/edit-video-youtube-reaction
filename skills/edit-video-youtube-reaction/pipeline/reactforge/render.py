@@ -293,6 +293,114 @@ def _card_plate(path: Path, L: dict, cards: list[dict]) -> Path:
     return path
 
 
+MORPH = 0.6   # seconds the presenter takes to shrink into / grow out of the MOTION bubble
+
+
+def _rec_time(keep: list[list[float]], t0: float, t: float) -> float:
+    """Second in recording.mp4 of second `t` of a cut talk."""
+    acc = 0.0
+    for s, e in keep:
+        if t < acc + (e - s):
+            return t0 + s + (t - acc)
+        acc += e - s
+    return t0 + keep[-1][1]
+
+
+def _bubble_morph(project: Path, cfg: dict, L: dict, al: dict, out: Path, enter: bool, leave: bool, mode: str = "motion") -> None:
+    """Full-screen presenter ↔ the presenter's small frame of the next layout: the round bubble
+    (MOTION), the rounded card (BUBBLE) or the portrait card (white layout). Coming from a FACE talk,
+    the first MORPH seconds show the presenter full frame shrinking into that frame (corners rounding
+    off, the crop easing from the FACE framing to the frame's own, its rim fading in); going on to a
+    FACE talk, the last MORPH seconds grow it back to full frame. The presenter never stops: the
+    frames are the talk's own recording, so picture and voice stay together across the join."""
+    if not (enter or leave):
+        return
+    import os, shutil
+    import numpy as np
+    from PIL import Image, ImageDraw, ImageFilter
+    fps = cfg["output"]["fps"]; W, H = L["w"], L["h"]
+    keep, t0, _, nfr, dur = _snap(al, fps)
+    n = max(2, int(round(MORPH * fps)))
+    rec = project / "work" / "recording.mp4"
+    rc = cfg["recording"]; fc_ = rc.get("face", {}); dc = rc.get("dot", {})
+    # the frame the presenter lands in: outer box (rim included), corner radius, rim width, rim colour
+    if mode == "motion":
+        D = L["dot"]; R = D["d"] + 2 * D["rim"]
+        bx, by, bw, bh, brad, rim, clay = W - D["m"] - R, H - D["m"] - R, R, R, R / 2, D["rim"], True
+    elif mode == "bubble":
+        B = L["bubble"]; k = L["rim"]
+        bx, by, bw, bh, brad, rim, clay = B["x"] - k, B["y"] - k, B["w"] + 2 * k, B["h"] + 2 * k, B["r"] + k, k, True
+    else:
+        Hd = L["head"]; k = int(6 * L["s"])
+        bx, by, bw, bh, brad, rim, clay = Hd["x"] - k, Hd["y"] - k, Hd["w"] + 2 * k, Hd["h"] + 2 * k, Hd["r"] + k, k, False
+    iw, ih = map(int, subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height",
+                                     "-of", "csv=p=0", str(rec)], capture_output=True, text=True).stdout.strip().split(",")[:2])
+
+    def window(cx: float, cy: float, z: float, ratio: float) -> tuple[float, float, float, float]:
+        cw = min(iw, ih * ratio) / z; ch = min(ih, iw / ratio) / z
+        return (max(0, min(iw - cw, cx * iw - cw / 2)), max(0, min(ih - ch, cy * ih - ch / 2)), cw, ch)
+
+    face_w = window(float(fc_.get("cx", 0.5)), float(fc_.get("cy", 0.45)), float(fc_.get("zoom", 1.0)), W / H)
+    if mode == "motion":
+        dot_w = window(float(dc.get("cx", rc.get("cx", 0.5))), float(dc.get("cy", 0.5)), float(dc.get("zoom", 1.0)), 1.0)
+    elif mode == "bubble":
+        bc = rc.get("bubble", {})
+        dot_w = window(float(bc.get("cx", rc.get("cx", 0.5))), float(bc.get("cy", 0.42)), float(bc.get("zoom", 1.25)), L["bubble"]["w"] / L["bubble"]["h"])
+    else:
+        dot_w = window(float(rc.get("cx", 0.5)), float(rc.get("cy", 0.5)), float(rc.get("zoom", 1.0)), L["head"]["w"] / L["head"]["h"])
+    ease = lambda x: 4 * x ** 3 if x < 0.5 else 1 - (-2 * x + 2) ** 3 / 2
+    lerp = lambda a, b, p: a + (b - a) * p
+    # clay ring gradient (#F0B49A → #D97757 → #B5532F along the diagonal), cut to shape per frame
+    gy, gx = np.mgrid[0:H, 0:W].astype(np.float32)
+    tt = ((gx + gy) / (W + H))[..., None]
+    c0, c1, c2 = (np.array(c, np.float32) for c in RIM)
+    ring = np.where(tt < 0.5, c0 + (c1 - c0) * tt * 2, c1 + (c2 - c1) * (tt * 2 - 1)).astype(np.uint8)
+    ring_img = Image.fromarray(ring, "RGB") if clay else Image.new("RGB", (W, H), (38, 37, 35))
+
+    spans = ([("enter", 0.0)] if enter else []) + ([("leave", max(0.0, dur - n / fps))] if leave else [])
+    cur = out
+    for kind, start in spans:
+        tmp = out.parent / f"{out.stem}_morph_{kind}"
+        shutil.rmtree(tmp, ignore_errors=True); tmp.mkdir(parents=True)
+        src = tmp / "src"; src.mkdir()
+        run(["ffmpeg", "-v", "error", "-y", "-ss", f"{_rec_time(keep, t0, start):.3f}", "-i", str(rec), "-frames:v", str(n), str(src / "%04d.png")])
+        frames = sorted(src.glob("*.png"))
+        for i, fr in enumerate(frames):
+            x = i / (len(frames) - 1)
+            p = ease(x) if kind == "enter" else ease(1 - x)          # p: 0 = full frame, 1 = bubble
+            rx, ry, rw, rh = lerp(0, bx, p), lerp(0, by, p), lerp(W, bw, p), lerp(H, bh, p)
+            rad = lerp(0, brad, p)
+            k = rim * p
+            cx_, cy_, cw_, ch_ = (lerp(a, b, p) for a, b in zip(face_w, dot_w))
+            img = Image.open(fr).convert("RGB").crop((int(cx_), int(cy_), int(cx_ + cw_), int(cy_ + ch_)))
+            iw2, ih2 = max(2, int(rw - 2 * k)), max(2, int(rh - 2 * k))
+            img = img.resize((iw2, ih2), Image.LANCZOS)
+            layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+            # shadow, then the ring, then the picture inside it
+            sh = Image.new("L", (W, H), 0)
+            ImageDraw.Draw(sh).rounded_rectangle((rx, ry + 20 * p, rx + rw, ry + rh + 20 * p), radius=rad, fill=int(92 * p))
+            layer.paste((20, 20, 19, 255), (0, 0, W, H), sh.filter(ImageFilter.GaussianBlur(22)))
+            if k > 0.3:
+                m = Image.new("L", (W, H), 0)
+                ImageDraw.Draw(m).rounded_rectangle((rx, ry, rx + rw, ry + rh), radius=rad, fill=255)
+                layer.paste(ring_img, (0, 0), m)
+            m2 = Image.new("L", (iw2, ih2), 0)
+            ImageDraw.Draw(m2).rounded_rectangle((0, 0, iw2 - 1, ih2 - 1), radius=max(0, rad - k), fill=255)
+            layer.paste(img, (int(rx + k), int(ry + k)), m2)
+            layer.save(tmp / f"{i:04d}.png")
+        nxt = out.with_name(f"{out.stem}.morph_{kind}{out.suffix}")
+        run(["ffmpeg", "-v", "error", "-y", "-i", str(cur), "-framerate", str(fps), "-i", str(tmp / "%04d.png"),
+             # growing out: hold the last (full-frame) picture to the very end, or the graphics flash back for a frame
+             "-filter_complex", f"[1:v]format=rgba,setpts=PTS+{start:.6f}/TB[m];[0:v][m]overlay=0:0:eof_action={'repeat' if kind == 'leave' else 'pass'},format=yuv420p[v]",
+             "-map", "[v]", "-map", "0:a", "-r", str(fps)] + _enc(cfg) + ["-c:a", "copy", str(nxt)])
+        if cur != out:
+            cur.unlink(missing_ok=True)
+        cur = nxt
+        shutil.rmtree(tmp, ignore_errors=True)
+    os.replace(cur, out)
+    print("   chuyển cảnh co/giãn bubble: " + " + ".join("vào" if k == "enter" else "ra" for k, _ in spans))
+
+
 def _dot_mask(path: Path, d: int) -> Path:
     """Gray disc mask for the MOTION presenter bubble."""
     if path.exists():
@@ -501,6 +609,9 @@ def main(project: Path, only: str | None = None, concat: bool = True) -> None:
             t0 = (first["start"] + 1.0) if first else 1.0
             run(["ffmpeg", "-v", "error", "-y", "-ss", f"{t0:.2f}", "-i", str(work / "recording.mp4"), "-frames:v", "1", "-q:v", "3", str(pip_src)])
     order = []
+    seq = [i for i in plan if i["type"] != "score"]
+    def _is_face(i: int) -> bool:
+        return 0 <= i < len(seq) and seq[i]["type"] == "talk" and seq[i].get("mode") == "face"
     for it in plan:
         if it["type"] == "score": continue
         out = seg / f"{it['id']}.mov"
@@ -530,6 +641,10 @@ def main(project: Path, only: str | None = None, concat: bool = True) -> None:
                 render_screen(project, cfg, L, it, al, body)
             else:
                 render_talk(project, cfg, L, it, al, body)
+            if mode != "face":
+                # right next to a full-screen FACE talk: shrink into / grow out of the presenter's frame
+                k = seq.index(it)
+                _bubble_morph(project, cfg, L, al, body, enter=_is_face(k - 1), leave=_is_face(k + 1), mode=mode)
             if memes:
                 render_memes(project, cfg, L, memes, body, out)
             print(f"{it['id']} → {out.name} ({ffprobe_duration(out):.1f}s)" + (f" · {len(memes)} meme" if memes else ""))

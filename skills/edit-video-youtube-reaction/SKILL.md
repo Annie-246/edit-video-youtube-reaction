@@ -51,6 +51,10 @@ description: Edit Video Youtube Reaction — dựng video react/phân tích YouT
 | `BUBBLE:` | **nền lưới trắng**; quay màn hình trong một khung bo góc lớn 1500x1000 bên trái, mặt người trong **ô bo góc nhỏ 336x400 bên phải**. Cả hai khung có viền cam gradient (`#F0B49A → #D97757 → #B5532F`) và bóng đổ mềm phía dưới | không có | bình luận dài trên quay màn hình |
 | `MOTION:` | **motion graphic tràn kín màn** 1920x1080, không nền lưới, không khung; người nói nằm trong **bubble tròn nhỏ góc phải dưới** (Ø 270px, viền cam gradient, bóng mềm, khung lấy rộng thấy cả nền và áo) | không có | **mọi đoạn có motion graphic**: sơ đồ, số liệu, logo, mục lục, câu chốt |
 
+- **Chuyển cảnh co/giãn (tự động):** đoạn `MOTION:` / `BUBBLE:` / bố cục avatar nằm ngay sau một đoạn `FACE:` thì
+  0,6 giây đầu người full màn co lại đúng vào khung của bố cục đó (bubble tròn / ô bo góc / khung dọc), góc bo dần,
+  viền hiện dần; nằm ngay trước `FACE:` thì 0,6 giây cuối khung đó giãn ra full màn. Hình lấy từ chính bản quay nên
+  người không đứng hình, không lệch tiếng. Kịch bản không cần khai gì.
 - Mỗi video nên trộn: hook bằng `FACE:`, thân bài xen `FACE:` / `MOTION:` / bố cục avatar + quay màn hình.
   Một đoạn nói vừa cần graphic vừa cần quay màn hình thì tách bằng `---` thành hai đoạn.
 - `FACE:` không dùng `SIDE:`; muốn chen đồ hoạ thì dùng `OVER:` (đè lên người), `FULL:` / `BEAT:` hoặc meme.
@@ -107,6 +111,9 @@ Học từ video mẫu "học thêm motion graphics (2)".
 - **Chữ:** kem `#FAF9F5`, chữ phụ `#C9C5BC`, chữ mờ `#9A968E`. Font Inter, viết hoa đầu câu.
 - **Chiều sâu vừa phải, không "ảo":** card có nền chuyển nhẹ sáng trên tối dưới, đường sáng mảnh mép trên,
   viền mảnh, bóng đổ vừa. Chỉ danh sách chương (`chapters`) được nổi khối mạnh hơn.
+- **Chữ nhấn** (`*…*`, số lớn, từ khoá FACE): cam tươi (`#FF9255`) gradient chuyển rất nhẹ, **nét chữ sạch không
+  bộ lọc**; quầng sáng là bản sao nhoè đặt phía sau (toả quanh chữ, không phủ lên chữ); thỉnh thoảng một vệt sáng
+  mờ lướt qua. Không làm khối 3D, không phủ lớp bóng lên chữ (trông đục). Ở FACE thêm bản sao tối phía sau để đọc rõ.
 - **Nhãn nhỏ phía trên tiêu đề** (`kicker`: "Quy trình", "Hạn chót"…) là **chữ trơn** in hoa giãn chữ có chấm
   cam, **không bọc capsule**. Capsule chỉ dùng khi chính nó là nội dung (mẫu `pills`). Đừng lạm dụng capsule.
 - Cảnh nào thật sự cần nền sáng thì ghim `"dark": false`.
@@ -186,6 +193,10 @@ Mỗi video mới, hỏi đủ: (1) kịch bản (file `.md`, Google Doc hoặc 
   hoặc meme đều tính là một hình mới (AI chọn từ khoá giữ nhịp ≤ 9 giây, thiếu thì tự chèn). Pipeline tự đảm bảo: cảnh graphic
   nào dài quá 11 giây sẽ chạy 7 giây rồi tự chuyển sang b-roll cùng chủ đề (lấy mốc b-roll
   gần nhất phía trước trong đoạn đó). Vẫn nên khai cảnh dày: khoảng 6–9 giây một cảnh.
+- **Motion hiện theo lời (tự động):** cảnh dạng danh sách (`pills`, `flow`, `steps`, `checklist`, `recap`, `bars`,
+  `hub`, `tracker`, `receipt`, `chapters`, `logos`, `folder`) được pipeline dò lời: mỗi mục hiện đúng lúc được nói
+  (sớm 0,15 giây), mục không dò được thì chia đều giữa hai mục bên cạnh. Vì vậy **đặt nhãn mục giống lời nói**
+  ("Viết bài" khi người dẫn nói "viết bài"). Thẻ `FULL:` chưa có phần này.
 - **Phân tích kịch bản trước, chọn graphic sau:** con số → `bignumber`/`equation`, quy trình →
   `steps`/`flow`, so sánh → `compare`/`bars`, danh sách → `checklist`, câu chốt → `title`,
   tin nhắn/AI hỏi đáp → `chat`/`questions`. Hai cảnh liền nhau không cùng dạng.

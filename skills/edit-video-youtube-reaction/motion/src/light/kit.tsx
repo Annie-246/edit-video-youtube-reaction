@@ -37,6 +37,15 @@ if (typeof document !== "undefined" && !document.querySelector("style[data-fonts
 /** Two looks: light (beige) and dark (Anthropic charcoal). Colours flow through CSS variables. */
 export const DarkCtx = createContext(false);
 export const useDark = () => useContext(DarkCtx);
+
+/** Word cues: the frame (from the scene start) at which list item i is spoken, written by the
+ * pipeline into a scene's `cue` prop. Items then appear with the voice, not on a fixed stagger;
+ * without a cue the template's own timing (`fallback`) stays. */
+export const CueCtx = createContext<number[] | undefined>(undefined);
+export const cueAt = (i: number, fallback: number) => {
+  const c = useContext(CueCtx);
+  return c && typeof c[i] === "number" ? c[i] : fallback;
+};
 export const themeVars = (dark: boolean): React.CSSProperties =>
   (dark
     // dark surfaces get a light touch of depth (the chapter list goes further, see learn.tsx): a
@@ -116,20 +125,44 @@ export const BlobBg: React.FC<{ seed?: number; strength?: number }> = ({ seed = 
   );
 };
 
-export const GradText: React.FC<{ children: React.ReactNode; style?: React.CSSProperties }> = ({ children, style }) => (
-  <span
-    style={{
-      background: GRAD,
-      WebkitBackgroundClip: "text",
-      backgroundClip: "text",
-      color: "transparent",
-      paddingBottom: "0.08em",
-      ...style,
-    }}
-  >
-    {children}
-  </span>
-);
+/** Highlighted words, after the "$30,000" / "time." references: still one clay, only gently lit.
+ * The fill drifts a few shades from a touch lighter at the top to a touch deeper at the foot; a
+ * faint gloss sits on the upper half; a soft sheen glides by now and then; a warm bloom and a
+ * small dark drop lift the word off the background. Everything subtle: a strong gradient or a
+ * white streak makes the word look silly. The padding / negative margin keep Vietnamese stacked
+ * marks (ầ, ễ, ỗ) and descenders inside the painted box. */
+export const HL_FILL = "linear-gradient(180deg, #FFAB72 0%, #FF9255 40%, #FF8040 72%, #F77232 100%)";   // fresh, saturated orange
+const SHEEN_EVERY = 96;   // frames between two passes of the sheen
+export const sheen = (f: number, offset = 0) => {
+  const pos = interpolate(((f + offset) % SHEEN_EVERY) / SHEEN_EVERY, [0, 0.5], [140, -40], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  return `linear-gradient(105deg, rgba(255,240,228,0) ${pos - 14}%, rgba(255,240,228,0.35) ${pos}%, rgba(255,240,228,0) ${pos + 14}%)`;
+};
+
+/** Lit text: the visible letters carry no filter at all (filters re-rasterise the glyphs and
+ * leave them soft), so they stay crisp. The glow is a blurred copy of the word sitting behind it,
+ * spread wide so it reads as light around the word, not a haze over it; `shade` adds a soft dark
+ * copy under it for busy pictures (FACE keywords). `pad` keeps Vietnamese stacked marks (ầ, ễ, ỗ)
+ * and descenders inside the painted box; the negative margin cancels it in the layout. */
+export const LitText: React.FC<{ children: React.ReactNode; style?: React.CSSProperties; glow?: number; shade?: boolean; pad?: [number, number, number] }> = ({
+  children, style, glow = 0.6, shade = false, pad = [0.12, 0.04, 0.14],
+}) => {
+  const f = useCurrentFrame();
+  const box: React.CSSProperties = { padding: `${pad[0]}em ${pad[1]}em ${pad[2]}em` };
+  const back: React.CSSProperties = { ...box, position: "absolute", left: 0, top: 0, right: 0, bottom: 0, pointerEvents: "none", whiteSpace: "inherit", textShadow: "none" };
+  return (
+    <span style={{ position: "relative", display: "inline-block", ...box, margin: `-${pad[0]}em -${pad[1]}em -${pad[2]}em`, ...style }}>
+      {shade ? <span aria-hidden style={{ ...back, color: "rgba(0,0,0,0.9)", filter: "blur(0.06em)", transform: "translateY(0.05em)", opacity: 0.75 }}>{children}</span> : null}
+      {glow > 0 ? <span aria-hidden style={{ ...back, color: "#FF7A30", filter: "blur(0.3em)", opacity: glow }}>{children}</span> : null}
+      <span style={{ position: "relative", backgroundImage: `${sheen(f)}, ${HL_FILL}`, WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent",
+        textShadow: "none" }}>{children}</span>
+    </span>
+  );
+};
+
+export const GradText: React.FC<{ children: React.ReactNode; style?: React.CSSProperties }> = ({ children, style }) => {
+  const dark = useDark();
+  return <LitText style={style} glow={dark ? 0.6 : 0.3}>{children}</LitText>;
+};
 
 export const Card: React.FC<{ style?: React.CSSProperties; children?: React.ReactNode; glow?: boolean }> = ({ style, children, glow }) => (
   <div

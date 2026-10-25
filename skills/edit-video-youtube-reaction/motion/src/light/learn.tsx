@@ -1,6 +1,6 @@
 import React from "react";
 import { Img, interpolate, useCurrentFrame } from "remotion";
-import { Card, FONT, GRAD, GradText, Kicker, L, Pill, Stage, Typed, Words, ease, lerp, useDark, useIn } from "./kit";
+import { Card, FONT, GRAD, GradText, Kicker, L, Pill, Stage, Typed, Words, cueAt, ease, lerp, useDark, useIn } from "./kit";
 import { Icon, IconTile } from "./icons";
 import type { TplProps } from "./templates";
 
@@ -86,7 +86,7 @@ const ReceiptT: React.FC<TplProps> = ({ kicker, title = "Chi phí", tag, items =
           <div style={{ fontSize: 17, letterSpacing: "0.12em", color: L.muted, textTransform: "uppercase" }}>{tag || "Hoá đơn"}</div>
         </div>
         {list.map((it, i) => {
-          const p = useIn(10 + i * 6);
+          const p = useIn(cueAt(i, 10 + i * 6));
           return (
             <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: `1px dashed ${L.line}`, opacity: p, transform: `translateX(${(1 - p) * -16}px)` }}>
               <span style={{ fontSize: 23, color: L.ink2 }}>{it.label}</span>
@@ -203,7 +203,7 @@ const TrackerT: React.FC<TplProps> = ({ kicker, title, steps = [], current = 0, 
       <Head kicker={kicker} title={title} size={42} />
       <div style={{ display: "flex", gap: 14 }}>
         {list.map((s, i) => {
-          const p = useIn(4 + i * 3);
+          const p = useIn(cueAt(i, 4 + i * 3));
           const done = i < cur;
           const on = i === cur;
           const tick = interpolate(f, [16 + i * 4, 24 + i * 4], [0, 1], clamp);
@@ -265,8 +265,8 @@ const HubT: React.FC<TplProps> = ({ kicker, title, inputs = [], center = {}, out
           {iy.map((y, i) => <path key={"i" + i} d={path(300, y, cx - 80, cy)} fill="none" stroke="#D97757" strokeWidth={2.5} strokeDasharray="6 8" strokeDashoffset={dash} opacity={flowIn} />)}
           {oy.map((y, i) => <path key={"o" + i} d={path(cx + 80, cy, W - 300, y)} fill="none" stroke="#D97757" strokeWidth={2.5} strokeDasharray="6 8" strokeDashoffset={dash} opacity={flowOut} />)}
         </svg>
-        {ins.map((it, i) => <Node key={i} it={it} x={300} y={iy[i]} d={2 + i * 4} />)}
-        {outs.map((it, i) => <Node key={i} it={it} x={W - 300} y={oy[i]} d={34 + i * 5} right />)}
+        {ins.map((it, i) => <Node key={i} it={it} x={300} y={iy[i]} d={cueAt(i, 2 + i * 4)} />)}
+        {outs.map((it, i) => <Node key={i} it={it} x={W - 300} y={oy[i]} d={cueAt(ins.length + i, 34 + i * 5)} right />)}
         <div style={{ position: "absolute", left: cx, top: cy, transform: `translate(-50%,-50%) scale(${c})`, display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
           <div style={{ width: 150, height: 150, borderRadius: 44, background: "linear-gradient(180deg, #E3876A 0%, #D97757 50%, #C8643F 100%)", display: "flex", alignItems: "center", justifyContent: "center",
             boxShadow: `inset 0 1px 0 rgba(255,255,255,0.2), 0 0 ${40 + Math.sin(f / 8) * 12}px rgba(217,119,87,0.45), 0 16px 34px rgba(0,0,0,0.35)` }}>
@@ -303,7 +303,8 @@ const FolderT: React.FC<TplProps> = ({ kicker, name = "Thư mục", items = [], 
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 22 }}>
             {list.map((t, i) => {
-              const p = interpolate(f, [30 + i * 4, 40 + i * 4], [0, 1], { ...clamp, easing: ease });
+              const c0 = cueAt(i, 30 + i * 4);
+              const p = interpolate(f, [c0, c0 + 10], [0, 1], { ...clamp, easing: ease });
               return (
                 <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, opacity: p, transform: `translateY(${(1 - p) * 12}px)` }}>
                   <Icon name="folder" size={86} color="#D97757" stroke={1.5} />
@@ -630,7 +631,7 @@ const ChaptersT: React.FC<TplProps> = ({ kicker = "Trong video này", items = []
   const listH = n * (ROW + GAP) - GAP;
   const intro = mode !== "focus";
   const fo = Math.max(0, Math.min(n - 1, Number(focus)));
-  const at = (i: number) => (Array.isArray(times) && times[i] !== undefined ? Math.round(Number(times[i]) * 30) : 14 + i * Number(per));
+  const at = (i: number) => (Array.isArray(times) && times[i] !== undefined ? Math.round(Number(times[i]) * 30) : cueAt(i, 14 + i * Number(per)));
   const push = intro ? 0 : interpolate(f, [6, 28], [0, 1], { ...clamp, easing: ease });
   const drift = interpolate(f, [0, dur || 120], [0, 1], clamp);
   // push in on the focused row: scale up and slide it towards the middle of the frame

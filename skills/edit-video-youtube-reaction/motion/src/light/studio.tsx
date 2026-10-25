@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill, Img, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
-import { Card, Cursor, FONT, Typed, Words, ease, useDark, useIn } from "./kit";
+import { Card, Cursor, FONT, Typed, Words, cueAt, ease, useDark, useIn } from "./kit";
 import { Icon } from "./icons";
 import type { TplProps } from "./templates";
 
@@ -201,7 +201,7 @@ const PillsT: React.FC<TplProps> = ({ items = [], title }) => {
       {title ? <Words text={title} delay={2} size={46} weight={800} color={T.ink} /> : null}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 18 }}>
         {list.map((it, i) => {
-          const d = 8 + i * 9;
+          const d = cueAt(i, 8 + i * 9);
           const p = spring({ frame: f - d, fps, config: { damping: 12, stiffness: 160 } });
           const right = i % 2 === 1;
           const last = i === list.length - 1;

@@ -56,6 +56,68 @@ def parse_full(line: str) -> dict | None:
     return {"at": m.group("at"), "props": json.loads(m.group("props"))}
 
 
+CUE_LEAD = 0.15   # an item lands this much before its word, so it is already there as it is said
+# where each list template keeps its items, in the order they are drawn
+CUE_KEYS = {"pills": [("items", "label")], "flow": [("nodes", "label")], "steps": [("steps", "title")],
+            "checklist": [("items", "label")], "recap": [("items", "name")], "bars": [("bars", "label")],
+            "hub": [("inputs", "label"), ("outputs", "label")], "tracker": [("steps", "label")],
+            "receipt": [("items", "label")], "chapters": [("items", "title")], "logos": [("items", "name")],
+            "folder": [("items", None)]}
+
+
+def _labels(tpl: str, props: dict) -> list[str]:
+    out = []
+    for key, field in CUE_KEYS.get(tpl, []):
+        for x in props.get(key) or []:
+            out.append(str(x if field is None or not isinstance(x, dict) else x.get(field, "")))
+    return out
+
+
+def add_cues(scenes: list[dict], ws: list[dict], fps: int) -> None:
+    """Give list scenes a `cue`: the frame (from the scene start) at which each item is spoken.
+    Items are looked up in order through the words said while the scene is up (a label matches
+    where most of its words appear together); items not heard are spread between their found
+    neighbours. Nothing heard at all → no cue, the template keeps its own stagger."""
+    wn = [normalize(w["w"]) for w in ws]
+    for sc in scenes:
+        labels = _labels(sc["template"], sc["props"])
+        if not labels or "cue" in sc["props"]:
+            continue
+        s0, s1 = sc["start"], sc["start"] + sc["duration"]
+        idx = [k for k, w in enumerate(ws) if s0 - 0.3 <= w["s"] < s1]
+        if not idx:
+            continue
+        times: list[float | None] = []
+        pos = idx[0]
+        for lab in labels:
+            toks = [normalize(x) for x in lab.split() if normalize(x)]
+            best = None
+            if toks:
+                for k in range(pos, idx[-1] + 1):
+                    win = wn[k:k + len(toks) + 1]
+                    hit = sum(1 for t in toks if t in win)
+                    if wn[k] in toks and hit >= max(1, (len(toks) + 1) // 2):
+                        best = k; break
+            if best is not None:
+                times.append(ws[best]["s"]); pos = best + 1
+            else:
+                times.append(None)
+        if not any(t is not None for t in times):
+            continue
+        # fill the gaps: spread between found neighbours, or step 0.6 s off the nearest one
+        for i, t in enumerate(times):
+            if t is None:
+                prev = next(((j, times[j]) for j in range(i - 1, -1, -1) if times[j] is not None), None)
+                nxt = next(((j, times[j]) for j in range(i + 1, len(times)) if times[j] is not None), None)
+                if prev and nxt:
+                    times[i] = prev[1] + (nxt[1] - prev[1]) * (i - prev[0]) / (nxt[0] - prev[0])
+                elif prev:
+                    times[i] = prev[1] + 0.6 * (i - prev[0])
+                else:
+                    times[i] = nxt[1] - 0.6 * (nxt[0] - i)
+        sc["props"]["cue"] = [max(4, int(round((t - s0 - CUE_LEAD) * fps))) for t in times]
+
+
 def find_phrase(phrase: str, ws: list[dict]) -> float | None:
     toks = [normalize(x) for x in phrase.split() if normalize(x)]
     wn = [normalize(w["w"]) for w in ws]
@@ -226,6 +288,8 @@ def render_panel(props: dict, out: Path, composition: str = "Main", base: Path |
     props_p = out.with_suffix(".props.json")
     write_json(props_p, _inline_images(props, base))
     cmd = ["npx", "remotion", "render", composition, str(out), f"--props={props_p}", "--log=error", *(extra or [])]
+    if not any(a.startswith("--image-format") for a in (extra or [])):
+        cmd.append("--jpeg-quality=95")   # the default (80) smears glows and gradients
     # b-roll scenes play work/public/screen.mp4 of THIS project
     if base is not None and (base / "work" / "public").is_dir():
         cmd.append(f"--public-dir={base / 'work' / 'public'}")
@@ -349,6 +413,7 @@ def main(project: Path, only: str | None = None, force: bool = False) -> None:
             if vis.exists():
                 scenes = insert_auto(scenes, read_json(vis), ws, total)
             scenes = split_long(scenes, total)
+            add_cues(scenes, ws, cfg["output"]["fps"])
             for sc in scenes:
                 if sc["template"] == "chapters" and not sc["props"].get("items"):
                     from .cards import chapter_items   # the opening list: rows from the BREAK titles

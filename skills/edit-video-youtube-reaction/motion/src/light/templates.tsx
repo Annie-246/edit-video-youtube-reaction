@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill, Img, OffthreadVideo, interpolate, staticFile, useCurrentFrame } from "remotion";
-import { ART_H, ART_W, BlobBg, Card, Cursor, FONT, GRAD, GradText, Kicker, L, Pill, Rings, Stage, Typed, Words, ease, lerp, useIn } from "./kit";
+import { ART_H, ART_W, BlobBg, Card, Cursor, FONT, GRAD, GradText, Kicker, L, Pill, Rings, Stage, Typed, Words, cueAt, ease, lerp, useIn } from "./kit";
 import { Icon, IconTile } from "./icons";
 import { REEL } from "./reel";
 import { MEDIA } from "./media";
@@ -159,7 +159,7 @@ const FlowT: React.FC<TplProps> = ({ kicker, title, nodes = [], seed }) => {
       <Title text={title} size={46} />
       <div style={{ display: "flex", alignItems: "stretch", gap, marginTop: 18, position: "relative" }}>
         {nodes.map((nd: Any, i: number) => {
-          const d = 16 + i * 14;
+          const d = cueAt(i, 16 + i * 14);
           const p = useIn(d);
           const last = i === n - 1;
           const line = interpolate(f, [d + 6, d + 20], [0, 1], clamp);
@@ -194,7 +194,7 @@ const StepsT: React.FC<TplProps> = ({ kicker, title, steps = [], seed }) => {
       <Title text={title} size={46} />
       <div style={{ display: "flex", flexDirection: vertical ? "column" : "row", gap: vertical ? 14 : 22, marginTop: 10, width: vertical ? 900 : undefined }}>
         {steps.map((s: Any, i: number) => {
-          const p = useIn(14 + i * 12);
+          const p = useIn(cueAt(i, 14 + i * 12));
           const last = i === n - 1;
           return (
             <Card key={i} glow={last} style={{ width: vertical ? undefined : Math.min(330, (ART_W - 160) / n - 22), padding: vertical ? "16px 24px" : "26px 24px", display: "flex", flexDirection: vertical ? "row" : "column", alignItems: vertical ? "center" : "flex-start", gap: vertical ? 20 : 12, opacity: p, transform: `translateY(${(1 - p) * 26}px)` }}>
@@ -260,7 +260,7 @@ const ChecklistT: React.FC<TplProps> = ({ kicker, title, items = [], seed, side 
         <div style={{ perspective: 1400 }}>
           <Card glow style={{ width: 580, padding: "26px 30px", transform: `rotateX(${tilt}deg) rotateY(-8deg) translateY(${(1 - p) * 80}px)`, opacity: p, display: "flex", flexDirection: "column", gap: 4 }}>
             {(items as Any[]).map((it, i) => {
-              const a = useIn(16 + i * 10);
+              const a = useIn(cueAt(i, 16 + i * 10));
               const label = typeof it === "string" ? it : it.label;
               const val = typeof it === "string" ? "" : it.value;
               return (
@@ -502,7 +502,8 @@ const BarsT: React.FC<TplProps> = ({ kicker, title, bars = [], seed }) => {
       <Title text={title} size={44} />
       <div style={{ display: "flex", alignItems: "flex-end", gap: 50, height: 430, marginTop: 6 }}>
         {(bars as Any[]).map((b, i) => {
-          const t = interpolate(f, [14 + i * 10, 44 + i * 10], [0, 1], { ...clamp, easing: ease });
+          const c0 = cueAt(i, 14 + i * 10);
+          const t = interpolate(f, [c0, c0 + 30], [0, 1], { ...clamp, easing: ease });
           const h = 280 * (Number(b.value) / max) * t;
           const hi = i === bars.length - 1 || b.hi;
           return (
@@ -625,7 +626,7 @@ const RecapT: React.FC<TplProps> = ({ kicker, title, items = [], seed, dur }) =>
       <Title text={title} size={44} />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 350px)", gap: 18 }}>
         {(items as Any[]).map((it, i) => {
-          const p = useIn(8 + i * 5);
+          const p = useIn(cueAt(i, 8 + i * 5));
           const on = f >= 20 + i * per;
           return (
             <Card key={i} glow={on} style={{ padding: "20px 22px", display: "flex", gap: 16, alignItems: "center", opacity: p * (on ? 1 : 0.55), transform: `scale(${on ? 1 : 0.97})` }}>

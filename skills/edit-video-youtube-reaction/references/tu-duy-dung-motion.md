@@ -104,6 +104,11 @@ Hai loại graphic, hai luật khác nhau (đo trên video mẫu bằng mốc t�
 - Thẻ minh hoạ theo lời liệt kê (mỗi ý một thẻ) bật ra **khi người nói bắt đầu ý đó**, không đợi
   nói xong (2:30–2:45 ở video mẫu).
 
+## 5b. Hiện theo lời, không hiện cả loạt
+
+Phần tử trong một cảnh không được bật ra hết ngay đầu cảnh. Mỗi mục danh sách hiện đúng lúc người dẫn nói tới nó
+(pipeline tự dò lời, xem SKILL.md). Khi đặt tên mục, dùng đúng chữ người dẫn nói để pipeline dò được.
+
 ## 6. Nhất quán: một hệ thống nhìn, không phải bộ sưu tập hiệu ứng
 
 - **Một ngôn ngữ chuyển cảnh, lặp lại.** Video mẫu dùng gần như duy nhất kiểu nhoè → nét 0,2–0,5 giây

@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill, Img, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
-import { BlobBg, Card, FONT, Kicker, L, Words, ease, useDark, useIn } from "./kit";
+import { BlobBg, Card, FONT, Kicker, L, Words, cueAt, ease, useDark, useIn } from "./kit";
 import type { TplProps } from "./templates";
 
 /**
@@ -77,7 +77,7 @@ const LogosT: React.FC<TplProps> = ({ items = [], title, kicker, seed }) => {
         {title ? <Words text={title} delay={2} size={48} /> : null}
         <div style={{ display: "flex", gap: 44, alignItems: "flex-start" }}>
           {list.map((it, i) => {
-            const d = 4 + i * 7;
+            const d = cueAt(i, 4 + i * 7);
             return (
               <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 22 }}>
                 <LogoTile src={it.src} size={size} delay={d} />
