@@ -49,7 +49,7 @@ description: Edit Video Youtube Reaction — dựng video react/phân tích YouT
 | *(không khai)* | bố cục trắng ở trên, **chỉ chạy quay màn hình** | chữ nhảy theo từng từ | thuật lại / demo trên quay màn hình |
 | `FACE:` | người nói **chiếm cả màn**; mỗi chỗ cắt và mỗi ~7 giây đổi cỡ cảnh rộng ↔ chặt (punch-in 1.15) | **chỉ cụm từ khoá** 2–5 từ, AI tự chọn (xem "Chữ từ khoá FACE"), cộng lớp `OVER:` nếu khai | hook, câu chuyện, quan điểm, kêu gọi |
 | `BUBBLE:` | **nền lưới trắng**; quay màn hình trong một khung bo góc lớn 1500x1000 bên trái, mặt người trong **ô bo góc nhỏ 336x400 bên phải**. Cả hai khung có viền cam gradient (`#F0B49A → #D97757 → #B5532F`) và bóng đổ mềm phía dưới | không có | bình luận dài trên quay màn hình |
-| `MOTION:` | **chỉ motion graphic tràn kín màn** 1920x1080, không có người nên **không nền lưới, không khung** | không có | **mọi đoạn có motion graphic**: sơ đồ, số liệu, logo, mục lục, câu chốt |
+| `MOTION:` | **motion graphic tràn kín màn** 1920x1080, không nền lưới, không khung; người nói nằm trong **bubble tròn nhỏ góc phải dưới** (Ø 270px, viền cam gradient, bóng mềm, khung lấy rộng thấy cả nền và áo) | không có | **mọi đoạn có motion graphic**: sơ đồ, số liệu, logo, mục lục, câu chốt |
 
 - Mỗi video nên trộn: hook bằng `FACE:`, thân bài xen `FACE:` / `MOTION:` / bố cục avatar + quay màn hình.
   Một đoạn nói vừa cần graphic vừa cần quay màn hình thì tách bằng `---` thành hai đoạn.
@@ -65,7 +65,7 @@ Graphic đè lên người nói, cùng lớp trong suốt với chữ từ khoá
 | Mẫu | Dùng khi | Props |
 |---|---|---|
 | `stats` | 2–3 con số dưới ngực, đếm lên cùng lúc, lóe cam khi chạm đích (hook có số liệu) | `items:[{label,value,prefix,suffix,decimals}]` |
-| `dots` | "3 điều cần nhớ" mà vẫn giữ mặt người: ô số 1-2-3, câu của ý hiện tại, viên kết quả các ý đã qua | `n`, `active`, `text`, `pills:[…]` |
+| `dots` | "3 điều cần nhớ" mà vẫn giữ mặt người. **Chỉ chữ, không card:** câu của ý đang nói ở dưới, dẫn bằng số to màu cam; các ý đã nói lùi lên trên thành dòng nhỏ mờ (`pills` = tên ngắn của từng ý) | `n`, `active`, `text`, `pills:[…]` |
 | `status` | nhãn trạng thái nhỏ phía trên ("6 giờ", "Đang dựng…") | `text`, `spin`, `side:"right"` |
 | `blurtitle` | câu lớn đặt trên chính người nói, **người nói tự nhoè** suốt lớp này (thay cho cắt hẳn sang thẻ) | `kicker`, `title` (có `*nhấn*`) |
 - **Nền lưới trắng chỉ dành cho khung có mặt người** (bố cục trắng, `BUBBLE:`). Khung không người
@@ -73,7 +73,9 @@ Graphic đè lên người nói, cùng lớp trong suốt với chữ từ khoá
 - Viền và bóng của `BUBBLE:` vẽ một lần thành `work/gfx/rim_<chế độ>_<cỡ>.png`
   (kích thước khung ở `layout_for` → `screen`, `bubble`, `rim`, `shadow`). Bố cục trắng gốc giữ nguyên.
 - Cỡ cảnh `FACE:` chỉnh trong `project.json` → `recording.face: {"cx":0.5,"cy":0.45,"zoom":1.0,"punch":1.15}`;
-  ô mặt `BUBBLE:` → `recording.bubble: {"cx":0.5,"cy":0.42,"zoom":1.25}`. Bản quay 1080p phóng 1.15
+  ô mặt `BUBBLE:` → `recording.bubble: {"cx":0.5,"cy":0.42,"zoom":1.25}`; bubble tròn `MOTION:` →
+  `recording.dot: {"cx":0.5,"cy":0.5,"zoom":1.0}` (zoom 1 = lấy cả chiều cao khung, thấy nền và áo; mẫu nào
+  có nội dung sát góc phải dưới thì chừa chỗ cho bubble). Bản quay 1080p phóng 1.15
   hơi mềm; quay 4K thì thoải mái.
 - Từ khoá `FACE:` lưu ở `work/keywords/<id>.json` (sửa tay được, giữ nguyên khi lời không đổi).
 

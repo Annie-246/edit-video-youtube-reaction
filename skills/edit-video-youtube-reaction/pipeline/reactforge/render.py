@@ -242,6 +242,36 @@ def _card_plate(path: Path, L: dict, cards: list[dict]) -> Path:
     return path
 
 
+def _dot_mask(path: Path, d: int) -> Path:
+    """Gray disc mask for the MOTION presenter bubble."""
+    if path.exists():
+        return path
+    c = (d - 1) / 2
+    path.parent.mkdir(parents=True, exist_ok=True)
+    run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", f"color=black:s={d}x{d}", "-frames:v", "1",
+         "-vf", f"format=gray,geq=lum='255*lte(pow(X-{c}\\,2)+pow(Y-{c}\\,2)\\,{c * c})'", str(path)])
+    return path
+
+
+def _dot_plate(path: Path, L: dict, x: int, y: int, R: int) -> Path:
+    """Full-frame RGBA layer: soft shadow under the bubble and its orange gradient ring."""
+    if path.exists():
+        return path
+    W, H, S = L["w"], L["h"], L["shadow"]
+    r = R / 2; cx, cy = x + r, y + r
+    disc = lambda ox, oy: f"lte(pow(X-{cx + ox}\\,2)+pow(Y-{cy + oy}\\,2)\\,{r * r})"
+    t = f"((X-{x}+Y-{y})/{2 * R})"
+    def ch(i: int) -> str:
+        a, b, dd = RIM[0][i], RIM[1][i], RIM[2][i]
+        return f"'clip(if(lt({t}\\,0.5)\\,{a}+({b - a})*{t}*2\\,{b}+({dd - b})*({t}*2-1))\\,0\\,255)'"
+    fc = (f"color=black@0:s={W}x{H},format=rgba,geq=r=20:g=20:b=19:a='{int(255 * S['alpha'])}*{disc(0, S['dy'])}',gblur=sigma={S['blur']}[sh];"
+          f"color=black@0:s={W}x{H},format=rgba,geq=r={ch(0)}:g={ch(1)}:b={ch(2)}:a='255*{disc(0, 0)}'[ring];"
+          f"[sh][ring]overlay=0:0:format=auto,format=rgba")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    run(["ffmpeg", "-v", "error", "-y", "-filter_complex", fc, "-frames:v", "1", str(path)])
+    return path
+
+
 def render_screen(project: Path, cfg: dict, L: dict, item: dict, al: dict, out: Path) -> None:
     """BUBBLE: the scenes play in a big rounded card on the white grid (orange gradient rim, shadow
     underneath), the presenter in a small card on the right. MOTION has no presenter, so no grid
@@ -252,12 +282,23 @@ def render_screen(project: Path, cfg: dict, L: dict, item: dict, al: dict, out: 
     keep, t0, t1, nfr, dur = _snap(al, fps)
     side = project / "work" / "side" / f"{item['id']}.mp4"
     if mode == "motion":
-        cmd = ["ffmpeg", "-v", "error", "-y", "-ss", f"{t0:.3f}", "-t", f"{t1 - t0 + 0.5:.3f}", "-i", str(rec), "-i", str(side)]
+        # graphics fill the screen; the presenter rides along in a round bubble bottom-right
+        # (wide crop: background and shirt stay in, not just the face)
+        D = L["dot"]; d = D["d"]; R = d + 2 * D["rim"]
+        x, y = L["w"] - D["m"] - R, L["h"] - D["m"] - R
+        rc = cfg["recording"]; dc = rc.get("dot", {})
+        crop = _crop(float(dc.get("cx", rc.get("cx", 0.5))), float(dc.get("cy", 0.5)), float(dc.get("zoom", 1.0)), 1.0)
+        plate = _dot_plate(g / f"dot_{L['w']}x{L['h']}_{d}.png", L, x, y, R)
+        dmask = _dot_mask(g / f"mask_dot_{d}.png", d)
+        cmd = ["ffmpeg", "-v", "error", "-y", "-ss", f"{t0:.3f}", "-t", f"{t1 - t0 + 0.5:.3f}", "-i", str(rec), "-i", str(side),
+               "-loop", "1", "-i", str(plate), "-loop", "1", "-i", str(dmask)]
         fc: list[str] = []
         _join(keep, fc)
         fc += [f"[1:v]fps={fps},scale={L['w']}:{L['h']}:force_original_aspect_ratio=increase,crop={L['w']}:{L['h']},setsar=1,"
-               f"trim=duration={dur:.6f}[vc]", "[tv]nullsink"]
-        _finish(cfg, cmd, fc, _full_cards(project, item, fps, cmd, fc, "[vc]", 2), nfr, dur, out)
+               f"trim=duration={dur:.6f}[sv]", "[2:v]format=rgba[dp]", "[sv][dp]overlay=0:0:shortest=1[sp]",
+               f"[tv]fps={fps},{crop},scale={d}:{d},setsar=1[fv]", "[3:v]format=gray[fm]", "[fv][fm]alphamerge[fa]",
+               f"[sp][fa]overlay={x + D['rim']}:{y + D['rim']}:shortest=1[vc]"]
+        _finish(cfg, cmd, fc, _full_cards(project, item, fps, cmd, fc, "[vc]", 4), nfr, dur, out)
         return
     cards = [C, B]
     # cached by name, so the names carry the sizes

@@ -28,6 +28,8 @@ def layout_for(width: int) -> dict:
         "screen": {"bubble": {"x": r(40), "y": r(40), "w": e(1500), "h": e(1000), "r": r(30)},
                    "motion": {"x": 0, "y": 0, "w": r(1920), "h": r(1080), "r": 0}},
         "bubble": {"x": r(1562), "y": r(300), "w": e(336), "h": e(400), "r": r(28)},
+        # MOTION: the presenter in a small round bubble, bottom-right, over the full-screen graphics
+        "dot": {"d": e(270), "m": r(56), "rim": max(2, r(7))},
         "rim": max(2, r(5)), "shadow": {"dy": r(20), "blur": r(22), "alpha": 0.36},
         "info": {"x": r(1520), "y": r(40), "w": e(360), "h": e(176), "r": r(24)},
         # word captions sit in a short white pill straddling the bottom edge of the main frame

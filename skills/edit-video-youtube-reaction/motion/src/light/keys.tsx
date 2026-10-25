@@ -140,26 +140,26 @@ const Dots: React.FC<{ props: Record<string, any>; len: number }> = ({ props, le
   const { o, blur, p } = useFade(len);
   const n = Number(props.n || 3), act = Number(props.active || 1);
   const pills = (props.pills || []) as string[];
+  // text only, no cards: the step being said is one big line at the bottom led by a clay numeral;
+  // the steps already said stay above it as small faded lines, so the list builds up as it is spoken
   return (
-    <div style={{ position: "absolute", left: SIDE, right: SIDE, bottom: 110, display: "flex", flexDirection: "column", alignItems: "center", gap: 22, fontFamily: FONT,
-      opacity: o, filter: `blur(${blur}px)`, transform: `translateY(${(1 - p) * 20}px)` }}>
-      {pills.length ? (
-        <div style={{ display: "flex", gap: 14 }}>
-          {pills.slice(0, act).map((t, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 30px", borderRadius: 999, background: "rgba(255,255,255,0.94)", color: "#141413", fontSize: 38, fontWeight: 750,
-              boxShadow: "0 8px 24px rgba(0,0,0,0.3)" }}>
-              <span style={{ width: 18, height: 18, borderRadius: 9, background: i === act - 1 ? "#D97757" : "#B9B4C6" }} />{t}
-            </div>
-          ))}
-        </div>
-      ) : null}
-      <div style={{ display: "flex", gap: 12 }}>
-        {Array.from({ length: n }, (_, i) => (
-          <div key={i} style={{ width: 64, height: 64, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 34, fontWeight: 800,
-            background: i + 1 === act ? "#D97757" : "rgba(255,255,255,0.22)", color: "#fff", boxShadow: i + 1 === act ? "0 8px 24px rgba(217,119,87,0.5)" : "none" }}>{i + 1}</div>
+    <div style={{ position: "absolute", inset: 0, fontFamily: FONT, opacity: o, filter: `blur(${blur}px)` }}>
+      <Band len={len} tall />
+      <div style={{ position: "absolute", left: SIDE, right: SIDE, bottom: 110, display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+        color: "#fff", textShadow: SHADOW, whiteSpace: "nowrap", transform: `translateY(${(1 - p) * 20}px)` }}>
+        {pills.slice(0, act - 1).map((t, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "baseline", gap: 16, fontSize: 42, fontWeight: 700, opacity: 0.62 }}>
+            <span style={{ fontWeight: 900 }}>{i + 1}</span>{t}
+          </div>
         ))}
+        {props.text ? (
+          <div style={{ display: "flex", alignItems: "baseline", gap: 26, fontSize: 92, fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1.15 }}>
+            <Grad style={{ fontSize: 130, fontWeight: 900 }}>{act}</Grad>
+            <span>{props.text}</span>
+            {pills.length ? null : <span style={{ fontSize: 40, fontWeight: 700, opacity: 0.7 }}>/{n}</span>}
+          </div>
+        ) : null}
       </div>
-      {props.text ? <div style={{ fontSize: 88, fontWeight: 800, letterSpacing: "-0.02em", color: "#fff", textShadow: SHADOW, whiteSpace: "nowrap" }}>{props.text}</div> : null}
     </div>
   );
 };
