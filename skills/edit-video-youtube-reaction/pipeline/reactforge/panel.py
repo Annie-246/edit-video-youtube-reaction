@@ -291,6 +291,10 @@ def main(project: Path, only: str | None = None, force: bool = False) -> None:
                               "secs": round(min(secs, max(1.0, total - t)), 3)})
             write_json(full_dir / f"{it['id']}.json", cards)
             print(f"{it['id']}: {len(cards)} thẻ toàn màn hình — " + " · ".join(f"{c['start']:.0f}s ({c['secs']:.1f}s)" for c in cards))
+        elif (full_dir / f"{it['id']}.json").exists():
+            # FULL lines were removed from the script: drop the stale card list or render keeps showing it
+            (full_dir / f"{it['id']}.json").unlink()
+            print(f"{it['id']}: bỏ thẻ toàn màn hình cũ (kịch bản không còn FULL)")
         if it.get("side"):
             scenes, notes = build_scenes(it["side"], ws, total)
             vis = project / "work" / "visuals" / f"{it['id']}.json"
