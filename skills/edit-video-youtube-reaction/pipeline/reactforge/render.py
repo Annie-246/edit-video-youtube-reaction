@@ -306,13 +306,17 @@ def _rec_time(keep: list[list[float]], t0: float, t: float) -> float:
     return t0 + keep[-1][1]
 
 
-def _bubble_morph(project: Path, cfg: dict, L: dict, al: dict, out: Path, enter: bool, leave: bool, mode: str = "motion") -> None:
-    """Full-screen presenter ↔ the presenter's small frame of the next layout: the round bubble
-    (MOTION), the rounded card (BUBBLE) or the portrait card (white layout). Coming from a FACE talk,
-    the first MORPH seconds show the presenter full frame shrinking into that frame (corners rounding
-    off, the crop easing from the FACE framing to the frame's own, its rim fading in); going on to a
-    FACE talk, the last MORPH seconds grow it back to full frame. The presenter never stops: the
-    frames are the talk's own recording, so picture and voice stay together across the join."""
+def _bubble_morph(project: Path, cfg: dict, L: dict, al: dict, out: Path, enter: str | None, leave: str | None, mode: str = "motion") -> None:
+    """Joins with the neighbouring talk, done on this talk's first / last MORPH seconds.
+    `enter` / `leave` name the neighbour's kind:
+      "face"   full-screen presenter ↔ this layout's presenter frame (the round bubble of MOTION, the
+               rounded card of BUBBLE, the portrait card of the white layout): the presenter shrinks
+               into it / grows out of it, corners rounding, crop easing, rim fading in.
+      "bubble" (MOTION only) BUBBLE ↔ MOTION: the big screen-recording card opens up to full screen
+               with the graphics inside it, while the presenter's card rounds off and slides into the
+               bubble; the other way it closes back into the card.
+    The presenter never stops: the frames are the talk's own recording, so picture and voice stay
+    together across the join."""
     if not (enter or leave):
         return
     import os, shutil
@@ -348,6 +352,12 @@ def _bubble_morph(project: Path, cfg: dict, L: dict, al: dict, out: Path, enter:
         dot_w = window(float(bc.get("cx", rc.get("cx", 0.5))), float(bc.get("cy", 0.42)), float(bc.get("zoom", 1.25)), L["bubble"]["w"] / L["bubble"]["h"])
     else:
         dot_w = window(float(rc.get("cx", 0.5)), float(rc.get("cy", 0.5)), float(rc.get("zoom", 1.0)), L["head"]["w"] / L["head"]["h"])
+    # the BUBBLE layout this talk may open out of / close into
+    Bc = L["bubble"]; kb = L["rim"]; Cc = L["screen"]["bubble"]
+    bub_box = (Bc["x"] - kb, Bc["y"] - kb, Bc["w"] + 2 * kb, Bc["h"] + 2 * kb, Bc["r"] + kb, kb)
+    bcfg = rc.get("bubble", {})
+    bub_w = window(float(bcfg.get("cx", rc.get("cx", 0.5))), float(bcfg.get("cy", 0.42)), float(bcfg.get("zoom", 1.25)), Bc["w"] / Bc["h"])
+    bg_img = Image.open(_bg(project, L)).convert("RGB").resize((W, H)) if "bubble" in (enter, leave) else None
     ease = lambda x: 4 * x ** 3 if x < 0.5 else 1 - (-2 * x + 2) ** 3 / 2
     lerp = lambda a, b, p: a + (b - a) * p
     # clay ring gradient (#F0B49A → #D97757 → #B5532F along the diagonal), cut to shape per frame
@@ -357,28 +367,36 @@ def _bubble_morph(project: Path, cfg: dict, L: dict, al: dict, out: Path, enter:
     ring = np.where(tt < 0.5, c0 + (c1 - c0) * tt * 2, c1 + (c2 - c1) * (tt * 2 - 1)).astype(np.uint8)
     ring_img = Image.fromarray(ring, "RGB") if clay else Image.new("RGB", (W, H), (38, 37, 35))
 
-    spans = ([("enter", 0.0)] if enter else []) + ([("leave", max(0.0, dur - n / fps))] if leave else [])
+    spans = ([("enter", 0.0, enter)] if enter else []) + ([("leave", max(0.0, dur - n / fps), leave)] if leave else [])
     cur = out
-    for kind, start in spans:
+    for kind, start, via in spans:
         tmp = out.parent / f"{out.stem}_morph_{kind}"
         shutil.rmtree(tmp, ignore_errors=True); tmp.mkdir(parents=True)
         src = tmp / "src"; src.mkdir()
         run(["ffmpeg", "-v", "error", "-y", "-ss", f"{_rec_time(keep, t0, start):.3f}", "-i", str(rec), "-frames:v", str(n), str(src / "%04d.png")])
         frames = sorted(src.glob("*.png"))
+        if via == "bubble":
+            body = tmp / "body"; body.mkdir()
+            run(["ffmpeg", "-v", "error", "-y", "-ss", f"{start:.3f}", "-i", str(cur), "-frames:v", str(n), "-vf", f"scale={W}:{H}", str(body / "%04d.png")])
+            bodies = sorted(body.glob("*.png"))
+            sx, sy, sw, sh_, srad, srim = bub_box; swin = bub_w
+        else:
+            sx, sy, sw, sh_, srad, srim = 0, 0, W, H, 0, 0; swin = face_w
         for i, fr in enumerate(frames):
             x = i / (len(frames) - 1)
-            p = ease(x) if kind == "enter" else ease(1 - x)          # p: 0 = full frame, 1 = bubble
-            rx, ry, rw, rh = lerp(0, bx, p), lerp(0, by, p), lerp(W, bw, p), lerp(H, bh, p)
-            rad = lerp(0, brad, p)
-            k = rim * p
-            cx_, cy_, cw_, ch_ = (lerp(a, b, p) for a, b in zip(face_w, dot_w))
+            p = ease(x) if kind == "enter" else ease(1 - x)          # p: 0 = the neighbour's look, 1 = this talk's
+            rx, ry, rw, rh = lerp(sx, bx, p), lerp(sy, by, p), lerp(sw, bw, p), lerp(sh_, bh, p)
+            rad = lerp(srad, brad, p)
+            k = lerp(srim, rim, p)
+            cx_, cy_, cw_, ch_ = (lerp(a, b, p) for a, b in zip(swin, dot_w))
             img = Image.open(fr).convert("RGB").crop((int(cx_), int(cy_), int(cx_ + cw_), int(cy_ + ch_)))
             iw2, ih2 = max(2, int(rw - 2 * k)), max(2, int(rh - 2 * k))
             img = img.resize((iw2, ih2), Image.LANCZOS)
             layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
             # shadow, then the ring, then the picture inside it
             sh = Image.new("L", (W, H), 0)
-            ImageDraw.Draw(sh).rounded_rectangle((rx, ry + 20 * p, rx + rw, ry + rh + 20 * p), radius=rad, fill=int(92 * p))
+            sp = 1.0 if via == "bubble" else p
+            ImageDraw.Draw(sh).rounded_rectangle((rx, ry + 20 * sp, rx + rw, ry + rh + 20 * sp), radius=rad, fill=int(92 * sp))
             layer.paste((20, 20, 19, 255), (0, 0, W, H), sh.filter(ImageFilter.GaussianBlur(22)))
             if k > 0.3:
                 m = Image.new("L", (W, H), 0)
@@ -387,6 +405,30 @@ def _bubble_morph(project: Path, cfg: dict, L: dict, al: dict, out: Path, enter:
             m2 = Image.new("L", (iw2, ih2), 0)
             ImageDraw.Draw(m2).rounded_rectangle((0, 0, iw2 - 1, ih2 - 1), radius=max(0, rad - k), fill=255)
             layer.paste(img, (int(rx + k), int(ry + k)), m2)
+            if via == "bubble" and i < len(bodies):
+                # the big card opening up: the graphics show through a rounded window that grows
+                # from the screen-recording card to the whole frame, its clay rim thinning away
+                ox, oy = lerp(Cc["x"], 0, p), lerp(Cc["y"], 0, p)
+                ow, oh = lerp(Cc["w"], W, p), lerp(Cc["h"], H, p)
+                orad, ok = lerp(Cc["r"], 0, p), kb * (1 - p)
+                canvas = bg_img.copy().convert("RGBA")
+                if ok > 0.3:
+                    mr = Image.new("L", (W, H), 0)
+                    ImageDraw.Draw(mr).rounded_rectangle((ox - ok, oy - ok, ox + ow + ok, oy + oh + ok), radius=orad + ok, fill=255)
+                    canvas.paste(ring_img, (0, 0), mr)
+                mw = Image.new("L", (W, H), 0)
+                dw = ImageDraw.Draw(mw)
+                dw.rounded_rectangle((ox, oy, ox + ow, oy + oh), radius=orad, fill=255)
+                # the talk's own bubble is baked into these frames: keep it hidden (plain background
+                # there), the moving one lands on that spot
+                hole = (bx - 30, by - 10, bx + bw + 30, by + bh + 50)
+                dw.ellipse(hole, fill=0)
+                canvas.paste(Image.open(bodies[i]).convert("RGB"), (0, 0), mw)
+                mh = Image.new("L", (W, H), 0)
+                ImageDraw.Draw(mh).ellipse(hole, fill=255)
+                canvas.paste(bg_img, (0, 0), mh)
+                canvas.alpha_composite(layer)
+                layer = canvas
             layer.save(tmp / f"{i:04d}.png")
         nxt = out.with_name(f"{out.stem}.morph_{kind}{out.suffix}")
         run(["ffmpeg", "-v", "error", "-y", "-i", str(cur), "-framerate", str(fps), "-i", str(tmp / "%04d.png"),
@@ -398,7 +440,7 @@ def _bubble_morph(project: Path, cfg: dict, L: dict, al: dict, out: Path, enter:
         cur = nxt
         shutil.rmtree(tmp, ignore_errors=True)
     os.replace(cur, out)
-    print("   chuyển cảnh co/giãn bubble: " + " + ".join("vào" if k == "enter" else "ra" for k, _ in spans))
+    print("   chuyển cảnh: " + " + ".join(("vào từ " if k == "enter" else "ra sang ") + v for k, _, v in spans))
 
 
 def _dot_mask(path: Path, d: int) -> Path:
@@ -642,9 +684,16 @@ def main(project: Path, only: str | None = None, concat: bool = True) -> None:
             else:
                 render_talk(project, cfg, L, it, al, body)
             if mode != "face":
-                # right next to a full-screen FACE talk: shrink into / grow out of the presenter's frame
+                # joins: shrink from / grow to a full-screen FACE talk; MOTION also opens out of /
+                # closes into a neighbouring BUBBLE talk's big card
                 k = seq.index(it)
-                _bubble_morph(project, cfg, L, al, body, enter=_is_face(k - 1), leave=_is_face(k + 1), mode=mode)
+                def _via(j: int) -> str | None:
+                    if _is_face(j):
+                        return "face"
+                    if mode == "motion" and 0 <= j < len(seq) and seq[j]["type"] == "talk" and seq[j].get("mode") == "bubble":
+                        return "bubble"
+                    return None
+                _bubble_morph(project, cfg, L, al, body, enter=_via(k - 1), leave=_via(k + 1), mode=mode)
             if memes:
                 render_memes(project, cfg, L, memes, body, out)
             print(f"{it['id']} → {out.name} ({ffprobe_duration(out):.1f}s)" + (f" · {len(memes)} meme" if memes else ""))
