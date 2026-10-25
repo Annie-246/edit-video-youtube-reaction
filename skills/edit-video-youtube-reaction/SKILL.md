@@ -35,6 +35,8 @@ description: Edit Video Youtube Reaction — dựng video react/phân tích YouT
 
 - **Đoạn nào có motion graphic thì motion graphic phải full màn:** đoạn `MOTION:` hoặc thẻ `FULL:` /
   `BEAT:`. Không đặt motion graphic (title, flow, logo, ảnh, số liệu…) vào khung nhỏ cạnh avatar.
+  **Ngoại lệ duy nhất:** lớp nhỏ đè lên người ở `FACE:` qua `OVER:` (thẻ tên, nút subscribe, thông báo bật,
+  nhãn giảm giá, sticker) và dấu khoanh / chỉ điểm trên hình đang chiếu. Xem `references/tu-duy-dung-motion.md` mục 9b.
 - **Bố cục có người dạng card nhỏ** (bố cục trắng, `BUBBLE:`) **chỉ dùng với source quay màn hình.**
 - Video xoay vòng linh hoạt giữa ba thứ: **người nói full màn** (`FACE:`, có thể kèm `OVER:`) ·
   **motion graphic full màn** (`MOTION:`) · **bố cục avatar + quay màn hình** (mặc định / `BUBBLE:`).
@@ -210,6 +212,10 @@ Mỗi video mới, hỏi đủ: (1) kịch bản (file `.md`, Google Doc hoặc 
   lượng dữ liệu `folder`, cắt ậm ừ `transcript`, kế hoạch dựng `scriptclip`, gợi tò mò ý thứ hai
   `reveal`, xu hướng `linechart`, trước/sau `beforeafter`, gõ prompt `promptui`, đang xuất / chờ xử lý
   `progress`, tài liệu thật `doctilt`, bằng chứng xã hội `comments`.
+- **Chọn loại motion theo tình huống, linh hoạt từng trường hợp:** tra bảng 32 loại ở
+  `references/tu-duy-dung-motion.md` mục 9 (tên chuẩn ngành → mẫu có sẵn / lớp `OVER:` / tự code). Loại chưa có
+  mẫu thì xem mẫu gốc làm tay trong `references/motion-graphics-taxonomy.md` rồi tự code đúng lúc video cần
+  (mục 9c); không ép một mẫu sai dạng cho có, không code sẵn cho đủ bộ.
 - **Tư duy chọn cảnh (đọc `references/tu-duy-dung-motion.md` trước khi khai cảnh):**
   - Mỗi câu hỏi "người xem cần **tin / thấy / hiểu / nhớ**?": tin → `FACE:`; thấy → b-roll / giao
     diện / ảnh thật; hiểu → sơ đồ, icon ẩn dụ; nhớ → con số / câu chốt. Không cần gì → không cảnh mới.
@@ -304,9 +310,13 @@ Logo và ảnh thật là graphic nên chỉ tự chèn vào đoạn `MOTION:` (
     Nếu GIF Telegram không ra, kiểm tra bằng `python -m reactforge.tgmeme search "facepalm"`.
 - **Chèn:** **đè lên lời, không ngắt nhịp**, ngay sau câu chứa câu neo. Meme hiện trên **nền đen,
   không bo thẻ**: `"mode":"full"` gần kín màn, `"part"` chiếm khoảng nửa màn, lệch trái/phải xen kẽ;
-  người dẫn vẫn nói tiếp bên dưới. Meme **có tiếng** thì phát tiếng của nó và hạ giọng người dẫn
-  còn ~28% suốt meme (lên xuống mượt 0,15 giây); meme **ảnh tĩnh** thì im, giọng giữ nguyên. Thời
-  lượng video không đổi. Clip ≤ 4,5 giây chạy trọn. Muốn meme ảnh: thêm `"image": true` (lấy từ Imgflip).
+  người dẫn vẫn nói tiếp bên dưới. **Tiếng meme để nhỏ, không bao giờ át hay hạ giọng người dẫn**
+  (khoá cứng): giọng giữ nguyên mức; tiếng meme đè lên lời ở ~−31 dB (giọng ~−19 dB). Meme **có tiếng**
+  được dời tới chỗ người dẫn **vừa nói hết câu và có quãng nghỉ ≥ 0,4 giây** (trong 8 giây sau câu neo),
+  bắt đầu ngay khi từ cuối dứt để giữ được tiếng meme: trong quãng nghỉ tiếng meme lên ~−24 dB, người
+  dẫn nói tiếp thì lùi về mức nhỏ (mượt 0,15 giây). Không có quãng nghỉ thì chèn ở cuối câu như meme
+  thường, tiếng nhỏ suốt. Meme **ảnh tĩnh** thì im. Thời lượng video không đổi.
+  Muốn nghe rõ trọn tiếng một meme thì neo nó vào câu cuối đoạn hoặc câu có nghỉ dài; đừng tăng mức meme. Clip ≤ 4,5 giây chạy trọn. Muốn meme ảnh: thêm `"image": true` (lấy từ Imgflip).
   Điểm chèn tính lại mỗi lần render nên `verify` cắt thêm vẫn không lệch.
 - **Kho:** `<thư mục làm việc>/meme-library/` (thư mục chứa `projects/`), chia theo cảm xúc
   (`shock/ laugh/ facepalm/ win/ fail/ awkward/ confused/ sad/ hype/ cringe/`), kèm `index.csv`

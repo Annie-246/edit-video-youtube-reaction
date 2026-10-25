@@ -135,6 +135,11 @@ khi cập nhật), dùng `../light/kit` (`Stage`, `Card`, `Words`, `GradText`, `
 `Typed`, `Cursor`, `useIn`, `L`) và `../light/icons` (`Icon`, `IconTile`). Đăng ký tên trong
 `src/custom/index.ts`. Mẫu tự code trùng tên sẽ đè lên mẫu có sẵn.
 
+Lớp nhỏ đè lên người nói (`OVER:` ở `FACE:`: thẻ tên, subscribe, thông báo, nhãn giảm giá, sticker) không vào
+`src/custom/`: thêm component vào `src/light/keys.tsx` và đăng ký trong bảng `OVERS`. Danh sách loại nên code,
+chỗ đặt và luật dùng: `references/tu-duy-dung-motion.md` mục 9; link mẫu gốc làm tay để lấy nhịp:
+`references/motion-graphics-taxonomy.md`. Code xong thì thêm dòng vào danh mục ở trên.
+
 Xem thử một khung trước khi dựng cả bài:
 
 ```bash

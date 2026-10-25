@@ -88,7 +88,11 @@ hoặc cảnh trước còn đang minh hoạ đúng ý này.
   "anything *extra*", "*perform*", "*forever*".
 - Con số luôn là thứ được nhấn (cỡ lớn, đếm lên); chữ dẫn để nhỏ.
 - Ý trùng lặp với cảnh trước thì không nhấn lại; nhấn phần **mới** của câu.
-- Nhấn bằng đổi màu/đổi font cho đúng một cụm là đủ: không thêm mũi tên, gạch chân, khung đỏ.
+- Nhấn **chữ** (`title`, từ khoá, `BEAT:`) bằng đổi màu/đổi font cho đúng một cụm là đủ: không thêm mũi tên,
+  gạch chân, khung đỏ lên chữ.
+- **Ngoại lệ: khoanh / gạch chân / bút dạ quang vẽ tay** (Highlight Marks, xem mục 9) được dùng trên **hình**
+  (quay màn hình, b-roll, `doctilt`, `photo`) để trỏ đúng chi tiết người dẫn đang nói tới: con số trong bảng giá,
+  một nút bấm, một dòng tài liệu. Chỉ màu cam `#D97757`, nét vẽ tay tự chạy ra trong ~0,4 giây, mỗi lúc một dấu.
 
 ## 5. Đồng bộ với lời (cách đặt câu neo)
 
@@ -137,4 +141,81 @@ Phần tử trong một cảnh không được bật ra hết ngay đầu cảnh
 5. Icon / tên mục có trùng với lần xuất hiện trước của cùng khái niệm?
 6. Đoạn này đã bao lâu không thấy mặt người? Quá ~40 giây thì tách đoạn và chen `FACE:`.
 7. Graphic có đang nằm trong bố cục avatar không? Có thì chuyển sang `MOTION:` / `FULL:` (bố cục avatar
-   chỉ cho quay màn hình).
+   chỉ cho quay màn hình). Ngoại lệ duy nhất: lớp nhỏ ở mục 9b (đè lên `FACE:`) và dấu khoanh trên hình.
+8. Loại motion đã gọi đúng tên ở mục 9 chưa? Có mẫu sẵn thì dùng; chưa có thì tự code theo 9c, không ép
+   một mẫu sai dạng cho có.
+
+## 9. Chọn loại motion theo tình huống (bản đồ 32 loại)
+
+Tên loại theo `motion-graphics-taxonomy.md` (cùng thư mục, có link mẫu xem được và mẫu gốc làm tay).
+Mục 3 trả lời "câu này cần cảnh gì"; mục này trả lời "cảnh đó gọi là gì, làm bằng gì". Linh hoạt: một
+tình huống có nhiều lựa chọn, chọn theo nhịp đoạn (mục 2) và luật hai cảnh liền nhau không cùng dạng.
+
+### 9a. Bảng tra
+
+| # | Loại (tên chuẩn) | Tình huống trong kịch bản | Làm bằng trong skill |
+|---|---|---|---|
+| 1 | Karaoke Highlight | lời dài trên quay màn hình | thanh chữ nhảy của bố cục avatar (tự động) |
+| 2 | Pop / Word-by-word Captions | hook, câu nhanh ở người full màn | chữ từ khoá `FACE:` (tự động) |
+| 3 | Kinetic Typography | câu chốt, slogan, câu "đắt" | `title`, `bigtype`, `horizon`, `BEAT:`; ở `FACE:` → `OVER: blurtitle` |
+| 4 | Kinetic Callout / Text Emphasis | một con số / cụm khoá đập vào mắt | `bignumber`, `bigtype`; FACE kiểu chồng (`"big": true`) |
+| 5 | Typewriter | gõ câu hỏi, prompt, câu tìm kiếm | `quote`, `typebar`, `search`, `promptui` |
+| 6 | 3D Text | — | **không dùng** (bộ màu cấm khối 3D cho chữ) |
+| 7 | Lower Thirds | nhân vật / người dẫn xuất hiện lần đầu, cần tên + vai trò | full màn: `person`; ở `FACE:` → **`OVER: lowerthird`** (9b) |
+| 8 | Title Card | mở một chủ đề lớn | `title`, `tool`, `horizon` (thẻ `FULL:`) |
+| 9 | Chapter / Section Cards | sang phần mới | `BREAK:` → `chapters` / `chapter` (tự động) |
+| 10 | Logo Sting / Intro–Outro | kết video | `OUTRO:` (không có intro, luật cũ giữ nguyên) |
+| 11 | Animated Charts | xu hướng, trước/sau theo số | `linechart`, `bars` |
+| 12 | Stat Callout / Number Counter | một con số đo được | `bignumber`, `pricecut`, `receipt`; ở `FACE:` → `OVER: stats` |
+| 13 | Progress Bar / Ring | đang xử lý, mới đi được X% | `progress`; ở `FACE:` → `OVER: status` |
+| 14 | Timeline / Steps / Checklist | quy trình, danh sách, video nhiều bước | `steps`, `pills`, `flow`, `checklist`, `tracker`, `agenda`, `recap`; ở `FACE:` → `OVER: dots` |
+| 15 | Comparison / Before–After | cũ vs mới, trước vs sau | `compare`, `beforeafter`, `bars` |
+| 16 | Quote Card | trích lời nhân vật / khách hàng | `quote` |
+| 17 | Callout / Annotation | chỉ vào một thành phần trên hình đang chiếu | dấu chỉ điểm trên quay màn hình / `doctilt` / `photo` (9b) |
+| 18 | Highlight Marks | khoanh đúng con số / nút / dòng trên hình | dấu khoanh cam vẽ tay trên hình (9b, mục 4) |
+| 19 | Zoom / Punch-in | câu chốt ở người full màn | `FACE:` punch 1.15 (tự động); b-roll tự zoom trượt |
+| 20 | Subscribe / Like / Bell | lời kêu gọi đăng ký giữa / cuối video | ở `FACE:` → **`OVER: subscribe`** (9b) |
+| 21 | End Screen / End Card | 10–20 giây cuối | `OUTRO:` + lời kêu gọi; cần ô gợi ý video tiếp → mẫu `endscreen` (9c) |
+| 22 | Social Post / Comment Mockup | bình luận, bằng chứng xã hội, đoạn chat | `comments`, `chat` |
+| 23 | Notification Pop | "đơn mới", "tin nhắn mới", cảnh báo bật lên | ở `FACE:` → **`OVER: notify`** (9b); full màn → `chat` |
+| 24 | Price Tag / Product Card | nói giá, giới thiệu sản phẩm | `pricecut`, `logo`; có ảnh sản phẩm → mẫu `product` (9c) |
+| 25 | Discount Badge / Promo Sticker | ưu đãi, freeship, % giảm | ở `FACE:` → **`OVER: badge`** (9b); hạn chót → `countdown`, `lock` |
+| 26 | Picture-in-Picture | quay màn hình + mặt người | `BUBBLE:`, bubble tròn của `MOTION:` (tự động) |
+| 27 | Split Screen | đặt hai thứ cạnh nhau cùng lúc | `compare`, `beforeafter`; hai video chạy song song → mẫu `split` (9c) |
+| 28 | Motion Backgrounds | nền của thẻ | nền than + quầng cam có sẵn; không thêm nền khác |
+| 29 | Sticker / Emoji | phản ứng vui, ngắn | ưu tiên meme; cần sticker nhỏ ở `FACE:` → `OVER: sticker` (9b), rất hạn chế |
+| 30 | Transitions | nối hai cảnh | chỉ ngôn ngữ chuyển cảnh có sẵn: co/giãn, morph, nhoè → nét. **Không** thêm wipe / glitch / slide |
+| 31 | Light Leaks / Flares | — | **không dùng** |
+| 32 | Map / Route | chỉ khi kịch bản nói về địa điểm, hành trình | mẫu `map` (9c), hiếm |
+
+### 9b. Lớp nhỏ đè lên người nói (ngoại lệ của luật "motion full màn")
+
+Lower Thirds (`lowerthird`), Subscribe/Bell (`subscribe`), Notification Pop (`notify`), Discount Badge
+(`badge`), Sticker (`sticker`) **được** đè lên người nói ở đoạn `FACE:` qua dòng `OVER:`, vì chúng là
+nhãn phụ, không phải nội dung chính:
+
+- Chiếm ≤ 1/4 khung, nằm ở 1/3 dưới hoặc góc trên; không che miệng, không trùng giờ với cụm từ khoá
+  (trùng thì cụm từ khoá nhường như các lớp `OVER:` khác).
+- Mỗi lúc một lớp nhỏ, 2–4 giây, hiện theo câu neo rồi tự tan. Dùng bộ màu chung: nền than, chữ kem, nhấn cam.
+- `lowerthird` chỉ ở lần đầu nhân vật xuất hiện; `subscribe` tối đa 2 lần một video (giữa và cuối),
+  đúng lúc người dẫn kêu gọi.
+- Sơ đồ, số liệu, quy trình, logo, ảnh **vẫn phải full màn**: lớp nhỏ không phải đường tắt để nhét graphic
+  cạnh mặt người.
+
+Callout / Highlight Marks (17, 18) nằm **trên hình đang chiếu** (quay màn hình trong bố cục avatar, `doctilt`,
+`photo`), trỏ đúng chi tiết đang được nói, không dùng trên chữ.
+
+### 9c. Loại chưa có mẫu: tự code khi kịch bản thật cần
+
+Chưa có mẫu sẵn: `lowerthird`, `subscribe`, `notify`, `badge`, `sticker`, dấu khoanh / chỉ điểm trên hình,
+`endscreen`, `product`, `split`, `map`. **Không code trước cho đủ bộ**; video nào cần thì code đúng lúc đó:
+
+1. Mở link mẫu của loại đó trong `motion-graphics-taxonomy.md` (ưu tiên 🎨 mẫu gốc làm tay) để lấy nhịp và bố cục.
+2. Code bằng bộ màu và `kit` có sẵn (xem `motion/TEMPLATES.md` → "Tự code mẫu mới"). Mẫu full màn vào
+   `src/custom/`; lớp nhỏ đè người phải đăng ký thêm vào bảng `OVERS` trong `src/light/keys.tsx`; dấu khoanh trên
+   quay màn hình phải thêm props vào cảnh `broll` / `screen` (bước `doctor` hiện chỉ cho ba mẫu này trong bố cục avatar).
+3. `npx remotion still` một khung để soi trước khi dựng cả bài; ổn thì ghi mẫu vào `TEMPLATES.md` để video sau
+   dùng lại.
+
+Không có loại nào khớp tình huống thì cũng tự code dạng mới theo đúng quy trình trên, miễn qua được mục 1 và 7
+(người xem cần gì, có phải trang trí không).
