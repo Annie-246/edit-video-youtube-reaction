@@ -38,6 +38,13 @@ if (typeof document !== "undefined" && !document.querySelector("style[data-fonts
 export const DarkCtx = createContext(false);
 export const useDark = () => useContext(DarkCtx);
 
+/** Scene-to-scene morph inside one MOTION talk (Main sets it for the overlap frames):
+ * dir "out" on the scene that is leaving, "in" on the one arriving, p 0 → 1 across the join.
+ * The outgoing title floats up and shrinks into the spot where the new label lands; cards of the old
+ * scene draw in while the new ones swell out of the same place, so one scene turns into the next. */
+export const MorphCtx = createContext<{ dir: "in" | "out" | null; p: number }>({ dir: null, p: 1 });
+const useMorph = () => useContext(MorphCtx);
+
 /** Word cues: the frame (from the scene start) at which list item i is spoken, written by the
  * pipeline into a scene's `cue` prop. Items then appear with the voice, not on a fixed stagger;
  * without a cue the template's own timing (`fallback`) stays. */
@@ -164,18 +171,27 @@ export const GradText: React.FC<{ children: React.ReactNode; style?: React.CSSPr
   return <LitText style={style} glow={dark ? 0.6 : 0.3}>{children}</LitText>;
 };
 
-export const Card: React.FC<{ style?: React.CSSProperties; children?: React.ReactNode; glow?: boolean }> = ({ style, children, glow }) => (
-  <div
-    style={{
-      background: L.card,
-      borderRadius: 24,
-      boxShadow: glow ? "var(--glowshadow)" : "var(--cardshadow)",
-      ...style,
-    }}
-  >
-    {children}
-  </div>
-);
+export const Card: React.FC<{ style?: React.CSSProperties; children?: React.ReactNode; glow?: boolean }> = ({ style, children, glow }) => {
+  const m = useMorph();
+  // morph: the leaving scene's cards draw in and fade, the arriving ones swell out of the same spot
+  const mt = m.dir === "out" ? `scale(${1 - 0.12 * m.p})` : m.dir === "in" ? `scale(${0.86 + 0.14 * m.p})` : "";
+  const mf = m.dir === "out" ? `blur(${(m.p * 5).toFixed(2)}px)` : "";
+  return (
+    <div
+      style={{
+        background: L.card,
+        borderRadius: 24,
+        boxShadow: glow ? "var(--glowshadow)" : "var(--cardshadow)",
+        ...style,
+        transform: `${mt} ${style?.transform ?? ""}`.trim() || undefined,
+        filter: `${mf} ${style?.filter ?? ""}`.trim() || undefined,
+        opacity: (m.dir === "out" ? 1 - m.p : 1) * (style?.opacity === undefined ? 1 : Number(style.opacity)),
+      }}
+    >
+      {children}
+    </div>
+  );
+};
 
 export const Pill: React.FC<{ children: React.ReactNode; active?: boolean; style?: React.CSSProperties }> = ({ children, active, style }) => (
   <div
@@ -201,10 +217,15 @@ export const Pill: React.FC<{ children: React.ReactNode; active?: boolean; style
 
 export const Kicker: React.FC<{ text?: string; delay?: number }> = ({ text, delay = 0 }) => {
   const p = useIn(delay);
+  const m = useMorph();
   if (!text) return null;
+  // morph in: the label lands where the previous title was flying to, coming down out of it big and soft
+  const q = m.dir === "in" ? m.p : 1;
+  const mo = m.dir === "out" ? 1 - m.p : 1;
   // a label, not a button: small spaced capitals behind a clay dot, no capsule around it
   return (
-    <div style={{ opacity: p, transform: `translateY(${(1 - p) * 14}px)`, display: "flex", alignItems: "center", gap: 10, fontFamily: FONT,
+    <div style={{ opacity: (m.dir === "in" ? q : p) * mo, transform: m.dir === "in" ? `translateY(${(1 - q) * 110}px) scale(${1 + (1 - q) * 1.8})` : `translateY(${(1 - p) * 14}px)`,
+      filter: m.dir === "in" && q < 1 ? `blur(${((1 - q) * 6).toFixed(2)}px)` : undefined, display: "flex", alignItems: "center", gap: 10, fontFamily: FONT,
       fontSize: 17, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: L.muted }}>
       <span style={{ width: 8, height: 8, borderRadius: 4, background: GRAD }} />
       {text}
@@ -238,8 +259,14 @@ export const Words: React.FC<{ text: string; delay?: number; per?: number; size?
     parts.push({ w, g: grad });
     if (close) grad = false;
   }
-  return (
-    <div style={{ fontFamily: FONT, fontSize: size, fontWeight: weight, lineHeight, letterSpacing: "-0.02em", color, textAlign: align, padding: "6px 0" }}>
+    // morph out: a title-size line floats up and shrinks towards where the next label lands
+  const mo = useMorph();
+  const big = size >= 40;
+  const mstyle: React.CSSProperties = mo.dir === "out" && big
+    ? { transform: `translateY(${-190 * mo.p}px) scale(${1 - 0.7 * mo.p})`, opacity: 1 - Math.max(0, (mo.p - 0.55) / 0.45) }
+    : mo.dir === "out" ? { opacity: 1 - mo.p } : {};
+return (
+    <div style={{ ...mstyle, fontFamily: FONT, fontSize: size, fontWeight: weight, lineHeight, letterSpacing: "-0.02em", color, textAlign: align, padding: "6px 0" }}>
       {parts.map((p, i) => {
         const t = interpolate(f - delay - i * per, [0, 10], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: ease });
         const st: React.CSSProperties = {

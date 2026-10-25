@@ -55,6 +55,11 @@ description: Edit Video Youtube Reaction — dựng video react/phân tích YouT
   0,6 giây đầu người full màn co lại đúng vào khung của bố cục đó (bubble tròn / ô bo góc / khung dọc), góc bo dần,
   viền hiện dần; nằm ngay trước `FACE:` thì 0,6 giây cuối khung đó giãn ra full màn. Hình lấy từ chính bản quay nên
   người không đứng hình, không lệch tiếng. Kịch bản không cần khai gì.
+- **`BUBBLE:` ↔ `MOTION:` (tự động):** khung quay màn hình lớn nở dần ra full màn thành motion graphic, ô mặt người
+  tròn dần và trượt vào bubble góc phải dưới; chiều ngược lại thì thu vào.
+- **Nối các cảnh motion với nhau = morph (tự động):** trong một đoạn, sang cảnh mới thì tiêu đề cảnh cũ bay lên thu
+  nhỏ thành nhãn nhỏ của cảnh mới, card cũ co lại tan đi còn card mới nở ra từ cùng chỗ, nền đứng yên (~0,7 giây).
+  Không cắt cứng, không trượt ngang giữa các cảnh.
 - Mỗi video nên trộn: hook bằng `FACE:`, thân bài xen `FACE:` / `MOTION:` / bố cục avatar + quay màn hình.
   Một đoạn nói vừa cần graphic vừa cần quay màn hình thì tách bằng `---` thành hai đoạn.
 - `FACE:` không dùng `SIDE:`; muốn chen đồ hoạ thì dùng `OVER:` (đè lên người), `FULL:` / `BEAT:` hoặc meme.
