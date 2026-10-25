@@ -519,8 +519,8 @@ def render_screen(project: Path, cfg: dict, L: dict, item: dict, al: dict, out: 
     _finish(cfg, cmd, fc, _full_cards(project, item, fps, cmd, fc, "[vc]", 6), nfr, dur, out)
 
 
-DUCK = 0.28     # presenter level while a meme with sound plays over the talk
-MEME_DB = -20.0  # mean level a meme's sound is brought to (the voice sits near -19 dB)
+MEME_DB = -31.0      # meme sound under the voice (the voice sits near -19 dB and is never ducked)
+MEME_GAP_DB = -24.0  # a little louder while it plays in the pause after a sentence, still under the voice
 
 
 def _mean_db(f: Path, ss: float, secs: float) -> float | None:
@@ -534,14 +534,15 @@ def _mean_db(f: Path, ss: float, secs: float) -> float | None:
 def render_memes(project: Path, cfg: dict, L: dict, memes: list[dict], body: Path, out: Path) -> None:
     """Lay memes over a rendered talk, right after the sentence their anchor belongs to: the meme
     shows on black (full frame or part of it, no card) while the presenter keeps talking. A meme
-    with sound plays it and ducks the voice for its length; a still is silent. Length unchanged."""
+    with sound plays it quietly under the voice (louder only in the pause after the sentence); the
+    voice is never lowered; a still is silent. Length unchanged."""
     fps = cfg["output"]["fps"]; W, H = L["w"], L["h"]
     total = ffprobe_duration(body)
     nfr = int(round(total * fps)); dur = nfr / fps
     def q(t: float) -> float:
         return round(round(t * fps) / fps, 6)
     cmd = ["ffmpeg", "-v", "error", "-y", "-i", str(body)]
-    fc, vtag, mixes, ducks = [], "[0:v]", [], []
+    fc, vtag, mixes = [], "[0:v]", []
     for k, m in enumerate(sorted(memes, key=lambda m: m["t"])):
         t = q(min(max(m["t"], 0.3), total - 0.5))
         md = min(int(round(float(m["secs"]) * fps)) / fps, dur - t)
@@ -566,16 +567,15 @@ def render_memes(project: Path, cfg: dict, L: dict, memes: list[dict], body: Pat
         level = _mean_db(Path(m["file"]), float(m.get("ss", 0)), md) if m.get("audio") and not m.get("still") else None
         if level is not None and level > -50:
             # plain gain, never loudnorm: on a clip that opens silent loudnorm lifts the hiss to 0 dB
-            gain = min(12.0, MEME_DB - level)
+            lo, hi = (10 ** (min(12.0, db - level) / 20) for db in (MEME_DB, MEME_GAP_DB))
+            g = min(float(m.get("gap", 0.0)), md)   # seconds of silence before the voice comes back
             ms = int(round(t * 1000))
-            fc.append(f"[{n}:a]aresample=48000,aformat=channel_layouts=stereo,volume={gain:.1f}dB,alimiter=limit=0.9,"
-                      f"atrim=end={md:.6f},afade=t=out:st={max(0.0, md - 0.15):.3f}:d=0.15,adelay={ms}|{ms}[ma{k}]")
+            # louder over the pause, back under the voice 0.15 s before it resumes (quoted: commas need no escaping)
+            amp = f"{lo:.4f}+{hi - lo:.4f}*min(1,max(0,({g:.3f}-t)/0.15))"
+            fc.append(f"[{n}:a]aresample=48000,aformat=channel_layouts=stereo,asetpts=PTS-STARTPTS,volume='{amp}':eval=frame,"
+                      f"alimiter=limit=0.9,atrim=end={md:.6f},afade=t=out:st={max(0.0, md - 0.15):.3f}:d=0.15,adelay={ms}|{ms}[ma{k}]")
             mixes.append(f"[ma{k}]")
-            # ramp the voice down/up over 0.15 s so the duck never clicks
-            ducks.append(f"min(1,max(0,min((t-{t:.3f})/0.15,({t + md:.3f}-t)/0.15)))")
-    # quoted, so the commas inside need no escaping
-    vol = f",volume='1-{1 - DUCK}*min(1,{'+'.join(ducks)})':eval=frame" if ducks else ""
-    fc.append(f"[0:a]aformat=channel_layouts=stereo{vol}[voice]")
+    fc.append("[0:a]aformat=channel_layouts=stereo[voice]")
     if mixes:
         fc.append(f"[voice]{''.join(mixes)}amix=inputs={len(mixes) + 1}:duration=first:normalize=0,"
                   f"asetpts=N/SR/TB,apad,atrim=end={dur:.6f},asetpts=PTS-STARTPTS[a]")

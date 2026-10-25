@@ -7,8 +7,9 @@
             login), else a short meme clip found with yt-dlp, else an Imgflip template image. Everything downloaded lands in the meme library with a row in
             index.csv, so later videos reuse it.
   3. place  render.py lays each meme over the talk right after the sentence its anchor phrase
-            belongs to: on black, no card; the presenter keeps talking (voice ducked under a
-            meme with sound, untouched under a still).
+            belongs to: on black, no card; the presenter keeps talking and the voice is never
+            lowered. A meme with sound plays quietly, landing in the pause after a sentence so
+            its sound is heard there.
 
 Library: project.json "memes": {"library": "..."} > $REACTFORGE_MEME_LIB >
 <workspace>/meme-library (the folder that holds projects/).
@@ -25,6 +26,7 @@ MAX_UPSCALE = 1.4   # blur standard: never show a meme bigger than 1.4x its own 
 MAX_CLIP = 20.0     # longer search hits are compilations, not a meme
 EVERY = 20.0        # about one meme per this many seconds of talk
 GAP = 12            # min seconds between two memes
+QUIET = 0.4         # a pause this long after a sentence is where a meme with sound lands
 STARTERS = {"và", "nhưng", "cũng", "còn", "thì", "đấy", "đây", "đó", "mình", "anh", "thế", "vì", "nên", "sau",
             "tiếp", "bây", "ok", "điều", "kết", "tất", "nghe", "cứ", "trong", "khi", "nếu", "vậy", "rồi"}
 
@@ -254,10 +256,19 @@ def place_memes(entries: list[dict], item: dict, words: list[dict], al: dict) ->
                 or (nxt[:1].isupper() and nxt.lower() in STARTERS)
         win = [i for i in range(min(k, len(ws) - 2), len(ws) - 1) if ws[i]["s"] - t0 <= 8]
         hit = next((i for i in win if ends(i)), None)
+        sound = m.get("audio") and not m.get("still")
+        if sound:
+            # a meme with sound waits for a sentence end followed by a real pause, so it is heard there
+            hit = next((i for i in win if ends(i) and ws[i + 1]["s"] - ws[i]["e"] >= QUIET), hit)
         if hit is None and win:
             hit = max(win, key=lambda i: ws[i + 1]["s"] - ws[i]["e"])
-        t = (ws[hit]["e"] + ws[hit + 1]["s"]) / 2 if hit is not None else total
-        out.append({**m, "t": round(t, 3)})
+        if hit is None:
+            t, gap = total, 0.0
+        else:
+            # with sound it starts as the last word ends, to use the whole pause
+            t = ws[hit]["e"] + 0.08 if sound else (ws[hit]["e"] + ws[hit + 1]["s"]) / 2
+            gap = max(0.0, ws[hit + 1]["s"] - t)
+        out.append({**m, "t": round(t, 3), "gap": round(gap, 3)})
     return out
 
 
