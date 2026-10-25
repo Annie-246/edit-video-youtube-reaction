@@ -152,6 +152,16 @@ Mỗi video mới, hỏi đủ: (1) kịch bản (file `.md`, Google Doc hoặc 
 - **Phân tích kịch bản trước, chọn graphic sau:** con số → `bignumber`/`equation`, quy trình →
   `steps`/`flow`, so sánh → `compare`/`bars`, danh sách → `checklist`, câu chốt → `title`,
   tin nhắn/AI hỏi đáp → `chat`/`questions`. Hai cảnh liền nhau không cùng dạng.
+- **Tư duy chọn cảnh (đọc `references/tu-duy-dung-motion.md` trước khi khai cảnh):**
+  - Mỗi câu hỏi "người xem cần **tin / thấy / hiểu / nhớ**?": tin → `FACE:`; thấy → b-roll / giao
+    diện / ảnh thật; hiểu → sơ đồ, icon ẩn dụ; nhớ → con số / câu chốt. Không cần gì → không cảnh mới.
+  - Tỉ lệ mặt người theo chức năng đoạn: demo/hướng dẫn ít mặt, quan điểm/kêu gọi nhiều mặt.
+    Không để quá ~40 giây liền không thấy mặt người.
+  - Mỗi `title` đúng **một** cụm `*nhấn*`, là từ cảm xúc / kết quả / con số.
+  - Câu neo: `bignumber` neo vào 3–5 từ **trước** con số (số đếm xong đúng lúc được nói); `title`/`BEAT:`
+    neo vào đầu câu (chữ hiện trước lời).
+  - Một khái niệm giữ một icon suốt video; video nhiều phần thì `agenda` sau hook, `recap` cuối khớp
+    đúng các mục đã hứa.
 - **Xen b-roll thật:** đoạn thuật lại lời/việc của nhân vật trong video gốc thì dùng `broll`
   đúng khúc đó; đoạn người dẫn tự giải thích, ví dụ, kêu gọi thì dùng graphic.
 - **Nhân vật được nhắc tên lần đầu phải hiện hình:** cắt chân dung từ video gốc (khung nhìn
