@@ -70,8 +70,8 @@ export const IconTile: React.FC<{ name?: string; size?: number; active?: boolean
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      background: active ? "#D97757" : "var(--tile)",
-      boxShadow: active ? "0 12px 30px rgba(217,119,87,0.35)" : "inset 0 0 0 1px rgba(217,119,87,0.15)",
+      background: active ? "linear-gradient(180deg, #E3876A 0%, #D97757 50%, #C8643F 100%)" : "var(--tile)",
+      boxShadow: active ? "inset 0 1px 0 rgba(255,255,255,0.18), 0 8px 20px rgba(217,119,87,0.32)" : "var(--tileshadow)",
       flex: "none",
     }}
   >

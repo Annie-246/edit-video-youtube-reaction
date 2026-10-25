@@ -15,11 +15,11 @@ def keep_intervals(al: dict) -> list[list[float]]:
     return al.get("keep") or [[al["start"], al["end"]]]
 
 
-BG_SRC = FONT_DIR.parent / "bg-grid.png"  # white grid; a project can override with assets/bg.png
+BG_SRC = FONT_DIR.parent / "bg-grid-dark.png"  # dark grid (theme); a project can override with assets/bg.png
 
 
 def _bg(project: Path, L: dict) -> Path:
-    """The white grid background, scaled once to the output size."""
+    """The grid background (dark theme), scaled once to the output size."""
     out = project / "work" / "gfx" / "bg.png"
     if not out.exists():
         src = project / "assets" / "bg.png"
@@ -195,6 +195,57 @@ def render_face(project: Path, cfg: dict, L: dict, item: dict, al: dict, out: Pa
     else:
         fc.append(f"{base}format=yuv420p[vc]")
     _finish(cfg, cmd, fc, _full_cards(project, item, fps, cmd, fc, "[vc]", n_in), nfr, dur, out)
+    _apply_orbits(project, cfg, item, out)
+
+
+def _apply_orbits(project: Path, cfg: dict, item: dict, out: Path) -> None:
+    """OVER orbit: cut the presenter out frame by frame over each orbit's span (rembg human
+    segmentation, lightly smoothed against flicker) and stack: picture → far half of the ring →
+    presenter → near half. Done on the finished FACE body so the cut-out matches its framing."""
+    import os, shutil
+    spec_p = project / "work" / "keys" / f"{item['id']}.orbit.json"
+    spec = read_json(spec_p) if spec_p.exists() else []
+    if not spec:
+        return
+    try:
+        import numpy as np
+        from PIL import Image
+        from rembg import new_session, remove
+    except ImportError:
+        print(f"   ⚠ {item['id']}: thiếu rembg/pillow (chạy lại setup) → bỏ ảnh xoay 3D"); return
+    fps = cfg["output"]["fps"]
+    W, H = layout_for(cfg["output"]["width"])["w"], layout_for(cfg["output"]["width"])["h"]
+    sess = new_session("u2net_human_seg")
+    cur = out
+    for k, o in enumerate(spec):
+        s, e = float(o["s"]), float(o["e"])
+        tmp = out.parent / f"{item['id']}_orbit{k}"
+        shutil.rmtree(tmp, ignore_errors=True)
+        (tmp / "f").mkdir(parents=True); (tmp / "m").mkdir()
+        run(["ffmpeg", "-v", "error", "-y", "-ss", f"{s:.3f}", "-t", f"{e - s:.3f}", "-i", str(cur), "-vf", "scale=960:-2", str(tmp / "f" / "%05d.png")])
+        prev = None
+        for fr in sorted((tmp / "f").glob("*.png")):
+            a = np.asarray(remove(Image.open(fr), session=sess, only_mask=True), dtype=np.float32)
+            a = a if prev is None else 0.6 * a + 0.4 * prev   # damp frame-to-frame flicker
+            prev = a
+            Image.fromarray(a.clip(0, 255).astype(np.uint8)).resize((W, H), Image.BILINEAR).save(tmp / "m" / fr.name)
+        nxt = out.with_name(f"{out.stem}.orbit{k}{out.suffix}")
+        on = f"enable='between(t\\,{s:.3f}\\,{e:.3f})'"
+        cmd = ["ffmpeg", "-v", "error", "-y", "-i", str(cur), "-framerate", str(fps), "-i", str(tmp / "m" / "%05d.png"),
+               "-c:v", "libvpx", "-i", o["back"], "-c:v", "libvpx", "-i", o["front"]]
+        fc = [f"[0:v]split[bg][pv]",
+              f"[pv]trim=start={s:.3f}:end={e:.3f},setpts=PTS-STARTPTS[pvs]",
+              f"[1:v]format=gray,gblur=sigma=1.2[mk]", "[pvs][mk]alphamerge,setpts=PTS+{:.3f}/TB[ps]".format(s),
+              f"[2:v]fps={fps},format=rgba,setpts=PTS+{s:.3f}/TB[b]", f"[3:v]fps={fps},format=rgba,setpts=PTS+{s:.3f}/TB[f]",
+              f"[bg][b]overlay=0:0:eof_action=pass:{on}[s1]", f"[s1][ps]overlay=0:0:eof_action=pass:{on}[s2]",
+              f"[s2][f]overlay=0:0:eof_action=pass:{on},format=yuv420p[v]"]
+        run(cmd + ["-filter_complex", ";".join(fc), "-map", "[v]", "-map", "0:a", "-r", str(fps)] + _enc(cfg) + ["-c:a", "copy", str(nxt)])
+        if cur != out:
+            cur.unlink(missing_ok=True)
+        cur = nxt
+        shutil.rmtree(tmp, ignore_errors=True)
+    os.replace(cur, out)
+    print(f"   {item['id']}: ghép {len(spec)} vòng ảnh xoay 3D")
 
 
 def _round_mask(path: Path, w: int, h: int, r: int, rgba: bool = False) -> Path:

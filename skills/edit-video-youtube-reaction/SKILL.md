@@ -68,6 +68,7 @@ Graphic đè lên người nói, cùng lớp trong suốt với chữ từ khoá
 | `dots` | "3 điều cần nhớ" mà vẫn giữ mặt người. **Chỉ chữ, không card:** câu của ý đang nói ở dưới, dẫn bằng số to màu cam; các ý đã nói lùi lên trên thành dòng nhỏ mờ (`pills` = tên ngắn của từng ý) | `n`, `active`, `text`, `pills:[…]` |
 | `status` | nhãn trạng thái nhỏ phía trên ("6 giờ", "Đang dựng…") | `text`, `spin`, `side:"right"` |
 | `blurtitle` | câu lớn đặt trên chính người nói, **người nói tự nhoè** suốt lớp này (thay cho cắt hẳn sang thẻ) | `kicker`, `title` (có `*nhấn*`) |
+| `orbit` | **ảnh xoay vòng 3D quanh người**: ảnh vòng ra sau thì khuất sau người, vòng ra trước thì đè lên (tự tách nền người bằng rembg). Chỉ thỉnh thoảng, ở đoạn có ảnh, 3–6 giây | `images:[…]` (6–8 ảnh), `cx`, `cy` (0.7 = ngang ngực), `rx`, `ry`, `speed`, `card` |
 - **Nền lưới trắng chỉ dành cho khung có mặt người** (bố cục trắng, `BUBBLE:`). Khung không người
   (`MOTION:`, thẻ `FULL:`, clip gốc, chuyển phần) tràn kín màn.
 - Viền và bóng của `BUBBLE:` vẽ một lần thành `work/gfx/rim_<chế độ>_<cỡ>.png`
@@ -95,21 +96,31 @@ alpha) bằng composition `Keys`, `render` đè lên mặt người. Hai kiểu,
   nằm giữa cụm hoặc dài hơn 16 ký tự thì tự về kiểu dòng, vì tách ra đọc vô nghĩa.
 - Chữ hiện từng từ đúng lúc nói (mờ → rõ, trồi lên), từ khoá nảy nhẹ; hết cụm thì mờ đi.
 
-## Bộ màu (cố định, kiểu Claude/Anthropic)
+## Bộ màu: dark theme toàn bộ (cố định)
 
-- **Màu nhấn duy nhất:** cam trơn `#D97757`, dùng cho từ khoá, thẻ tiêu đề phần, nút, icon.
-  **Không dùng gradient nhiều màu.** Ngoại lệ: bộ showreel (`chapter`, `outro`, `horizon`,
-  `agenda`) được dùng gradient cùng tông cam đất và quầng sáng trên nền than ấm.
-- **Chữ:** `#141413`, chữ phụ `#5E5D59`. Font Inter, viết hoa đầu câu, không viết hoa toàn bộ.
-- **Nền motion graphic:** gradient be `#F7F3EC` → cam nhạt `#F4DDCB`, thẻ trắng có bóng mềm.
-- **Nền đen** (`#1F1E1D`, chữ kem, nhấn cam): chỉ dùng cho vài cảnh cần nhấn. Mặc định các
-  thẻ FULL dạng `title`, `quote`, `equation` và mọi `BEAT:` có nền đen (`BREAK:` dùng `chapter`); các cảnh
-  khác nền sáng. Muốn đổi thì thêm `"dark": true/false` vào cảnh đó.
+Học từ video mẫu "học thêm motion graphics (2)".
+
+- **Nền:** than gần đen `#161514`, quầng cam ấm loang từ mép dưới, góc tối dần. Áp cho mọi motion
+  graphic, thẻ FULL, và cả bố cục avatar + quay màn hình (nền lưới tối `pipeline/assets/bg-grid-dark.png`,
+  khung viền tối, thanh chữ nhảy tối: chữ đã đọc màu kem, chưa đọc màu xám).
+- **Màu nhấn duy nhất:** cam đất `#D97757` (khối cam dùng gradient nhẹ cùng tông). Không dùng màu khác.
+- **Chữ:** kem `#FAF9F5`, chữ phụ `#C9C5BC`, chữ mờ `#9A968E`. Font Inter, viết hoa đầu câu.
+- **Chiều sâu vừa phải, không "ảo":** card có nền chuyển nhẹ sáng trên tối dưới, đường sáng mảnh mép trên,
+  viền mảnh, bóng đổ vừa. Chỉ danh sách chương (`chapters`) được nổi khối mạnh hơn.
+- **Nhãn nhỏ phía trên tiêu đề** (`kicker`: "Quy trình", "Hạn chót"…) là **chữ trơn** in hoa giãn chữ có chấm
+  cam, **không bọc capsule**. Capsule chỉ dùng khi chính nó là nội dung (mẫu `pills`). Đừng lạm dụng capsule.
+- Cảnh nào thật sự cần nền sáng thì ghim `"dark": false`.
 - **Chuyển động** theo 2 video mẫu ở `motion/templates/samples/`: chữ hiện dần từng từ, thẻ
   trồi lên lần lượt, con trỏ tay bấm, chữ gõ từng ký tự, số đếm lên.
-- **Showreel (dùng hạn chế, 2–4 lần một video):** `BREAK:` giữa các phần, `OUTRO:` cuối video.
-  **Không có intro**: video vào thẳng lời người dẫn. Số lớn bay vào, xuyên qua chữ khi thoát, sóng
-  tròn lan, chữ trồi có bóng lặp. Outro có tiếng whoosh + tiếng trầm tự tổng hợp; `BREAK:` im lặng.
+- **Danh sách chương (học từ video mẫu 2):**
+  - Đầu video, khi người dẫn kể "video này có…": `SIDE: @"câu neo" chapters {"mode":"intro"}` trong đoạn
+    `MOTION:`. Danh sách tự lấy từ các dòng `BREAK:` của kịch bản; các dòng nhoè vào rồi sáng lần lượt
+    (`"times":[giây…]` cho khớp đúng lúc nhắc từng chương, không có thì cách `per` khung).
+  - Mỗi `BREAK:` **tự thành màn quay lại danh sách**: khung đẩy nhẹ vào chương mới, dòng đó khoanh viền cam
+    phát sáng, chương đã qua có tick, còn lại mờ. Ảnh nhỏ mỗi dòng là một khung hình quay màn hình đầu tiên
+    của chương đó; chương không có quay màn hình thì dùng icon. `BREAK:` im lặng.
+- **Outro** (`OUTRO:`) giữ kiểu showreel: chữ trồi có bóng lặp, tiếng whoosh + trầm tự tổng hợp.
+  **Không có intro**: video vào thẳng lời người dẫn.
 
 ## Quy tắc SFX (khoá cứng)
 
@@ -239,7 +250,7 @@ video-cua-toi/
 | `FULL: @"câu neo" {"secs":4,"tpl":"<mẫu>",…}` | thẻ chiếm trọn màn hình vài giây |
 | `OVER: @"câu neo" {"secs":3,"tpl":"stats",…}` | graphic đè lên người nói, chỉ ở đoạn `FACE:` (xem "Lớp OVER") |
 | `BEAT: @"câu neo" {"title":"…"}` | thẻ chốt nền đen |
-| `BREAK: Tên phần` | màn chuyển nền đen, tiếng im hoàn toàn |
+| `BREAK: Tên phần` | màn quay lại danh sách chương, zoom vào chương mới (tên phần = tên dòng), tiếng im |
 | `---` | tách một đoạn nói thành hai |
 | `FACE:` / `BUBBLE:` / `MOTION:` | chế độ màn hình của đoạn nói (xem bảng bốn chế độ) |
 | `MEME: @"câu neo" {"q":"surprised pikachu","mood":"shock","secs":2,"mode":"part"}` | chèn meme ngay sau câu chứa câu neo (khai tay; AI vẫn tự chọn thêm) |

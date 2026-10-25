@@ -39,12 +39,27 @@ export const DarkCtx = createContext(false);
 export const useDark = () => useContext(DarkCtx);
 export const themeVars = (dark: boolean): React.CSSProperties =>
   (dark
-    ? { "--ink": "#FAF9F5", "--ink2": "#C9C5BC", "--muted": "#9A968E", "--card": "#2A2927", "--pill": "#2A2927",
-        "--bar": "#4A4642", "--tile": "#3A3330", "--tileic": "#E8916F", "--faint": "#6B6760",
-        "--cardshadow": "0 14px 40px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.08)" }
-    : { "--ink": "#141413", "--ink2": "#5E5D59", "--muted": "#8F8B85", "--card": "#FFFFFF", "--pill": "rgba(255,255,255,0.92)",
-        "--bar": "#DCC3AF", "--tile": "#F6E7DD", "--tileic": "#C15F3C", "--faint": "#B9B4C6",
-        "--cardshadow": "0 14px 40px rgba(80, 50, 30, 0.12), 0 0 0 1px rgba(150, 105, 75, 0.10)" }) as React.CSSProperties;
+    // dark surfaces get a light touch of depth (the chapter list goes further, see learn.tsx): a
+    // faintly top-lit fill, a soft top-edge highlight, a hairline border, a modest drop shadow
+    ? { "--ink": "#FAF9F5", "--ink2": "#C9C5BC", "--muted": "#9A968E", "--faint": "#6B6760", "--tileic": "#E8916F",
+        "--card": "linear-gradient(180deg, #2A2927 0%, #232220 100%)",
+        "--cardshadow": "inset 0 1px 0 rgba(255,255,255,0.05), inset 0 0 0 1px rgba(255,255,255,0.05), 0 10px 28px rgba(0,0,0,0.32)",
+        "--glowshadow": "inset 0 1px 0 rgba(255,255,255,0.07), 0 0 0 1.5px rgba(217,119,87,0.7), 0 0 26px rgba(217,119,87,0.28), 0 12px 30px rgba(0,0,0,0.35)",
+        "--pill": "linear-gradient(180deg, #2F2D2B 0%, #282725 100%)",
+        "--pillshadow": "inset 0 1px 0 rgba(255,255,255,0.05), 0 0 0 1px rgba(255,255,255,0.06), 0 4px 12px rgba(0,0,0,0.3)",
+        "--tile": "linear-gradient(180deg, #3A322D 0%, #2D2723 100%)",
+        "--tileshadow": "inset 0 1px 0 rgba(255,255,255,0.06), 0 0 0 1px rgba(217,119,87,0.18), 0 3px 8px rgba(0,0,0,0.3)",
+        "--deepcard": "linear-gradient(180deg, #2F2E2C 0%, #252422 55%, #1F1E1D 100%)",
+        "--deepshadowcard": "inset 0 1px 0 rgba(255,255,255,0.09), inset 0 0 0 1px rgba(255,255,255,0.05), 0 1px 2px rgba(0,0,0,0.5), 0 12px 26px rgba(0,0,0,0.38), 0 34px 74px rgba(0,0,0,0.58)",
+        "--bar": "linear-gradient(180deg, #2A2826 0%, #343230 100%)", "--ring": "rgba(255,255,255,0.12)", "--deepshadow": "0 24px 56px rgba(0,0,0,0.45)" }
+    : { "--ink": "#141413", "--ink2": "#5E5D59", "--muted": "#8F8B85", "--faint": "#B9B4C6", "--tileic": "#C15F3C",
+        "--card": "linear-gradient(180deg, #FFFFFF 0%, #FBF8F4 100%)",
+        "--cardshadow": "inset 0 1px 0 rgba(255,255,255,0.9), 0 0 0 1px rgba(150,105,75,0.10), 0 2px 4px rgba(80,50,30,0.06), 0 16px 40px rgba(80,50,30,0.14)",
+        "--glowshadow": "0 0 0 2px rgba(217,119,87,0.45), 0 18px 50px rgba(217,119,87,0.28)",
+        "--pill": "rgba(255,255,255,0.92)", "--pillshadow": "0 6px 18px rgba(80,50,30,0.10), 0 0 0 1px rgba(150,105,75,0.14)",
+        "--tile": "#F6E7DD", "--tileshadow": "inset 0 0 0 1px rgba(217,119,87,0.15)",
+        "--deepcard": "linear-gradient(180deg, #FFFFFF 0%, #FBF8F4 100%)", "--deepshadowcard": "0 0 0 1px rgba(150,105,75,0.10), 0 16px 40px rgba(80,50,30,0.16)",
+        "--bar": "#DCC3AF", "--ring": "#FFFFFF", "--deepshadow": "0 40px 80px rgba(80,50,30,0.28)" }) as React.CSSProperties;
 
 export const ease = Easing.bezier(0.22, 1, 0.36, 1);
 
@@ -81,10 +96,13 @@ export const BlobBg: React.FC<{ seed?: number; strength?: number }> = ({ seed = 
     );
   };
   if (useDark()) {
+    // dark theme (default): near-black charcoal, a warm clay glow pooling up from the bottom edge,
+    // the corners falling off into shadow
+    const breathe = 0.85 + 0.15 * Math.sin(t * 0.6 + seed);
     return (
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, #262624 0%, #1F1E1D 60%, #1A1918 100%)", overflow: "hidden" }}>
-        {blob(980, 120, 240, "rgba(217,119,87,0.55)", 4)}
-        {blob(180, 640, 220, "rgba(217,119,87,0.30)", 0)}
+      <div style={{ position: "absolute", inset: 0, background: "#161514", overflow: "hidden" }}>
+        <div style={{ position: "absolute", inset: 0, background: `radial-gradient(75% 55% at ${50 + Math.sin(t * 0.25 + seed) * 6}% 112%, rgba(217,119,87,${0.42 * breathe}) 0%, rgba(140,62,36,0.22) 38%, rgba(26,25,24,0) 72%)` }} />
+        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(120% 90% at 50% 40%, rgba(255,255,255,0.035) 0%, rgba(0,0,0,0) 60%, rgba(0,0,0,0.45) 100%)" }} />
       </div>
     );
   }
@@ -118,9 +136,7 @@ export const Card: React.FC<{ style?: React.CSSProperties; children?: React.Reac
     style={{
       background: L.card,
       borderRadius: 24,
-      boxShadow: glow
-        ? "0 18px 50px rgba(217, 119, 87, 0.28), 0 0 0 2px rgba(217, 119, 87, 0.35)"
-        : "var(--cardshadow)",
+      boxShadow: glow ? "var(--glowshadow)" : "var(--cardshadow)",
       ...style,
     }}
   >
@@ -142,7 +158,7 @@ export const Pill: React.FC<{ children: React.ReactNode; active?: boolean; style
       lineHeight: 1.3,
       color: active ? "#fff" : L.ink2,
       background: active ? GRAD : "var(--pill)",
-      boxShadow: active ? "0 10px 28px rgba(217,119,87,0.35)" : "0 6px 18px rgba(80,50,30,0.10), 0 0 0 1px rgba(150,105,75,0.14)",
+      boxShadow: active ? "0 8px 22px rgba(217,119,87,0.32)" : "var(--pillshadow)",
       ...style,
     }}
   >
@@ -153,12 +169,12 @@ export const Pill: React.FC<{ children: React.ReactNode; active?: boolean; style
 export const Kicker: React.FC<{ text?: string; delay?: number }> = ({ text, delay = 0 }) => {
   const p = useIn(delay);
   if (!text) return null;
+  // a label, not a button: small spaced capitals behind a clay dot, no capsule around it
   return (
-    <div style={{ opacity: p, transform: `translateY(${(1 - p) * 14}px)` }}>
-      <Pill style={{ fontSize: 20, padding: "8px 20px", color: L.purple }}>
-        <span style={{ width: 10, height: 10, borderRadius: 5, background: GRAD }} />
-        {text}
-      </Pill>
+    <div style={{ opacity: p, transform: `translateY(${(1 - p) * 14}px)`, display: "flex", alignItems: "center", gap: 10, fontFamily: FONT,
+      fontSize: 17, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: L.muted }}>
+      <span style={{ width: 8, height: 8, borderRadius: 4, background: GRAD }} />
+      {text}
     </div>
   );
 };

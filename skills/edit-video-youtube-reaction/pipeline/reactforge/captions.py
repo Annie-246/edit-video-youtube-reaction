@@ -105,7 +105,7 @@ def _ass_color(hex_rgb: str, alpha: int = 0) -> str:
 def build_ass(L: dict, accent: str, ws: list[dict], t0: float) -> str:
     s = L["s"]; cp = L["cap"]
     font = int(42 * s)
-    # Inside the white pill on the main frame's bottom edge: spoken words turn ink, upcoming stay grey.
+    # Inside the dark pill on the main frame's bottom edge: spoken words turn cream, upcoming stay grey.
     ml = cp["x"] + int(30 * s); mr = L["w"] - (cp["x"] + cp["w"]) + int(30 * s)
     mv = L["h"] - (cp["y"] + cp["h"]) + int(17 * s)
     head = f"""[Script Info]
@@ -117,7 +117,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Kara,Inter,{font},&H001F1315,&H00C4AFB5,&H00FFFFFF,&H00000000,-1,0,0,0,100,100,0,0,1,0,0,2,{ml},{mr},{mv},1
+Style: Kara,Inter,{font},&H00F5F9FA,&H0060676B,&H00FFFFFF,&H00000000,-1,0,0,0,100,100,0,0,1,0,0,2,{ml},{mr},{mv},1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text

@@ -2,7 +2,7 @@
 
   FULL:  any light template as a full-frame card        → {"tpl": "...", ...}
   BEAT:  one line that should land                       → dark `title`
-  BREAK: a chapter title over a beat of silence          → `chapter` (showreel style)
+  BREAK: back to the chapter list, push in on the new one → `chapters` (focus mode)
   OUTRO: closing sting                                   → `outro`
 Statement cards (title / quote / equation) go dark by default; tool openers stay light.
 
@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .common import load_project, read_json, write_json
+from .common import load_project, read_json, run, write_json
 from .graphics import layout_for
 from .panel import parse_full, render_panel
 
@@ -23,6 +23,43 @@ BREAK_SECS = {"outro": 3.2}
 
 def break_secs(cfg: dict, it: dict) -> float:
     return float(it.get("secs") or BREAK_SECS.get(it.get("tpl", ""), cfg["output"].get("break_secs", 2.6)))
+
+
+def _side_at(line: str) -> float | None:
+    """`at` second of a screen-recording SIDE line (broll / screen / rec), if any."""
+    import json, re
+    m = re.match(r'^(?:@"[^"]*"\s+)?(broll|screen|rec)\s+(\{.*\})\s*$', line.strip())
+    if not m:
+        return None
+    try:
+        at = json.loads(m.group(2)).get("at")
+    except ValueError:
+        return None
+    return float(at) if at is not None else None
+
+
+def chapter_items(project: Path, cfg: dict, plan: list[dict]) -> list[dict]:
+    """One row per BREAK: its title, and a thumbnail cut from the first screen recording of that
+    chapter (source/full.mp4 at the scene's `at`, webcam cropped off). No recording → an icon."""
+    gfx = project / "work" / "gfx"; gfx.mkdir(parents=True, exist_ok=True)
+    full = project / "source" / "full.mp4"
+    crop = (cfg.get("source") or {}).get("screen_crop")
+    items, cur = [], None
+    for it in plan:
+        if it["type"] == "break" and it.get("tpl", "chapter") == "chapter":
+            cur = {"title": it["title"], "icon": "play"}
+            items.append(cur)
+        elif cur is not None and "src" not in cur and it["type"] == "talk":
+            at = next((a for a in (_side_at(l) for l in it.get("side") or []) if a is not None), None)
+            if at is None or not full.exists():
+                continue
+            jpg = gfx / f"chapter_{len(items):02d}.jpg"
+            if not jpg.exists():
+                vf = (f"crop={crop[2]}:{crop[3]}:{crop[0]}:{crop[1]}," if crop else "") + "scale=480:-2"
+                run(["ffmpeg", "-v", "error", "-y", "-ss", f"{at:.2f}", "-i", str(full), "-frames:v", "1", "-vf", vf, "-q:v", "3", str(jpg)])
+            if jpg.exists():
+                cur["src"] = str(jpg); cur.pop("icon", None)
+    return items
 
 
 def _props(cfg: dict, L: dict, secs: float, style: str, src: dict) -> dict:
@@ -39,6 +76,8 @@ def main(project: Path, only: str | None = None, force: bool = False) -> None:
     plan = read_json(project / "work" / "plan.json")
     out_dir = project / "work" / "cards"; out_dir.mkdir(parents=True, exist_ok=True)
     n = 0
+    chapters = chapter_items(project, cfg, plan)
+    breaks = [b["id"] for b in plan if b["type"] == "break" and b.get("tpl", "chapter") == "chapter"]
     for it in plan:
         if only and it["id"] != only:
             continue
@@ -48,7 +87,9 @@ def main(project: Path, only: str | None = None, force: bool = False) -> None:
             tpl = it.get("tpl", "chapter")
             pr = {"title": it["title"], "sub": it.get("sub", ""), "dark": True}
             if tpl == "chapter":
-                pr["num"] = it.get("section", "")
+                # back to the chapter list: push in on this chapter, earlier ones ticked
+                tpl = "chapters"
+                pr = {"items": chapters, "mode": "focus", "focus": breaks.index(it["id"])}
             jobs.append((out_dir / f"{it['id']}.mp4",
                          {"width": L["w"], "height": L["h"], "fps": cfg["output"]["fps"],
                           "scenes": [{"start": 0, "duration": round(break_secs(cfg, it), 3), "template": tpl, "props": pr}]}))
@@ -64,8 +105,8 @@ def main(project: Path, only: str | None = None, force: bool = False) -> None:
                 # White layout: full-frame cards use the same light templates as the main frame.
                 tpl = pr.get("tpl", "title")
                 sp = {kk: v for kk, v in pr.items() if kk not in ("secs", "tpl")}
-                # emphasis cards (statements, quotes, the money maths) go dark; tool openers stay light
-                sp.setdefault("dark", tpl in ("title", "quote", "equation"))
+                if tpl == "chapters" and not sp.get("items"):
+                    sp["items"] = chapters   # the opening list: rows come from the BREAK titles
                 jobs.append((out_dir / f"{it['id']}_full{k}.mp4",
                              {"width": L["w"], "height": L["h"], "fps": cfg["output"]["fps"],
                               "scenes": [{"start": 0, "duration": round(secs, 3), "template": tpl, "props": sp}]}))

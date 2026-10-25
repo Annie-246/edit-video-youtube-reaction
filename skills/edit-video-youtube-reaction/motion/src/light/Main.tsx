@@ -2,7 +2,9 @@ import React from "react";
 import { AbsoluteFill, Sequence, interpolate, useCurrentFrame } from "remotion";
 import { ART_W, DarkCtx, themeVars } from "./kit";
 
-// Light by default; a scene opts into the dark look with "dark": true.
+// Whole-video theme: dark (charcoal + warm clay glow, like the reference). A scene can still pin
+// the light look with "dark": false. With THEME = "light" the old per-template tones come back.
+const THEME: "dark" | "light" = "dark";
 const DARK_DEFAULT = new Set<string>();
 // Studio / picture scenes come in a light and a dark look. Each has a natural tone (statement and
 // showcase scenes dark, explaining scenes light); a scene's own "dark" wins. Only guard: a third
@@ -38,12 +40,13 @@ export const Main: React.FC<MainProps> = ({ width, height, fps, scenes }) => {
   const artH = Math.round(ART_W * height / width);
   const tones: boolean[] = [];
   scenes.forEach((sc, i) => {
+    if (THEME === "dark") { tones.push(sc.props.dark ?? true); return; }   // one look for the whole video
     let d: boolean = sc.props.dark ?? (TONED.has(sc.template) ? DARK_NATURAL.has(sc.template) : DARK_DEFAULT.has(sc.template));
     if (sc.props.dark === undefined && TONED.has(sc.template) && i >= 2 && tones[i - 1] === d && tones[i - 2] === d) d = !d;
     tones.push(d);
   });
   return (
-    <AbsoluteFill style={{ background: "#fff", overflow: "hidden" }}>
+    <AbsoluteFill style={{ background: THEME === "dark" ? "#1A1918" : "#fff", overflow: "hidden" }}>
       {scenes.map((sc, i) => {
         const T = CUSTOM[sc.template] || TEMPLATES[sc.template] || TEMPLATES.title;
         const from = Math.round(sc.start * fps);

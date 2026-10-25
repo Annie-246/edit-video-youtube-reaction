@@ -65,7 +65,8 @@ Video mẫu: chỉ ~39% khung có mặt người, nhưng **không chia đều**.
 | Khối lượng dữ liệu, "AI tự sắp xếp" | `folder` | 3:12 thư mục mở ra hàng trăm thư mục con |
 | Cắt ậm ừ, AI đọc lời | `transcript` | 6:39 transcript từng chữ, nhãn Pause |
 | Quy trình nhiều bước | `steps` (≤ 4), `pills`, `tracker` (video nhiều chương) | 15:12 bảy bước kèm thời gian từng bước |
-| Mục lục / "trong video này" | `agenda` ở đầu; `tracker` hoặc `BREAK:` mỗi phần; `recap` ở cuối | 0:23 ba thẻ chương; dãy 7 thẻ quay lại ~2 phút một lần |
+| Mục lục / "trong video này" | `chapters` (intro) ở đầu, mỗi `BREAK:` tự quay lại danh sách và zoom vào chương mới; `recap` ở cuối | 0:23 ba thẻ chương; video mẫu 2 (0:30–0:39) danh sách 8 chương, dòng 07 khoanh cam |
+| Đoạn nói có ảnh / tư liệu nhiều tấm | thỉnh thoảng `OVER: orbit` (ảnh xoay 3D quanh người, 3–6 giây) | test YouMind: slide Đám cưới chuột bay quanh người khi nói "đưa tài liệu, link, hình ảnh…" |
 | "Ba điều cần nhớ" | `OVER: dots` ở `FACE:`; hoặc `steps` / `pills` ở `MOTION:` | 16:12 chấm 1-2-3 dưới mặt người |
 | "Có 2 thứ…", gợi tò mò ý sau | `reveal` | 17:45 thẻ 2 úp dấu "?" rồi lật |
 | Xu hướng, tăng trưởng, giữ chân | `linechart` | 17:39 đường retention |

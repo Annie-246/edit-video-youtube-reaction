@@ -331,7 +331,7 @@ const ChatT: React.FC<TplProps> = ({ kicker, title, messages = [], seed }) => {
                   lineHeight: 1.4,
                   color: me ? "#fff" : L.ink,
                   background: me ? GRAD : "var(--card)",
-                  boxShadow: me ? "0 14px 34px rgba(217,119,87,0.32)" : "0 12px 30px rgba(80,50,30,0.12), 0 0 0 1px rgba(150,105,75,0.1)",
+                  boxShadow: me ? "0 14px 34px rgba(217,119,87,0.32)" : "var(--cardshadow)",
                 }}
               >
                 <Typed text={m.text} delay={d + 4} cps={60} caret={false} />

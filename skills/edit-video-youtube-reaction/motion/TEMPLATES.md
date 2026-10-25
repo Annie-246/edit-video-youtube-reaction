@@ -6,7 +6,8 @@ theo khung: khung chính 1440x920 cạnh người nói, hoặc thẻ full 1920x1
 - **Màu:** nhấn bằng cam trơn `#D97757`, chữ `#141413`. Nền cảnh là gradient be – cam nhạt.
   Không dùng gradient nhiều màu. Ngoại lệ duy nhất: bộ showreel bên dưới (gradient cùng tông cam đất).
 - **Nền đen:** chỉ dùng cho vài cảnh cần nhấn (`"dark": true`). Mặc định thẻ FULL dạng
-  `title`, `quote`, `equation` và mọi `BEAT:` có nền đen; `BREAK:` dùng mẫu `chapter`.
+  `title`, `quote`, `equation` và mọi `BEAT:` có nền đen. **Hiện toàn video dùng dark theme** (`THEME` trong
+  `src/light/Main.tsx`); `BREAK:` dùng mẫu `chapters` (chế độ focus).
 - **Font:** Inter. Viết hoa đầu câu, không viết hoa toàn bộ. Line-height từ 1.24 trở lên.
 - **Chuyển động:** chữ hiện dần từng từ (bỏ mờ, trồi lên), thẻ trồi lên lần lượt, con trỏ tay bấm,
   chữ gõ từng ký tự, số đếm lên. Hai video mẫu nằm ở `templates/samples/`.
@@ -110,6 +111,9 @@ BEAT: @"câu neo" {"title":"…"}                  ← thẻ chốt nền đen
 | `progress` | đang xuất / đang xử lý: thanh chạy tới 100 % rồi hiện tick | `kicker`, `title`, `label`, `done`, `from`, `to` |
 | `doctilt` | ảnh chụp tài liệu thật trên mặt phẳng nghiêng, có viên nhãn tên | `src`, `label` |
 | `comments` | bằng chứng xã hội: tường bình luận trôi, con số lớn đè giữa | `items:[{name,text}]`, `big`, `sub` |
+| `chapters` | danh sách chương. `intro`: các dòng nhoè vào rồi sáng lần lượt theo lời; `focus`: quay lại danh sách, đẩy vào dòng `focus`, khoanh viền cam, chương trước có tick | `mode`, `items:[{title,src|icon}]` (bỏ trống = tự lấy từ `BREAK:`), `focus`, `times`, `per`, `kicker` |
+
+Ảnh xoay 3D quanh người (`OVER: orbit`) dùng composition riêng `Orbit` (`src/light/orbit.tsx`), không phải mẫu cảnh.
 
 Lớp `OVER:` đè lên người nói ở đoạn `FACE:` (`stats`, `dots`, `status`, `blurtitle`) nằm trong
 `src/light/keys.tsx`; props xem SKILL.md mục "Lớp OVER".

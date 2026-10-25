@@ -22,7 +22,7 @@ const pick = (list: string[], i: number) => (list.length ? list[((i % list.lengt
 const useTone = () => {
   const d = useDark();
   return d
-    ? { dark: true, bg: C.coal, field: `radial-gradient(90% 90% at 50% 30%, #2C2A28 0%, ${C.coal} 70%)`, ink: C.cream, sub: "#C9C5BC", card: "#2A2927", soft: "rgba(255,255,255,0.06)",
+    ? { dark: true, bg: C.coal, field: `radial-gradient(90% 90% at 50% 30%, #2C2A28 0%, ${C.coal} 70%)`, ink: C.cream, sub: "#C9C5BC", card: "linear-gradient(180deg, #2A2927 0%, #232220 100%)", soft: "rgba(255,255,255,0.06)",
         line: "rgba(240,180,154,0.28)", shadow: "rgba(0,0,0,0.5)", glow: 0.32 }
     : { dark: false, bg: C.cream, field: `radial-gradient(90% 90% at 50% 30%, #FFFFFF 0%, ${C.cream} 60%, ${C.sand} 100%)`, ink: C.ink, sub: C.ink2, card: "#FFFFFF", soft: "#FAF6F1",
         line: "rgba(181,83,47,0.22)", shadow: "rgba(80,40,20,0.20)", glow: 0.18 };
@@ -39,10 +39,10 @@ const Chip: React.FC<{ text?: string; delay?: number; low?: boolean }> = ({ text
   const T = useTone();
   if (!text) return null;
   return (
-    <div style={{ position: "absolute", left: 40, ...(low ? { bottom: 30 } : { top: 36 }), opacity: p, transform: `translateY(${(1 - p) * -16}px)`, zIndex: 60, display: "flex", alignItems: "center", gap: 10,
-      padding: "10px 22px", borderRadius: 99, fontSize: 22, fontWeight: 650, color: T.ink, background: T.dark ? "rgba(42,41,39,0.85)" : "rgba(255,255,255,0.92)",
-      boxShadow: T.dark ? "0 0 0 1px rgba(255,255,255,0.12)" : "0 8px 24px rgba(80,50,30,0.12)" }}>
-      <span style={{ width: 10, height: 10, borderRadius: 5, background: RIM }} />{text}
+    <div style={{ position: "absolute", left: 44, ...(low ? { bottom: 32 } : { top: 38 }), opacity: p, transform: `translateY(${(1 - p) * -16}px)`, zIndex: 60, display: "flex", alignItems: "center", gap: 10,
+      fontSize: 18, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: T.ink,
+      textShadow: T.dark ? "0 1px 2px rgba(0,0,0,0.8), 0 4px 18px rgba(0,0,0,0.7)" : "0 1px 2px rgba(255,255,255,0.8)" }}>
+      <span style={{ width: 8, height: 8, borderRadius: 4, background: RIM }} />{text}
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import React from "react";
 import { Img, interpolate, useCurrentFrame } from "remotion";
-import { Card, FONT, GRAD, GradText, Kicker, L, Pill, Stage, Typed, Words, ease, lerp, useIn } from "./kit";
+import { Card, FONT, GRAD, GradText, Kicker, L, Pill, Stage, Typed, Words, ease, lerp, useDark, useIn } from "./kit";
 import { Icon, IconTile } from "./icons";
 import type { TplProps } from "./templates";
 
@@ -90,7 +90,7 @@ const ReceiptT: React.FC<TplProps> = ({ kicker, title = "Chi phí", tag, items =
           return (
             <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: `1px dashed ${L.line}`, opacity: p, transform: `translateX(${(1 - p) * -16}px)` }}>
               <span style={{ fontSize: 23, color: L.ink2 }}>{it.label}</span>
-              <span style={{ fontSize: 20, fontWeight: 700, color: "#fff", background: "#2A2927", borderRadius: 999, padding: "5px 16px" }}>{it.value}</span>
+              <span style={{ fontSize: 20, fontWeight: 700, color: "var(--ink)", background: "var(--pill)", boxShadow: "var(--pillshadow)", borderRadius: 999, padding: "5px 16px" }}>{it.value}</span>
             </div>
           );
         })}
@@ -135,7 +135,7 @@ const CalendarT: React.FC<TplProps> = ({ kicker, title, month = "Tháng 11", yea
           })}
         </div>
       </Card>
-      {tag ? <div style={{ opacity: t, transform: `translateY(${(1 - t) * 10}px)` }}><Pill active>{mark}/{String(month).replace(/\D/g, "") || ""} · {tag}</Pill></div> : null}
+      {tag ? <div style={{ opacity: t, transform: `translateY(${(1 - t) * 10}px)`, fontSize: 24, fontWeight: 700, color: "#E8916F" }}>{mark}/{String(month).replace(/\D/g, "") || ""} · {tag}</div> : null}
     </Stage>
   );
 };
@@ -186,7 +186,7 @@ const LockT: React.FC<TplProps> = ({ kicker, name, sub, src, icon = "rocket", la
           <Icon name="lock" size={54} color="#141413" stroke={2.2} />
         </div>
       </div>
-      {label ? <div style={{ marginTop: 40, opacity: l }}><Pill active>{label}</Pill></div> : null}
+      {label ? <div style={{ marginTop: 40, opacity: l, fontSize: 26, fontWeight: 700, color: "#E8916F" }}>{label}</div> : null}
     </Stage>
   );
 };
@@ -268,8 +268,8 @@ const HubT: React.FC<TplProps> = ({ kicker, title, inputs = [], center = {}, out
         {ins.map((it, i) => <Node key={i} it={it} x={300} y={iy[i]} d={2 + i * 4} />)}
         {outs.map((it, i) => <Node key={i} it={it} x={W - 300} y={oy[i]} d={34 + i * 5} right />)}
         <div style={{ position: "absolute", left: cx, top: cy, transform: `translate(-50%,-50%) scale(${c})`, display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 150, height: 150, borderRadius: 44, background: GRAD, display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: `0 0 ${50 + Math.sin(f / 8) * 14}px rgba(217,119,87,0.55)` }}>
+          <div style={{ width: 150, height: 150, borderRadius: 44, background: "linear-gradient(180deg, #E3876A 0%, #D97757 50%, #C8643F 100%)", display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.2), 0 0 ${40 + Math.sin(f / 8) * 12}px rgba(217,119,87,0.45), 0 16px 34px rgba(0,0,0,0.35)` }}>
             {center.src ? <Img src={center.src} style={{ width: 96, height: 96, objectFit: "contain" }} /> : <Icon name={center.icon || "brain"} size={86} color="#fff" stroke={1.7} />}
           </div>
           {center.label ? <div style={{ fontSize: 24, fontWeight: 800 }}>{center.label}</div> : null}
@@ -375,7 +375,7 @@ const ScriptClipT: React.FC<TplProps> = ({ kicker, lines = [], active = 0, src, 
         </Card>
         <div style={{ display: "flex", flexDirection: "column", gap: 10, opacity: m, transform: `translateX(${(1 - m) * 30}px)` }}>
           {label ? <div style={{ fontSize: 17, color: L.muted, fontWeight: 600 }}>{label}</div> : null}
-          <div style={{ width: 460, height: 260, borderRadius: 18, overflow: "hidden", boxShadow: "0 0 0 3px #fff, 0 20px 50px rgba(80,50,30,0.25)", background: "#1F1E1D" }}>
+          <div style={{ width: 460, height: 260, borderRadius: 18, overflow: "hidden", boxShadow: "0 0 0 3px var(--ring), var(--deepshadow)", background: "#1F1E1D" }}>
             {src ? <Img src={src} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : null}
           </div>
         </div>
@@ -460,7 +460,7 @@ const BeforeAfterT: React.FC<TplProps> = ({ kicker, title, before = {}, after = 
     <div style={{ display: "flex", flexDirection: "column", gap: 10, opacity: p, transform: `translateY(${(1 - p) * 26}px)` }}>
       <div style={{ fontSize: big ? 34 : 26, fontWeight: 800 }}>{big ? <GradText>{it.label || "Sau"}</GradText> : it.label || "Trước"}</div>
       <div style={{ width: big ? 600 : 340, height: big ? 360 : 230, borderRadius: 20, overflow: "hidden", background: "#2A2927",
-        boxShadow: big ? "0 0 0 4px #fff, 0 24px 60px rgba(217,119,87,0.35)" : "0 0 0 3px #fff, 0 14px 30px rgba(80,50,30,0.2)" }}>
+        boxShadow: big ? "0 0 0 4px var(--ring), 0 0 40px rgba(217,119,87,0.3), var(--deepshadow)" : "0 0 0 3px var(--ring), var(--deepshadow)" }}>
         {it.src ? <Img src={it.src} style={{ width: "100%", height: "100%", objectFit: "cover", filter: grey ? "grayscale(1) brightness(0.85)" : "none" }} /> : null}
       </div>
       {it.sub ? <div style={{ fontSize: 19, color: L.ink2 }}>{it.sub}</div> : null}
@@ -567,9 +567,9 @@ const DocTiltT: React.FC<TplProps> = ({ src, label, seed }) => {
   const l = useIn(14);
   return (
     <Stage seed={seed}>
-      {label ? <div style={{ opacity: l, transform: `translateY(${(1 - l) * -10}px)` }}><Pill active>{label}</Pill></div> : null}
+      {label ? <div style={{ opacity: l, transform: `translateY(${(1 - l) * -10}px)` }}><Kicker text={label} /></div> : null}
       <div style={{ perspective: 1400 }}>
-        <div style={{ width: 920, height: 500, borderRadius: 18, overflow: "hidden", background: "#fff", boxShadow: "0 40px 80px rgba(80,50,30,0.28)",
+        <div style={{ width: 920, height: 500, borderRadius: 18, overflow: "hidden", background: "#fff", boxShadow: "var(--deepshadow)",
           transform: `rotateX(${lerp(a, 30, 18)}deg) rotateZ(${lerp(drift, -6, -3)}deg) translateY(${(1 - a) * 60}px) scale(${lerp(drift, 0.98, 1.04)})`, opacity: a }}>
           {src ? <Img src={src} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} /> : null}
         </div>
@@ -584,6 +584,7 @@ const CommentsT: React.FC<TplProps> = ({ items = [], big, sub, seed }) => {
   const list = items as Any[];
   const cols = 4;
   const b = useIn(16);
+  const dark = useDark();
   return (
     <Stage seed={seed} pad={0}>
       <div style={{ position: "absolute", inset: -40, display: "flex", gap: 20, transform: "rotate(-4deg)", filter: big ? "blur(2.5px)" : "none", opacity: big ? 0.75 : 1 }}>
@@ -606,16 +607,88 @@ const CommentsT: React.FC<TplProps> = ({ items = [], big, sub, seed }) => {
       </div>
       {big ? (
         <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8,
-          background: "radial-gradient(60% 50% at 50% 50%, rgba(247,243,236,0.92) 0%, rgba(247,243,236,0) 100%)", opacity: b }}>
+          background: dark ? "radial-gradient(60% 50% at 50% 50%, rgba(26,25,24,0.94) 0%, rgba(26,25,24,0) 100%)" : "radial-gradient(60% 50% at 50% 50%, rgba(247,243,236,0.92) 0%, rgba(247,243,236,0) 100%)", opacity: b }}>
           <div style={{ fontFamily: FONT, fontSize: 110, fontWeight: 850, letterSpacing: "-0.04em", transform: `scale(${lerp(b, 0.85, 1)})` }}><GradText>{big}</GradText></div>
-          {sub ? <div style={{ fontFamily: FONT, fontSize: 32, fontWeight: 650, color: "#141413" }}>{sub}</div> : null}
+          {sub ? <div style={{ fontFamily: FONT, fontSize: 32, fontWeight: 650, color: L.ink }}>{sub}</div> : null}
         </div>
       ) : null}
     </Stage>
   );
 };
 
+/* ---------- chapters: the video's chapter list ----------
+ * mode "intro": rows blur in, then light up one by one as each chapter is named (`times` = second of
+ *               each mention from the scene start, else every `per` frames)
+ * mode "focus": the list comes back at a new chapter: done rows ticked, the camera pushes in on row
+ *               `focus`, which gets the clay glow while the rest dim and soften
+ */
+const ChaptersT: React.FC<TplProps> = ({ kicker = "Trong video này", items = [], mode = "intro", focus = 0, per = 14, times, dur, seed }) => {
+  const f = useCurrentFrame();
+  const list = items as Any[];
+  const n = list.length;
+  const ROW = 62, GAP = 12, Wd = 860;
+  const listH = n * (ROW + GAP) - GAP;
+  const intro = mode !== "focus";
+  const fo = Math.max(0, Math.min(n - 1, Number(focus)));
+  const at = (i: number) => (Array.isArray(times) && times[i] !== undefined ? Math.round(Number(times[i]) * 30) : 14 + i * Number(per));
+  const push = intro ? 0 : interpolate(f, [6, 28], [0, 1], { ...clamp, easing: ease });
+  const drift = interpolate(f, [0, dur || 120], [0, 1], clamp);
+  // push in on the focused row: scale up and slide it towards the middle of the frame
+  const rowY = fo * (ROW + GAP) + ROW / 2 - listH / 2;
+  const scale = 1 + push * 0.07 + drift * 0.02;
+  const ty = -rowY * push * 0.85;
+  const head = useIn(0);
+  return (
+    <Stage seed={seed} pad={0}>
+      <div style={{ position: "absolute", left: "50%", top: "50%", width: Wd, transform: `translate(-50%, -50%) translateY(${ty}px) scale(${scale})`, transformOrigin: "50% 50%" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 15, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: L.muted,
+          marginBottom: 16, opacity: head * (1 - push * 0.6) }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 7, height: 7, borderRadius: 4, background: "#D97757" }} />{kicker}</span>
+          <span>{n} chương</span>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: GAP }}>
+          {list.map((it, i) => {
+            const enter = interpolate(f, intro ? [2 + i * 3, 12 + i * 3] : [0, 6], [0, 1], { ...clamp, easing: ease });
+            const lit = intro ? interpolate(f, [at(i), at(i) + 8], [0, 1], clamp) : i <= fo ? 1 : 0;
+            const sweep = intro ? interpolate(f, [at(i), at(i) + 14], [-30, 130], clamp) : -30;
+            const on = !intro && i === fo;
+            const done = !intro && i < fo;
+            const dim = !intro && !on ? push : 0;
+            const glow = on ? push : 0;
+            const spin = (f * 9) % 360;
+            return (
+              // each row is a raised card (top-lit fill, hairline, soft drop shadow); the focused one
+              // steps forward: a touch wider, warmer fill, clay rim and glow
+              <div key={i} style={{ position: "relative", height: ROW, borderRadius: 16, display: "flex", alignItems: "center", gap: 20, padding: "0 22px", overflow: "hidden",
+                background: on ? `linear-gradient(180deg, rgba(64,52,46,${glow}) 0%, rgba(40,35,32,${glow}) 100%), var(--deepcard)` : "var(--deepcard)",
+                boxShadow: on && glow > 0.05
+                  ? `inset 0 1px 0 rgba(255,255,255,0.12), 0 0 0 ${1 + glow}px rgba(217,119,87,${0.3 + 0.6 * glow}), 0 0 ${44 * glow}px rgba(217,119,87,${0.45 * glow}), 0 30px 70px rgba(0,0,0,0.6)`
+                  : "var(--deepshadowcard)",
+                opacity: enter * (1 - dim * 0.6), filter: `blur(${(1 - enter) * 8 + dim * 2.6}px)`,
+                transform: `translateY(${(1 - enter) * 14}px) scale(${1 + 0.04 * glow})` }}>
+                <div style={{ position: "absolute", top: 0, bottom: 0, left: `${sweep}%`, width: "30%", background: "linear-gradient(90deg, rgba(240,180,154,0) 0%, rgba(240,180,154,0.16) 50%, rgba(240,180,154,0) 100%)" }} />
+                <div style={{ width: 40, fontSize: 26, fontWeight: 500, letterSpacing: "-0.01em", color: on ? "#E8916F" : L.ink, opacity: 0.35 + 0.65 * lit, fontVariantNumeric: "tabular-nums" }}>{String(i + 1).padStart(2, "0")}</div>
+                <div style={{ width: 92, height: 52, borderRadius: 10, overflow: "hidden", flex: "none", display: "flex", alignItems: "center", justifyContent: "center",
+                  background: on ? "linear-gradient(180deg, #E8916F 0%, #C15F3C 100%)" : "var(--tile)",
+                  boxShadow: on ? "inset 0 1px 0 rgba(255,255,255,0.35), 0 6px 16px rgba(0,0,0,0.45)" : "var(--tileshadow)", opacity: 0.45 + 0.55 * lit }}>
+                  {it.src ? <Img src={it.src} style={{ width: "100%", height: "100%", objectFit: "cover", filter: on ? "none" : `grayscale(${1 - lit})` }} /> : <Icon name={it.icon || "play"} size={28} color={on ? "#fff" : "var(--tileic)"} />}
+                </div>
+                <div style={{ flex: 1, fontSize: 24, fontWeight: on ? 700 : 600, letterSpacing: "-0.01em", color: L.ink, opacity: 0.3 + 0.7 * lit, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.title}</div>
+                <div style={{ width: 28, display: "flex", justifyContent: "center", opacity: 0.4 + 0.6 * lit }}>
+                  {on ? <div style={{ width: 22, height: 22, borderRadius: 11, border: "3px solid #E8916F", borderTopColor: "transparent", transform: `rotate(${spin}deg)` }} />
+                    : done ? <Icon name="check" size={24} color="#E8916F" stroke={2.8} /> : <Icon name="lock" size={22} color={L.ink2} stroke={2.2} />}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </Stage>
+  );
+};
+
 export const LEARN: Record<string, React.FC<TplProps>> = {
+  chapters: ChaptersT,
   pricecut: PriceCutT,
   receipt: ReceiptT,
   calendar: CalendarT,

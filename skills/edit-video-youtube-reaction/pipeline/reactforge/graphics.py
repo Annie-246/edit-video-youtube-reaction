@@ -72,20 +72,20 @@ def frame_html(L: dict, info_kicker: str, info_title: str, info_sub: str = "", f
 <div class="t">{H.escape(info_title)}</div>{'<div class="s">' + H.escape(info_sub) + '</div>' if info_sub else ''}</div>"""
     return f"""<html><head><meta charset="utf-8"><style>{_font_css()}
 html,body{{margin:0;width:{L['w']}px;height:{L['h']}px;background:transparent;overflow:hidden;font-family:'NotionInter',sans-serif}}
-.fr{{position:absolute;box-sizing:border-box;border:{bw}px solid #fff;border-radius:{m['r'] + bw}px;
-box-shadow:0 {int(18*s)}px {int(50*s)}px rgba(80,50,30,.20),0 0 0 1px rgba(217,119,87,.10)}}
-.hd{{position:absolute;box-sizing:border-box;border:{hb}px solid #fff;border-radius:{h['r'] + hb}px;
-box-shadow:0 {int(14*s)}px {int(40*s)}px rgba(80,50,30,.22),0 0 0 1px rgba(217,119,87,.12)}}
+.fr{{position:absolute;box-sizing:border-box;border:{bw}px solid #262523;border-radius:{m['r'] + bw}px;
+box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 0 0 1px rgba(255,255,255,.06),0 {int(14*s)}px {int(36*s)}px rgba(0,0,0,.45)}}
+.hd{{position:absolute;box-sizing:border-box;border:{hb}px solid #262523;border-radius:{h['r'] + hb}px;
+box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 0 0 1px rgba(255,255,255,.06),0 {int(12*s)}px {int(30*s)}px rgba(0,0,0,.45)}}
 .info{{position:absolute;left:{inf['x']}px;top:{inf['y']}px;width:{inf['w']}px;height:{inf['h']}px;box-sizing:border-box;padding:{int(22*s)}px {int(26*s)}px;
-display:flex;flex-direction:column;justify-content:center;background:{GRAD};border-radius:{inf['r']}px;
-box-shadow:0 {int(16*s)}px {int(40*s)}px rgba(217,119,87,.35)}}
+display:flex;flex-direction:column;justify-content:center;background:linear-gradient(180deg,#E3876A 0%,#D97757 50%,#C8643F 100%);border-radius:{inf['r']}px;
+box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 {int(10*s)}px {int(28*s)}px rgba(0,0,0,.4)}}
 .k{{display:flex;align-items:center;gap:{int(8*s)}px;font-size:{int(20*s)}px;font-weight:600;color:rgba(255,255,255,.88);line-height:1.3}}
 .dot{{width:{int(10*s)}px;height:{int(10*s)}px;border-radius:50%;background:#fff}}
 .t{{margin-top:{int(4*s)}px;font-size:{int(40*s)}px;font-weight:800;letter-spacing:-.02em;line-height:1.24;padding-bottom:2px;color:#fff}}
 .s{{margin-top:{int(2*s)}px;font-size:{int(19*s)}px;color:rgba(255,255,255,.9);line-height:1.35}}
-.cp{{position:absolute;left:{cp['x']}px;top:{cp['y']}px;width:{cp['w']}px;height:{cp['h']}px;border-radius:{cp['r']}px;background:#fff;
-box-shadow:0 {int(12*s)}px {int(34*s)}px rgba(80,50,30,.18),0 0 0 1px rgba(217,119,87,.14);display:flex;align-items:center;justify-content:center;gap:{int(10*s)}px;
-font-size:{int(22*s)}px;font-weight:600;color:#5E5D59}}
+.cp{{position:absolute;left:{cp['x']}px;top:{cp['y']}px;width:{cp['w']}px;height:{cp['h']}px;border-radius:{cp['r']}px;background:linear-gradient(180deg,#2C2B29 0%,#232220 100%);
+box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 0 0 1px rgba(255,255,255,.07),0 {int(10*s)}px {int(26*s)}px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;gap:{int(10*s)}px;
+font-size:{int(22*s)}px;font-weight:600;color:#9A968E}}
 .cp .dot{{background:{GRAD}}}
 </style></head><body>
 <div class="fr" style="left:{m['x']-bw}px;top:{m['y']-bw}px;width:{m['w']+2*bw}px;height:{m['h']+2*bw}px"></div>

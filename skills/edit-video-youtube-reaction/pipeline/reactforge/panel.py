@@ -130,7 +130,7 @@ def split_long(scenes: list[dict], total: float) -> list[dict]:
         end = scenes[i + 1]["start"] if i + 1 < len(scenes) else total
         d = end - s["start"]
         starts.append((s["start"], s["template"], s["props"]))
-        if d <= MAX_SCENE or s["template"] == "recap":
+        if d <= MAX_SCENE or s["template"] in ("recap", "chapters"):
             continue
         is_b = s["template"] == "broll"
         prev = [a for j, a in brolls if j < i]
@@ -237,6 +237,29 @@ def render_panel(props: dict, out: Path, composition: str = "Main", base: Path |
 KEYS_ARGS = ["--codec=vp8", "--image-format=png", "--pixel-format=yuva420p"]   # keeps the alpha channel
 
 
+def render_orbits(project: Path, cfg: dict, L: dict, it: dict, orbits: list[dict], force: bool) -> None:
+    """OVER orbit: pictures circling the presenter. Two transparent layers per orbit (the far half
+    of the ring, the near half); render.py cuts the presenter out and stacks back → person → front.
+    Writes work/keys/<id>.orbit.json with the spans and the layer files."""
+    kd = project / "work" / "keys"; kd.mkdir(parents=True, exist_ok=True)
+    spec = []
+    for k, o in enumerate(orbits):
+        pr = o["props"]
+        base = {"width": L["w"], "height": L["h"], "fps": cfg["output"]["fps"], "total": round(o["e"] - o["s"], 3),
+                "images": pr.get("images", []), "cx": float(pr.get("cx", cfg["recording"].get("face", {}).get("cx", 0.5)))}
+        base.update({x: pr[x] for x in ("cy", "rx", "ry", "speed", "card") if x in pr})
+        files = {}
+        for layer in ("back", "front"):
+            f = kd / f"{it['id']}.orbit{k}.{layer}.webm"
+            props = {**base, "layer": layer}
+            if not (f.exists() and not force and f.with_suffix(".json").exists() and read_json(f.with_suffix(".json")) == props):
+                render_panel(props, f, composition="Orbit", base=project, extra=KEYS_ARGS)
+            files[layer] = str(f)
+        spec.append({"s": o["s"], "e": o["e"], **files})
+        print(f"{it['id']}: ảnh xoay 3D #{k} {o['s']:.1f}–{o['e']:.1f}s ({len(base['images'])} ảnh)")
+    write_json(kd / f"{it['id']}.orbit.json", spec)
+
+
 def render_keys(project: Path, cfg: dict, L: dict, it: dict, ws: list[dict], total: float, force: bool) -> None:
     """FACE keyword captions → work/keys/<id>.webm, a transparent layer render.py lays over the face."""
     from .keywords import keys_props
@@ -253,9 +276,12 @@ def render_keys(project: Path, cfg: dict, L: dict, it: dict, ws: list[dict], tot
             print(f'   ⚠ {it["id"]}: không thấy câu "{o["at"]}" — đặt OVER ở đầu đoạn'); t = 0.0
         pr = dict(o["props"]); tpl = pr.pop("tpl"); secs = float(pr.pop("secs", 3.0))
         overs.append({"s": round(t, 3), "e": round(min(total, t + secs), 3), "tpl": tpl, "props": pr})
+    orbits = [o for o in overs if o["tpl"] == "orbit"]
+    overs = [o for o in overs if o["tpl"] != "orbit"]
+    render_orbits(project, cfg, L, it, orbits, force)
     phrases = keys_props(read_json(kw)["phrases"], ws)
-    # an OVER that fills the bottom (stats, dots) or the whole frame (blurtitle) wins over keyword lines
-    busy = [(o["s"], o["e"]) for o in overs if o["tpl"] in ("stats", "dots", "blurtitle")]
+    # an OVER that fills the bottom (stats, dots) or the whole frame (blurtitle, orbit) wins over keyword lines
+    busy = [(o["s"], o["e"]) for o in overs + orbits if o["tpl"] in ("stats", "dots", "blurtitle", "orbit")]
     kept = []
     for p in phrases:
         if any(s <= p["s"] < e for s, e in busy):
@@ -323,6 +349,10 @@ def main(project: Path, only: str | None = None, force: bool = False) -> None:
             if vis.exists():
                 scenes = insert_auto(scenes, read_json(vis), ws, total)
             scenes = split_long(scenes, total)
+            for sc in scenes:
+                if sc["template"] == "chapters" and not sc["props"].get("items"):
+                    from .cards import chapter_items   # the opening list: rows from the BREAK titles
+                    sc["props"]["items"] = chapter_items(project, cfg, plan)
             # BUBBLE / MOTION draw into their big card on the grid; the white layout into its frame
             C = L["screen"].get(it.get("mode"), S)
             W, H = C["w"], C["h"]
