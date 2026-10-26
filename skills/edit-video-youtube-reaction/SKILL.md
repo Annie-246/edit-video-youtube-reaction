@@ -106,6 +106,10 @@ alpha) bằng composition `Keys`, `render` đè lên mặt người. Hai kiểu,
   khoá liền nhau và nằm **đầu hoặc cuối** cụm (từ khoá đứng đầu thì nằm trên chữ dẫn); từ khoá
   nằm giữa cụm hoặc dài hơn 16 ký tự thì tự về kiểu dòng, vì tách ra đọc vô nghĩa.
 - Chữ hiện từng từ đúng lúc nói (mờ → rõ, trồi lên), từ khoá nảy nhẹ; hết cụm thì mờ đi.
+- **Mật độ (khoá cứng):** không để khung người nói đứng trơn quá ~4 giây. Khoảng 3–5 giây một cụm, hai cụm
+  cách nhau ≥ 1,2 giây. Khai xong phải **đo khoảng trống** của từng đoạn `FACE:` (gộp cụm từ khoá + thẻ `FULL:` +
+  lớp `OVER:` + meme theo mốc lời thật): quãng nào > 5 giây thì lấp bằng cụm chữ mới hoặc cảnh minh hoạ.
+  Đừng chỉ chọn vài cụm "đắt" rồi để người nói chạy trơn cả chục giây; người xem thấy nhàm.
 
 ## Bộ màu: dark theme toàn bộ (cố định)
 
@@ -133,6 +137,12 @@ Học từ video mẫu "học thêm motion graphics (2)".
   - Mỗi `BREAK:` **tự thành màn quay lại danh sách**: khung đẩy nhẹ vào chương mới, dòng đó khoanh viền cam
     phát sáng, chương đã qua có tick, còn lại mờ. Ảnh nhỏ mỗi dòng là một khung hình quay màn hình đầu tiên
     của chương đó; chương không có quay màn hình thì dùng icon. `BREAK:` im lặng.
+  - **Bảng chương chỉ hiện ngắn (khoá cứng):** 5–7 giây lúc người dẫn nói "video có N ý", các dòng sáng nhanh
+    liền nhau (`"times"` cách ~0,35 giây). **Không** để bảng chạy suốt đoạn người dẫn tóm tắt từng ý (một màn
+    đứng yên cả phút rất chán). Lúc chốt "đó là N ý" được hiện lại bảng ~5 giây.
+  - **Tóm tắt từng ý, mỗi ý một nhịp:** nói "Thứ N" → lớp `OVER:` `dots` (số thứ tự to + tên ý ngắn, `n` = tổng số
+    ý, không `pills`) đè trên người nói ~3 giây → cảnh minh hoạ **tự vẽ** cho đúng ý đó (`FULL:`) → quay lại người nói
+    kèm chữ highlight. Ý sau dùng hình khác ý trước.
 - **Outro** (`OUTRO:`) giữ kiểu showreel: chữ trồi có bóng lặp, tiếng whoosh + trầm tự tổng hợp.
   **Không có intro**: video vào thẳng lời người dẫn.
 
@@ -191,17 +201,37 @@ Mỗi video mới, hỏi đủ: (1) kịch bản (file `.md`, Google Doc hoặc 
 
 - **Ý cuối cùng:** một ý nói lại nhiều lần thì chỉ giữ lần cuối (hoặc lần hoàn chỉnh nhất).
 - **Đệm an toàn:** không cắt chườm vào từ, giữa các ý luôn có đệm tự nhiên.
+- **Không cắt mất câu dẫn đầu chương / đầu đoạn:** sau `align`, đối chiếu từ đầu tiên được giữ của mỗi đoạn với
+  câu đầu của đoạn đó trong kịch bản; thiếu thì lùi mốc `keep` đầu đoạn về trước câu (đo `volumedetect` để chắc chỗ
+  lùi về là im lặng). Dựng xong nghe lại chỗ nối đầu mỗi chương. Bẫy đã gặp: Whisper bịa lời ở khoảng lặng ("Hãy
+  subscribe cho kênh Ghiền Mì Gõ…") làm mốc từ lệch, mốc đầu đoạn rơi vào giữa câu dẫn ("…có thể tự thực hiện
+  công việc" mà mất "Ở phần trước, chúng ta đã nói về…"), nghe rất cụt.
 
 ## Quy tắc hình ảnh (khoá cứng)
 
-- **Luật 10 giây:** tối thiểu 10 giây có một hình mới. Ở `FACE:`, mỗi cụm từ khoá mới hoặc thẻ FULL
-  đều tính là một hình mới (AI chọn từ khoá giữ nhịp ≤ 9 giây, thiếu thì tự chèn). Pipeline tự đảm bảo: cảnh graphic
+- **Luật 10 giây:** tối thiểu 10 giây có một hình mới. Ở `FACE:` siết hơn: **tối đa ~5 giây** phải có chữ hoặc
+  hình mới (mỗi cụm từ khoá mới, thẻ FULL, lớp OVER đều tính; xem "Mật độ" ở mục Chữ từ khoá FACE). Pipeline tự đảm bảo: cảnh graphic
   nào dài quá 11 giây sẽ chạy 7 giây rồi tự chuyển sang b-roll cùng chủ đề (lấy mốc b-roll
   gần nhất phía trước trong đoạn đó). Vẫn nên khai cảnh dày: khoảng 6–9 giây một cảnh.
 - **Motion hiện theo lời (tự động):** cảnh dạng danh sách (`pills`, `flow`, `steps`, `checklist`, `recap`, `bars`,
   `hub`, `tracker`, `receipt`, `chapters`, `logos`, `folder`) được pipeline dò lời: mỗi mục hiện đúng lúc được nói
   (sớm 0,15 giây), mục không dò được thì chia đều giữa hai mục bên cạnh. Vì vậy **đặt nhãn mục giống lời nói**
   ("Viết bài" khi người dẫn nói "viết bài"). Thẻ `FULL:` chưa có phần này.
+- **Motion graphic: mặc định tự vẽ bằng code theo từng câu (khoá cứng).** Với mỗi câu cần hình, tự hỏi "câu này
+  vẽ ra là cái gì?" rồi code đúng cảnh đó bằng vật thể / ẩn dụ cụ thể của câu: "AI giống điện" → nhà máy AI kéo
+  dây điện sáng dần sang cửa hàng, văn phòng, nhà xưởng; "chậm 3 tháng mất 10 tỷ đô" → 3 ô tháng tô dần + bộ đếm
+  tiền mất, tiền rơi; "dặn đừng xoá không phải bảo mật" → tin nhắn dặn bị đóng dấu, bảng quyền hạn, AI bấm Xoá bị
+  chặn. **Không xoay vòng loanh quanh** `title` / `compare` / `flow` / `pills` cho có hình. Mẫu có sẵn chỉ dùng cho
+  khung chuẩn: `chapters`, `person`, `chapter` (BREAK), `broll`, `subscribe`, outro, lớp `OVER:`.
+  - Viết vào `src/custom/<Tên video>Kit.tsx` trong thư mục data của plugin (`<data>/motion/src/custom/`), đăng ký
+    tên trong `src/custom/index.ts` (đặt tiền tố riêng, ví dụ `j_grid`), gọi bằng `FULL: @"câu neo" {"tpl":"j_grid",…}`.
+    Dùng `../light/kit` (`BlobBg`, `Kicker`, `Words`, `GradText`, `Typed`, `useIn`, `L`, `ease`) + `../light/icons`,
+    theo đúng bộ màu dark ở trên; mỗi tiêu đề đúng một cụm `*nhấn*`.
+  - **Chuyển động khớp lời:** mỗi nhịp trong cảnh (mục hiện, số đếm xong, dấu tick, AI bị chặn…) là một prop tính bằng
+    **giây từ đầu thẻ**, đo trên mốc từ thật của lời (không đoán). Cảnh dài > 8 giây phải có nhiều pha đổi theo lời.
+  - Render thẻ xong **trích khung hình soi lỗi** (chữ xuống dòng, tràn mép, đè nhau) trước khi dựng cả bài; nhãn
+    ngắn trong ô đặt `whiteSpace: "nowrap"`. Sửa code giao diện thì xoá `work/cards/<thẻ>.mp4` + `.props.json`
+    để thẻ đó dựng lại (cache chỉ so props).
 - **Phân tích kịch bản trước, chọn graphic sau:** con số → `bignumber`/`equation`, quy trình →
   `steps`/`flow`, so sánh → `compare`/`bars`, danh sách → `checklist`, câu chốt → `title`,
   tin nhắn/AI hỏi đáp → `chat`/`questions`. Hai cảnh liền nhau không cùng dạng.
