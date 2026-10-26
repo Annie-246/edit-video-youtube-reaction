@@ -222,7 +222,9 @@ Mỗi video mới, hỏi đủ: (1) kịch bản (file `.md`, Google Doc hoặc 
   dây điện sáng dần sang cửa hàng, văn phòng, nhà xưởng; "chậm 3 tháng mất 10 tỷ đô" → 3 ô tháng tô dần + bộ đếm
   tiền mất, tiền rơi; "dặn đừng xoá không phải bảo mật" → tin nhắn dặn bị đóng dấu, bảng quyền hạn, AI bấm Xoá bị
   chặn. **Không xoay vòng loanh quanh** `title` / `compare` / `flow` / `pills` cho có hình. Mẫu có sẵn chỉ dùng cho
-  khung chuẩn: `chapters`, `person`, `chapter` (BREAK), `broll`, `subscribe`, outro, lớp `OVER:`.
+  khung chuẩn: `chapters`, `person`, `chapter` (BREAK), `broll` (chỉ là khung phát đoạn video gốc thật), outro,
+  lớp `OVER:`. Lời kêu gọi like / share / subscribe / tham gia cộng đồng **cũng tự vẽ linh hoạt** theo đúng câu
+  người dẫn nói (nội dung, nút, con trỏ, thứ tự xuất hiện), không dùng lại mẫu `subscribe` có sẵn.
   - Viết vào `src/custom/<Tên video>Kit.tsx` trong thư mục data của plugin (`<data>/motion/src/custom/`), đăng ký
     tên trong `src/custom/index.ts` (đặt tiền tố riêng, ví dụ `j_grid`), gọi bằng `FULL: @"câu neo" {"tpl":"j_grid",…}`.
     Dùng `../light/kit` (`BlobBg`, `Kicker`, `Words`, `GradText`, `Typed`, `useIn`, `L`, `ease`) + `../light/icons`,
