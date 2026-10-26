@@ -68,8 +68,13 @@ Intro dựng **ngoài** pipeline chính bằng một script EDL rồi ghép vào
    `overlay` (đọc bằng `-c:v libvpx` để giữ alpha).
 5. Tiếng: giọng lấy từ chính `final.mp4` (cùng timeline, đã chuẩn hoá), nhạc + SFX `adelay` + `amix
    normalize=0` + `alimiter`; kiểm tổng ~ −15 LUFS.
-6. Ghép: `intro + final.mp4 từ mốc cuối intro`, encode lại toàn bộ (concat copy dễ lỗi ở điểm nối).
-   **Sao lưu `final.mp4` trước.** Lưu ý: chạy lại `render --concat` sẽ ghi đè bản đã ghép → ghép lại.
+6. Ghép (cách duy nhất đã chạy đúng, lệch 0 khung / 0 s ở mọi mốc):
+   - **sao lưu `final.mp4`**;
+   - cắt đuôi `final.mp4` **đúng biên khung** (vd. `-ss 44.8333333` sau `-i`, encode lại, `-r 30`);
+   - đổi cả intro và đuôi sang file trung gian `.mkv` **tiếng PCM** (`-c:v copy -c:a pcm_s16le`, intro thêm
+     `atrim=end=<độ dài>,apad=whole_dur=<độ dài>`) để hình và tiếng dài bằng nhau tuyệt đối;
+   - `-f concat` (demuxer) hai file `.mkv` → encode H.264 + AAC một lần.
+   Chạy lại `render --concat` sẽ ghi đè bản đã ghép → phải ghép lại.
 
 Script mẫu đầy đủ: `references/intro-match-cut-build-example.py` (dự án Jensen; đổi đường dẫn, EDL,
 cụm chữ, mốc nhạc cho video mới).
@@ -82,6 +87,19 @@ cụm chữ, mốc nhạc cho video mới).
 - **Chọn khung tư liệu:** kiểm `scdet` trong từng đoạn cắt, tránh đoạn có điểm chuyển camera bên trong
   (một cảnh 0,4 s mà đổi góc máy giữa chừng là giật).
 - **`-t` đặt sau `-i`** cắt luôn phần `apad` → mất thẻ tiêu đề cuối; đặt `-t` trước `-i`.
+- **Ghép intro vào `final.mp4` — 4 lần hỏng trước khi đúng:**
+  bộ lọc `concat` với input có `-ss` mất ~48 s hình, tiếng trôi 0,2 s; bộ lọc `concat` + `trim` cũng hỏng
+  (hình dừng ở 223 s); `-f concat` với file trung gian tiếng **AAC** lệch 2 khung cả phần sau, vì demuxer nối
+  file sau vào sau luồng dài nhất của file trước, mà AAC có đệm nên tiếng dài hơn hình ~0,06 s. Đúng: file
+  trung gian tiếng PCM, cắt đúng độ dài (mục 3 bước 6).
+- **Mọi clip của intro phải cùng một định dạng màu** (BT.709, tv range): thẻ Remotion ra `yuvj420p` full
+  range, clip video ra `yuv420p` tv range; đổi định dạng giữa luồng làm ffmpeg dựng lại bộ lọc, bộ đếm khung
+  về 0 → rớt khung ở mỗi điểm nối (đã mất 3 khung, cả phần sau hình sớm hơn tiếng 0,1 s). Chuẩn hoá từng clip
+  (`scale=out_range=tv:out_color_matrix=bt709,format=yuv420p` + gắn tag màu), và `setpts=N/30/TB` trước
+  overlay. Đừng chữa bằng `tpad` (đã thử: làm hình dài hơn tiếng).
+- **Kiểm trước khi giao:** intro `nb_frames == round(độ dài × 30)`; cắt đuôi `final.mp4` **đúng biên khung**
+  (vd. 44,8333 chứ không 44,85, rơi giữa hai khung lệch 1 khung); ghép xong so hình + tiếng ở vài mốc cuối
+  video với bản cũ: lệch khung = 0, tiếng không trôi.
 - **Đo nhạc trong bản mix bằng cách trừ giọng là sai** (limiter làm lệch); xuất riêng nhánh nhạc sau
   ducking rồi đo.
 - **Nhạc từ archive.org:** giấy phép do người upload tự khai, cùng tác giả mà chỗ ghi CC BY chỗ ghi

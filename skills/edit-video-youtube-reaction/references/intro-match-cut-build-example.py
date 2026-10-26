@@ -114,7 +114,8 @@ def frames(a, b):
     return round(b * FPS) - round(a * FPS)
 
 
-ENC = ["-c:v", "libx264", "-preset", "veryfast", "-crf", "16", "-an"]
+ENC = ["-c:v", "libx264", "-preset", "veryfast", "-crf", "16", "-an", "-color_range", "tv", "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709"]
+NORM = "scale=out_range=tv:out_color_matrix=bt709,format=yuv420p"   # one colour format for every clip (a change mid-stream resets the filter graph and drops frames)
 PUSH = 0.0009                              # zoom gained per frame, same on every footage shot
 
 
@@ -131,14 +132,14 @@ def make_clip(i, a, b, kind, args):
             w, h = 1920 / z0, 1080 / z0
             pre += f",crop={w:.0f}:{h:.0f}:{x0 * 1920:.0f}:{y0 * 1080:.0f}"
         zp = f"zoompan=z='1+{PUSH}*on':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=3840x2160:fps=30"
-        vf = f"{pre},scale=3840:2160:flags=lanczos,{zp},scale=1920:1080:flags=lanczos,setsar=1,format=yuv420p"
+        vf = f"{pre},scale=3840:2160:flags=lanczos,{zp},scale=1920:1080:flags=lanczos,setsar=1,{NORM}"
         run(["ffmpeg", "-loglevel", "error", "-y", "-ss", str(args["at"]), "-i", str(PRJ / "source" / "full.mp4"), "-vf", vf, *ENC, "-frames:v", str(n), str(out)])
     elif kind in ("card", "slice"):
         srcf = CARDS / f"card_{args['name']}.mp4" if kind == "card" else PRJ / "work" / "cards" / f"{args['card']}.mp4"
         ss = ["-ss", str(args["from"])] if kind == "slice" else []
-        run(["ffmpeg", "-loglevel", "error", "-y", *ss, "-i", str(srcf), "-vf", "fps=30,scale=1920:1080,setsar=1,format=yuv420p", *ENC, "-frames:v", str(n), str(out)])
+        run(["ffmpeg", "-loglevel", "error", "-y", *ss, "-i", str(srcf), "-vf", f"fps=30,scale=1920:1080,setsar=1,{NORM}", *ENC, "-frames:v", str(n), str(out)])
     elif kind == "black":
-        run(["ffmpeg", "-loglevel", "error", "-y", "-f", "lavfi", "-i", "color=c=black:s=1920x1080:r=30", "-vf", "format=yuv420p", *ENC, "-frames:v", str(n), str(out)])
+        run(["ffmpeg", "-loglevel", "error", "-y", "-f", "lavfi", "-i", "color=c=black:s=1920x1080:r=30", "-vf", f"{NORM}", *ENC, "-frames:v", str(n), str(out)])
     elif kind == "face":
         marks = args["frames"] + [(b, None)]
         subs = []
@@ -146,8 +147,8 @@ def make_clip(i, a, b, kind, args):
             x, (z, top) = marks[k]
             y = marks[k + 1][0]
             sp = CL / f"{i:03d}_{k}.mp4"
-            vf = "fps=30,setsar=1,format=yuv420p" if z == 1.0 else \
-                f"fps=30,scale={round(1920 * z)}:{round(1080 * z)}:flags=lanczos,crop=1920:1080:(iw-1920)/2:{top * 1080 * z:.0f},setsar=1,format=yuv420p"
+            vf = f"fps=30,setsar=1,{NORM}" if z == 1.0 else \
+                f"fps=30,scale={round(1920 * z)}:{round(1080 * z)}:flags=lanczos,crop=1920:1080:(iw-1920)/2:{top * 1080 * z:.0f},setsar=1,{NORM}"
             run(["ffmpeg", "-loglevel", "error", "-y", "-ss", f"{src_of(x):.3f}", "-i", str(PRJ / "work" / "recording.mp4"), "-vf", vf, *ENC, "-frames:v", str(frames(x, y)), str(sp)])
             subs.append(sp)
         lst = CL / f"{i:03d}.txt"
@@ -229,7 +230,9 @@ def main():
     mix = audio()
     out = PRJ / "out" / "intro_test_matchcut_v2.mp4"
     run(["ffmpeg", "-loglevel", "error", "-y", "-i", str(base), "-c:v", "libvpx", "-i", str(keys), "-i", str(mix),
-         "-filter_complex", "[0:v][1:v]overlay=0:0:eof_action=pass,format=yuv420p[v]", "-map", "[v]", "-map", "2:a",
+         # concat -c copy leaves slightly uneven timestamps; renumber every frame or overlay drops one at a join
+         "-filter_complex", "[0:v]setpts=N/30/TB[b];[1:v]setpts=N/30/TB[k];[b][k]overlay=0:0:eof_action=pass,format=yuv420p[v]",
+         "-map", "[v]", "-map", "2:a", "-r", "30",
          "-c:v", "libx264", "-preset", "medium", "-crf", "17", "-c:a", "aac", "-b:a", "192k", "-t", f"{TOTAL}", str(out)])
     (W / "edl_v2.json").write_text(json.dumps({"music_offset": MUSIC_OFF, "edl": EDL, "keys": phrases, "sfx": SFX_PLAN}, ensure_ascii=False, indent=1), encoding="utf-8")
     print("OK", out)
