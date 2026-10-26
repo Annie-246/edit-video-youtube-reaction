@@ -5,7 +5,7 @@ Item types:
   clip  — cut from the source video [CLIP mm:ss–mm:ss]
   score — scoreboard update (**Bảng điểm:** line)
 Optional lines inside a talk block:  SIDE: / FULL: / BEAT: / OVER: (graphics), FACE: / BUBBLE: / MOTION:
-(screen mode of the talk), MEME: (meme cut in after a line) — see SKILL.md. OUTRO: / BREAK: are full-frame stings.
+(screen mode of the talk) — see SKILL.md. OUTRO: / BREAK: are full-frame stings.
 Per section (anywhere under its "## N." heading):  INFO: kicker | title | sub   → the title card
 above the presenter, e.g. "INFO: Công cụ 2/6 | Agent Reach | Tìm lời phàn nàn của khách".
 Optional lines inside a clip paragraph: LABEL: text    NOTE: text
@@ -175,7 +175,7 @@ def parse_script(md_path: Path) -> list[dict]:
                 #   MOTION graphics full screen, voice only — no presenter on screen
                 cur["mode"] = s.split(":", 1)[0].lower(); continue
             if s.startswith("MEME:"):
-                cur.setdefault("memes", []).append(s[5:].strip()); continue
+                continue   # memes were dropped from the pipeline; old scripts may still carry the line
             if s.startswith("SIDE:"):
                 cur.setdefault("side", []).append(s[5:].strip()); continue
             if s.startswith("FULL:"):
@@ -234,7 +234,7 @@ def main(project: Path) -> list[dict]:
           f"{len(items)-len(talks)-len(clips)-len(breaks)} score")
     for it in items:
         if it["type"] == "talk":
-            print(f"  {it['id']} talk  [{it['section']}] {len(it['text'].split())} từ | {it.get('mode', 'layout')} | meme: {len(it.get('memes') or [])}")
+            print(f"  {it['id']} talk  [{it['section']}] {len(it['text'].split())} từ | {it.get('mode', 'layout')}")
         elif it["type"] == "clip":
             print(f"  {it['id']} clip  {it['start']:.0f}s–{it['end']:.0f}s ({it['end']-it['start']:.0f}s)")
         elif it["type"] == "break":

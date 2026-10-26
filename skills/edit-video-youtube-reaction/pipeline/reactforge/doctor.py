@@ -93,10 +93,6 @@ def check(project: Path) -> list[tuple[str, str, str]]:
                 for a, b in zip(sc, sc[1:] + [{"start": total}]):
                     if b["start"] - a["start"] > 10.5 and a["template"] != "broll":
                         out.append((WARN, tid, f"cảnh {a['template']} ở {a['start']:.0f}s đứng {b['start'] - a['start']:.0f}s (luật 10 giây)"))
-            mj = work / "memes" / f"{tid}.json"
-            for m in (read_json(mj) if mj.exists() else []):
-                if not Path(m["file"]).exists():
-                    out.append((ERROR, tid, f"meme \"{m['q']}\" mất file {m['file']} (chạy lại bước memes)"))
             for k, _ in enumerate(it.get("full") or []):
                 mp4 = work / "cards" / f"{tid}_full{k}.mp4"
                 png = work / "gfx" / f"{tid}_full{k}.png"
@@ -145,7 +141,7 @@ def check(project: Path) -> list[tuple[str, str, str]]:
 
 
 def _face_gaps(work: Path, tid: str, al: dict) -> list[str]:
-    """10-second rule in FACE: a keyword phrase, a full-frame card or a meme each count as new."""
+    """10-second rule in FACE: a keyword phrase, or a full-frame card each count as new."""
     marks = [0.0, al.get("kept") or (al["end"] - al["start"])]
     kw = work / "keywords" / f"{tid}.json"
     if kw.exists():

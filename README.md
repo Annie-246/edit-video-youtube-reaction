@@ -1,7 +1,7 @@
 # Edit Video Youtube Reaction
 
 Plugin Claude Code dựng video YouTube dạng react/phân tích: đưa kịch bản, file quay và link
-video gốc, nhận về `out/final.mp4` 1080p đã cắt vấp, có motion graphic, phụ đề Việt, meme,
+video gốc, nhận về `out/final.mp4` 1080p đã cắt vấp, có motion graphic, phụ đề Việt,
 logo và ảnh minh hoạ.
 
 ## Cài đặt: 3 bước, không cần biết kỹ thuật
@@ -65,7 +65,7 @@ khi cần họ bấm đồng ý. **Không `git clone` repo này** (bản clone k
 - **3 chế độ màn hình kiểu Greg Isenberg:** `FACE` (người nói full màn, chỉ hiện cụm từ khoá),
   `BUBBLE` (nội dung trong khung bo góc trên nền lưới, ô mặt nhỏ bên phải), `MOTION` (motion
   graphic tràn màn, không người).
-- **Tự chèn meme** (tìm, tải, cất vào kho `meme-library/`), **logo thương hiệu** được nhắc tên
+- **Tự chèn logo thương hiệu** được nhắc tên
   (kho `logo-library/`) và **ảnh thật** minh hoạ.
 - **Bộ motion studio:** swipe ảnh, dải màu, ảnh trôi, chữ khổng lồ, nút viên thuốc, quỹ đạo,
   thanh gõ prompt, giao diện app 3D; mỗi mẫu có bản sáng / tối.

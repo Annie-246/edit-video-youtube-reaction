@@ -10,7 +10,7 @@
       "name": "edit-video-youtube-reaction",
       "displayName": "Edit Video Youtube Reaction",
       "source": "./",
-      "description": "Dựng video react/phân tích YouTube: cắt vấp, bố cục trắng + 3 chế độ FACE/BUBBLE/MOTION, chữ từ khoá, phụ đề Việt, motion graphic Remotion (bộ studio sáng/tối), tự chèn meme, logo và ảnh thật."
+      "description": "Dựng video react/phân tích YouTube: cắt vấp, bố cục trắng + 3 chế độ FACE/BUBBLE/MOTION, chữ từ khoá, phụ đề Việt, motion graphic Remotion (bộ studio sáng/tối), tự chèn logo và ảnh thật."
     }
   ]
 }

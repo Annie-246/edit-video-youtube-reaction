@@ -1,10 +1,9 @@
 """Compose every plan item with ffmpeg, then concatenate."""
 from __future__ import annotations
-import math, re, subprocess
+import math, subprocess
 from pathlib import Path
 from .common import load_project, read_json, run, ffprobe_duration, pick_encoder, escape_ffmpeg_path, FONT_DIR
 from .graphics import layout_for
-from .memes import place_memes, _dims, MAX_UPSCALE
 
 
 def _enc(cfg) -> list[str]:
@@ -519,73 +518,6 @@ def render_screen(project: Path, cfg: dict, L: dict, item: dict, al: dict, out: 
     _finish(cfg, cmd, fc, _full_cards(project, item, fps, cmd, fc, "[vc]", 6), nfr, dur, out)
 
 
-MEME_DB = -31.0      # meme sound under the voice (the voice sits near -19 dB and is never ducked)
-MEME_GAP_DB = -24.0  # a little louder while it plays in the pause after a sentence, still under the voice
-
-
-def _mean_db(f: Path, ss: float, secs: float) -> float | None:
-    """Mean level of the part of a meme that will play; None if it has no audio stream."""
-    r = subprocess.run(["ffmpeg", "-hide_banner", "-ss", f"{ss:.3f}", "-t", f"{secs:.3f}", "-i", str(f), "-vn", "-af", "volumedetect", "-f", "null", "-"],
-                       capture_output=True, text=True)
-    m = re.search(r"mean_volume: (-?[\d.]+) dB", r.stderr)
-    return float(m.group(1)) if m else None
-
-
-def render_memes(project: Path, cfg: dict, L: dict, memes: list[dict], body: Path, out: Path) -> None:
-    """Lay memes over a rendered talk, right after the sentence their anchor belongs to: the meme
-    shows on black (full frame or part of it, no card) while the presenter keeps talking. A meme
-    with sound plays it quietly under the voice (louder only in the pause after the sentence); the
-    voice is never lowered; a still is silent. Length unchanged."""
-    fps = cfg["output"]["fps"]; W, H = L["w"], L["h"]
-    total = ffprobe_duration(body)
-    nfr = int(round(total * fps)); dur = nfr / fps
-    def q(t: float) -> float:
-        return round(round(t * fps) / fps, 6)
-    cmd = ["ffmpeg", "-v", "error", "-y", "-i", str(body)]
-    fc, vtag, mixes = [], "[0:v]", []
-    for k, m in enumerate(sorted(memes, key=lambda m: m["t"])):
-        t = q(min(max(m["t"], 0.3), total - 0.5))
-        md = min(int(round(float(m["secs"]) * fps)) / fps, dur - t)
-        n = k + 1   # input index of this meme
-        if m.get("still"):
-            cmd += ["-loop", "1", "-t", f"{md + 0.5:.3f}", "-i", m["file"]]
-        else:
-            cmd += ["-ss", f"{float(m.get('ss', 0)):.3f}", "-t", f"{md + 0.5:.3f}", "-i", m["file"]]
-        part = m.get("mode") == "part"
-        bw, bh = (int(W * 0.58) // 2 * 2, int(H * 0.66) // 2 * 2) if part else (W, H)
-        x = f"(W-w)/2{'-' if k % 2 else '+'}{int(W * 0.17)}" if part else "(W-w)/2"
-        if not m.get("still"):   # blur standard: never enlarge a clip past MAX_UPSCALE x its own pixels
-            sw, sh = _dims(Path(m["file"]))
-            if sw and sh and min(bw / sw, bh / sh) > MAX_UPSCALE:
-                bw, bh = int(sw * MAX_UPSCALE) // 2 * 2, int(sh * MAX_UPSCALE) // 2 * 2
-        key = ",colorkey=0x00FF00:0.32:0.12" if m.get("green") else ""
-        fc.append(f"color=c=black:s={W}x{H}:r={fps}:d={md + 0.5:.3f}[mb{k}]")
-        fc.append(f"[{n}:v]fps={fps},scale={bw}:{bh}:force_original_aspect_ratio=decrease,setsar=1,format=rgba{key}[mk{k}]")
-        fc.append(f"[mb{k}][mk{k}]overlay=x={x}:y=(H-h)/2,trim=duration={md:.6f},setpts=PTS-STARTPTS+{t:.6f}/TB,setsar=1[mv{k}]")
-        fc.append(f"{vtag}[mv{k}]overlay=0:0:eof_action=pass[vo{k}]")
-        vtag = f"[vo{k}]"
-        level = _mean_db(Path(m["file"]), float(m.get("ss", 0)), md) if m.get("audio") and not m.get("still") else None
-        if level is not None and level > -50:
-            # plain gain, never loudnorm: on a clip that opens silent loudnorm lifts the hiss to 0 dB
-            lo, hi = (10 ** (min(12.0, db - level) / 20) for db in (MEME_DB, MEME_GAP_DB))
-            g = min(float(m.get("gap", 0.0)), md)   # seconds of silence before the voice comes back
-            ms = int(round(t * 1000))
-            # louder over the pause, back under the voice 0.15 s before it resumes (quoted: commas need no escaping)
-            amp = f"{lo:.4f}+{hi - lo:.4f}*min(1,max(0,({g:.3f}-t)/0.15))"
-            fc.append(f"[{n}:a]aresample=48000,aformat=channel_layouts=stereo,asetpts=PTS-STARTPTS,volume='{amp}':eval=frame,"
-                      f"alimiter=limit=0.9,atrim=end={md:.6f},afade=t=out:st={max(0.0, md - 0.15):.3f}:d=0.15,adelay={ms}|{ms}[ma{k}]")
-            mixes.append(f"[ma{k}]")
-    fc.append("[0:a]aformat=channel_layouts=stereo[voice]")
-    if mixes:
-        fc.append(f"[voice]{''.join(mixes)}amix=inputs={len(mixes) + 1}:duration=first:normalize=0,"
-                  f"asetpts=N/SR/TB,apad,atrim=end={dur:.6f},asetpts=PTS-STARTPTS[a]")
-    else:
-        fc.append(f"[voice]asetpts=N/SR/TB,apad,atrim=end={dur:.6f},asetpts=PTS-STARTPTS[a]")
-    fc.append(f"{vtag}format=yuv420p[v]")
-    cmd += ["-filter_complex", ";".join(fc), "-map", "[v]", "-map", "[a]", "-frames:v", str(nfr), "-r", str(fps)] + _enc(cfg) + ["-c:a", "pcm_s16le", str(out)]
-    run(cmd)
-
-
 def render_clip(project: Path, cfg: dict, L: dict, item: dict, meta: dict, pip_src: Path, pip_is_video: bool, out: Path) -> None:
     """Source clip full screen with Vietnamese subtitles — no presenter, no frame (user's call)."""
     fps = cfg["output"]["fps"]
@@ -673,16 +605,13 @@ def main(project: Path, only: str | None = None, concat: bool = True) -> None:
             if not al or al["start"] is None:
                 print(f"⚠ {it['id']}: chưa khớp lời, bỏ qua"); order.pop(); continue
             mode = it.get("mode", "layout")
-            mp = work / "memes" / f"{it['id']}.json"
-            memes = place_memes(read_json(mp), it, words, al) if mp.exists() else []
-            body = seg / f"{it['id']}.body.mov" if memes else out
             print(f"{it['id']}: đang render talk ({mode})...")
             if mode == "face":
-                render_face(project, cfg, L, it, al, body, words)
+                render_face(project, cfg, L, it, al, out, words)
             elif mode in ("bubble", "motion"):
-                render_screen(project, cfg, L, it, al, body)
+                render_screen(project, cfg, L, it, al, out)
             else:
-                render_talk(project, cfg, L, it, al, body)
+                render_talk(project, cfg, L, it, al, out)
             if mode != "face":
                 # joins: shrink from / grow to a full-screen FACE talk; MOTION also opens out of /
                 # closes into a neighbouring BUBBLE talk's big card
@@ -693,10 +622,8 @@ def main(project: Path, only: str | None = None, concat: bool = True) -> None:
                     if mode == "motion" and 0 <= j < len(seq) and seq[j]["type"] == "talk" and seq[j].get("mode") == "bubble":
                         return "bubble"
                     return None
-                _bubble_morph(project, cfg, L, al, body, enter=_via(k - 1), leave=_via(k + 1), mode=mode)
-            if memes:
-                render_memes(project, cfg, L, memes, body, out)
-            print(f"{it['id']} → {out.name} ({ffprobe_duration(out):.1f}s)" + (f" · {len(memes)} meme" if memes else ""))
+                _bubble_morph(project, cfg, L, al, out, enter=_via(k - 1), leave=_via(k + 1), mode=mode)
+            print(f"{it['id']} → {out.name} ({ffprobe_duration(out):.1f}s)")
         else:
             m = meta.get(it["id"])
             if not m or not (project / "source" / m["file"]).exists():

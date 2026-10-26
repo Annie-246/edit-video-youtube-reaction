@@ -155,8 +155,6 @@ def check_round(project: Path, rnd: int, model: str, only: str | None = None) ->
         if only and tid != only:
             continue
         seg = work / "seg" / f"{tid}.mov"
-        if (work / "seg" / f"{tid}.body.mov").exists():
-            seg = work / "seg" / f"{tid}.body.mov"   # listen to the talk, not the memes cut into it
         al = by_id.get(tid)
         if not seg.exists() or not al or al.get("start") is None:
             continue
@@ -225,7 +223,6 @@ def main(project: Path, rounds: int = 2, only: str | None = None, model: str = "
             cards.main(project, only=tid)
             # render skips segments that already exist; the old cut must go first
             (work / "seg" / f"{tid}.mov").unlink(missing_ok=True)
-            (work / "seg" / f"{tid}.body.mov").unlink(missing_ok=True)
             render.main(project, only=tid, concat=False)
     if rebuild:
         render.concat_only(project)

@@ -183,7 +183,7 @@ tình huống có nhiều lựa chọn, chọn theo nhịp đoạn (mục 2) và
 | 26 | Picture-in-Picture | quay màn hình + mặt người | `BUBBLE:`, bubble tròn của `MOTION:` (tự động) |
 | 27 | Split Screen | đặt hai thứ cạnh nhau cùng lúc | `compare`, `beforeafter`; hai video chạy song song → mẫu `split` (9c) |
 | 28 | Motion Backgrounds | nền của thẻ | nền than + quầng cam có sẵn; không thêm nền khác |
-| 29 | Sticker / Emoji | phản ứng vui, ngắn | ưu tiên meme; cần sticker nhỏ ở `FACE:` → `OVER: sticker` (9b), rất hạn chế |
+| 29 | Sticker / Emoji | phản ứng vui, ngắn | không chèn meme; cần sticker nhỏ ở `FACE:` → `OVER: sticker` (9b), rất hạn chế |
 | 30 | Transitions | nối hai cảnh | chỉ ngôn ngữ chuyển cảnh có sẵn: co/giãn, morph, nhoè → nét. **Không** thêm wipe / glitch / slide |
 | 31 | Light Leaks / Flares | — | **không dùng** |
 | 32 | Map / Route | chỉ khi kịch bản nói về địa điểm, hành trình | mẫu `map` (9c), hiếm |

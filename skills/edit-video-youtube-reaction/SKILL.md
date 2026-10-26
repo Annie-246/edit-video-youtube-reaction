@@ -1,6 +1,6 @@
 ---
 name: edit-video-youtube-reaction
-description: Edit Video Youtube Reaction — dựng video react/phân tích YouTube từ kịch bản markdown + bản quay đọc kịch bản + link video gốc. Bố cục trắng kiểu Claude/Anthropic (khung nội dung lớn, avatar dọc, tiêu đề phần màu cam, chữ nhảy theo từng từ) xen 3 chế độ kiểu Greg Isenberg (người nói full màn chỉ hiện từ khoá, b-roll full màn có ô mặt nhỏ, motion graphic full màn không người), b-roll thật từ video gốc, motion graphic Remotion màu cam đất, sting chuyển phần/outro kiểu showreel, tự tìm và chèn meme kèm kho meme dùng lại, clip gốc full màn hình có phụ đề Việt, tự cắt vấp. Kích hoạt khi người dùng nói "edit video youtube reaction", "dựng video react", "ghép clip gốc với mặt người", hoặc gõ /reactforge.
+description: Edit Video Youtube Reaction — dựng video react/phân tích YouTube từ kịch bản markdown + bản quay đọc kịch bản + link video gốc. Bố cục trắng kiểu Claude/Anthropic (khung nội dung lớn, avatar dọc, tiêu đề phần màu cam, chữ nhảy theo từng từ) xen 3 chế độ kiểu Greg Isenberg (người nói full màn chỉ hiện từ khoá, b-roll full màn có ô mặt nhỏ, motion graphic full màn không người), b-roll thật từ video gốc, motion graphic Remotion màu cam đất, sting chuyển phần/outro kiểu showreel, clip gốc full màn hình có phụ đề Việt, tự cắt vấp. Kích hoạt khi người dùng nói "edit video youtube reaction", "dựng video react", "ghép clip gốc với mặt người", hoặc gõ /reactforge.
 ---
 
 # Edit Video Youtube Reaction — dựng video react tự động
@@ -64,7 +64,7 @@ description: Edit Video Youtube Reaction — dựng video react/phân tích YouT
   Không cắt cứng, không trượt ngang giữa các cảnh.
 - Mỗi video nên trộn: hook bằng `FACE:`, thân bài xen `FACE:` / `MOTION:` / bố cục avatar + quay màn hình.
   Một đoạn nói vừa cần graphic vừa cần quay màn hình thì tách bằng `---` thành hai đoạn.
-- `FACE:` không dùng `SIDE:`; muốn chen đồ hoạ thì dùng `OVER:` (đè lên người), `FULL:` / `BEAT:` hoặc meme.
+- `FACE:` không dùng `SIDE:`; muốn chen đồ hoạ thì dùng `OVER:` (đè lên người), `FULL:` / `BEAT:`. **Không chèn meme** (đã bỏ khỏi plugin).
 - `BUBBLE:` / `MOTION:` bắt buộc có `SIDE:` như bố cục trắng; mỗi cảnh ≤ 10 giây (`doctor` cảnh báo).
 
 ### Lớp `OVER:` (chỉ ở đoạn `FACE:`)
@@ -182,8 +182,6 @@ Mỗi video mới, hỏi đủ: (1) kịch bản (file `.md`, Google Doc hoặc 
 2. AI chạy Whisper bóc băng, cắt sạch vấp/lặp theo kịch bản.
 3. **Không dừng để duyệt cắt:** cắt và dựng một mạch tới bản cuối, trừ khi người dùng yêu cầu dừng.
 4. Áp note dựng của người dùng; không có note thì tự áp các quy tắc dưới đây.
-   Bước `memes` tự tìm chỗ chèn meme, tải meme, cất vào kho; **xem `work/memes_sheet.jpg`** rồi
-   bỏ / thay meme sai ý trước khi giao.
    Bước `visuals` tự chèn logo thương hiệu và ảnh thật; **xem `work/visuals_sheet.jpg`** rồi bỏ
    ảnh sai ý (sửa `work/visuals_auto.json`, chạy lại `visuals` rồi `panel --force`).
 5. Dựng graphic, b-roll, chữ nhảy, phụ đề clip, ghép và xuất `out/final.mp4`.
@@ -196,8 +194,8 @@ Mỗi video mới, hỏi đủ: (1) kịch bản (file `.md`, Google Doc hoặc 
 
 ## Quy tắc hình ảnh (khoá cứng)
 
-- **Luật 10 giây:** tối thiểu 10 giây có một hình mới. Ở `FACE:`, mỗi cụm từ khoá mới, thẻ FULL
-  hoặc meme đều tính là một hình mới (AI chọn từ khoá giữ nhịp ≤ 9 giây, thiếu thì tự chèn). Pipeline tự đảm bảo: cảnh graphic
+- **Luật 10 giây:** tối thiểu 10 giây có một hình mới. Ở `FACE:`, mỗi cụm từ khoá mới hoặc thẻ FULL
+  đều tính là một hình mới (AI chọn từ khoá giữ nhịp ≤ 9 giây, thiếu thì tự chèn). Pipeline tự đảm bảo: cảnh graphic
   nào dài quá 11 giây sẽ chạy 7 giây rồi tự chuyển sang b-roll cùng chủ đề (lấy mốc b-roll
   gần nhất phía trước trong đoạn đó). Vẫn nên khai cảnh dày: khoảng 6–9 giây một cảnh.
 - **Motion hiện theo lời (tự động):** cảnh dạng danh sách (`pills`, `flow`, `steps`, `checklist`, `recap`, `bars`,
@@ -275,7 +273,6 @@ video-cua-toi/
 | `BREAK: Tên phần` | màn quay lại danh sách chương, zoom vào chương mới (tên phần = tên dòng), tiếng im |
 | `---` | tách một đoạn nói thành hai |
 | `FACE:` / `BUBBLE:` / `MOTION:` | chế độ màn hình của đoạn nói (xem bảng bốn chế độ) |
-| `MEME: @"câu neo" {"q":"surprised pikachu","mood":"shock","secs":2,"mode":"part"}` | chèn meme ngay sau câu chứa câu neo (khai tay; AI vẫn tự chọn thêm) |
 | `OUTRO: Tiêu đề \| dòng phụ` | sting kết (đặt cuối cùng) |
 
 - `@"câu neo"` dò trong lời thật đã khớp (3–5 từ, phải duy nhất trong đoạn). Không tìm thấy
@@ -292,37 +289,6 @@ Danh mục mẫu và props: [motion/TEMPLATES.md](motion/TEMPLATES.md).
 ## Ảnh thật và logo: tự tìm, tự chèn
 
 Logo và ảnh thật là graphic nên chỉ tự chèn vào đoạn `MOTION:` (full màn). Bố cục avatar chỉ chạy quay màn hình; `FACE:` không có.
-
-- **Chọn chỗ:** sau `align`, AI đọc lời cả video, chọn khoảng **1 meme / 20 giây** (cách nhau ≥ 12 giây,
-  rải đều từ đầu tới cuối) ở câu đùa, cú twist, cú fail, con số sốc, câu hỏi tu từ, khoảnh khắc "wow";
-  tránh đoạn hướng dẫn nghiêm túc và lời kêu gọi. **Mọi video đều phải bóc kịch bản và chèn meme**, không
-  bỏ bước này. `q` là **từ khoá tiếng Anh** hợp ý câu nói ("mind blown", "facepalm", "money rain"…).
-  Kết quả ở `work/memes_auto.json`: sửa, xoá bớt, hoặc để `[]` nếu không muốn meme tự động.
-  `project.json` → `"memes": {"auto": false}` tắt hẳn phần tự chọn; dòng `MEME:` khai tay vẫn chạy.
-- **Tìm meme (theo thứ tự):** (1) tra kho (trùng tên/tag ≥ 60% thì dùng lại); (2) **GIF trong ô GIF của
-  Telegram** (`reactforge/tgmeme.py`, đăng nhập bằng tài khoản Telegram của người dùng); (3) clip meme
-  ngắn ≤ 20 giây bằng `yt-dlp`; (4) ảnh template Imgflip. Meme nền xanh tự tách nền. **Chuẩn độ nét:** không bao giờ phóng meme quá 1,4 lần số điểm ảnh gốc (Telegram bỏ kết quả quá nhỏ
-  và thử kết quả kế tiếp; `full` chỉ khi đủ nét, không thì `part`; render tự khoá mức phóng).
-  - **Cài Telegram một lần:** `pip install telethon`; lấy `api_id`/`api_hash` ở my.telegram.org → ghi vào
-    `~/.claude/telegram-gif/.env` (`TG_API_ID=…`, `TG_API_HASH=…`); chạy
-    `python -m reactforge.tgmeme login` (nhập số điện thoại + OTP). File `session.session` cùng thư mục
-    là chìa khoá tài khoản: **không đưa vào repo, không gửi ai**. Thiếu bất cứ thứ gì thì tự rơi về (3).
-    Nếu GIF Telegram không ra, kiểm tra bằng `python -m reactforge.tgmeme search "facepalm"`.
-- **Chèn:** **đè lên lời, không ngắt nhịp**, ngay sau câu chứa câu neo. Meme hiện trên **nền đen,
-  không bo thẻ**: `"mode":"full"` gần kín màn, `"part"` chiếm khoảng nửa màn, lệch trái/phải xen kẽ;
-  người dẫn vẫn nói tiếp bên dưới. **Tiếng meme để nhỏ, không bao giờ át hay hạ giọng người dẫn**
-  (khoá cứng): giọng giữ nguyên mức; tiếng meme đè lên lời ở ~−31 dB (giọng ~−19 dB). Meme **có tiếng**
-  được dời tới chỗ người dẫn **vừa nói hết câu và có quãng nghỉ ≥ 0,4 giây** (trong 8 giây sau câu neo),
-  bắt đầu ngay khi từ cuối dứt để giữ được tiếng meme: trong quãng nghỉ tiếng meme lên ~−24 dB, người
-  dẫn nói tiếp thì lùi về mức nhỏ (mượt 0,15 giây). Không có quãng nghỉ thì chèn ở cuối câu như meme
-  thường, tiếng nhỏ suốt. Meme **ảnh tĩnh** thì im. Thời lượng video không đổi.
-  Muốn nghe rõ trọn tiếng một meme thì neo nó vào câu cuối đoạn hoặc câu có nghỉ dài; đừng tăng mức meme. Clip ≤ 4,5 giây chạy trọn. Muốn meme ảnh: thêm `"image": true` (lấy từ Imgflip).
-  Điểm chèn tính lại mỗi lần render nên `verify` cắt thêm vẫn không lệch.
-- **Kho:** `<thư mục làm việc>/meme-library/` (thư mục chứa `projects/`), chia theo cảm xúc
-  (`shock/ laugh/ facepalm/ win/ fail/ awkward/ confused/ sad/ hype/ cringe/`), kèm `index.csv`
-  (tên, tag, nguồn URL, độ dài, nền xanh, đã dùng ở video nào). Đổi chỗ: `"memes": {"library": "…"}`.
-- **Bản quyền:** meme cắt từ phim / show có thể dính Content ID. Ưu tiên meme hoạt hình / nền xanh;
-  `index.csv` giữ URL nguồn để kiểm lại.
 
 ```text
 ## 2. Agent Reach
@@ -351,7 +317,7 @@ OVER: @"Đừng vội cho rằng" {"secs":3,"tpl":"blurtitle","kicker":"Greg lư
 ## archive.org: nguồn ưu tiên cho b-roll, nhạc nền, ảnh, tài liệu cũ (không dùng cho SFX)
 
 Khi cần **b-roll, video minh họa, nhạc nền, ảnh, sách/tài liệu cũ, bản lưu trang web**, tìm ở
-archive.org **trước** (sau khi tra kho `meme-library/` / `assets/`), rồi mới sang nguồn khác (Pexels, Openverse,
+archive.org **trước** (sau khi tra kho `assets/`), rồi mới sang nguồn khác (Pexels, Openverse,
 Wikimedia, yt-dlp). Logo thương hiệu vẫn theo đường logo ở trên.
 
 - **Tìm:** `https://archive.org/advancedsearch.php?q=<từ khoá> AND mediatype:(movies OR audio OR image OR texts)&fl[]=identifier&fl[]=title&fl[]=licenseurl&rows=20&output=json`.
@@ -391,7 +357,7 @@ python $RF --data "${CLAUDE_PLUGIN_DATA}" all projects/video-cua-toi
 python $RF --data "${CLAUDE_PLUGIN_DATA}" doctor projects/video-cua-toi   # KIỂM TRƯỚC KHI GIAO
 ```
 
-Các bước nối nhau: `plan → source → subs → align → captions → memes → visuals → panel → cards →
+Các bước nối nhau: `plan → source → subs → align → captions → visuals → panel → cards →
 graphics → render → verify`. Sửa lẻ một đoạn rồi ghép lại:
 
 ```powershell
@@ -424,14 +390,6 @@ dựng lại đúng các đoạn đó.
 - **Phụ đề YouTube trả 429:** vẫn tải được video; phụ đề thì Whisper nghe clip.
 - **Khung nội dung cao hơn 16:9:** b-roll và clip luôn hiện đủ khung hình, dải trống lấp bằng
   chính video làm mờ. Đừng đổi sang crop, sẽ mất chữ ở hai mép.
-- **Kịch bản viết liền một đoạn, ít dấu chấm:** điểm chèn meme dựa vào dấu câu, chữ viết hoa mở câu
-  ("…diễn viên này Cũng không cần…") và quãng nghỉ; không thấy thì lấy quãng nghỉ dài nhất trong
-  8 giây sau câu neo. Câu neo meme nên là đuôi câu chốt.
-- **Ghép video có meme:** đoạn có meme dựng thân trước (`seg/<id>.body.mov`) rồi mới đè meme lên;
-  mọi nhánh phải `setsar=1`, lệch SAR một chút (6479:6480) là ffmpeg từ chối.
-- **Đừng `loudnorm` tiếng meme:** nhiều clip meme mở đầu bằng vài giây im lặng; `loudnorm` kéo tiếng
-  rè đó lên 0 dB. Đo `volumedetect` đúng đoạn sẽ phát: dưới −50 dB coi như meme câm (không hạ giọng),
-  còn lại chỉnh bằng `volume` về −20 dB (tăng tối đa +12 dB) + `alimiter`.
 - **Props Remotion phình to làm sập trình duyệt:** ảnh được nhúng base64 vào props, PNG gốc 2–8 MB
   nhân với số cảnh dùng lại ảnh đó là ra props hơn 100 MB, Chrome headless chết giữa chừng. Ảnh
   đưa vào cảnh nên là JPEG ≤ 1600px (bước `visuals` tự làm); ảnh tự chuẩn bị thì thu nhỏ trước.

@@ -5,7 +5,7 @@ from pathlib import Path
 
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="reactforge", description="Dựng video react: mặt người + clip gốc + đồ hoạ")
-    ap.add_argument("cmd", choices=["plan", "source", "subs", "align", "captions", "panel", "graphics", "render", "concat", "verify", "all", "doctor", "cards", "voice", "memes", "visuals"])
+    ap.add_argument("cmd", choices=["plan", "source", "subs", "align", "captions", "panel", "graphics", "render", "concat", "verify", "all", "doctor", "cards", "voice", "visuals"])
     ap.add_argument("project", type=Path)
     ap.add_argument("--only", help="chỉ dựng 1 item (vd t03, c02)")
     ap.add_argument("--concat", action="store_true", help="tự động nối lại file cuối (tiện khi dùng kèm --only)")
@@ -18,14 +18,14 @@ def main(argv=None):
         from . import doctor
         doctor.main(p)
         return
-    from . import cards, script_parser, source, subs, align, captions, memes, visuals, panel, graphics, render, verify, voice
+    from . import cards, script_parser, source, subs, align, captions, visuals, panel, graphics, render, verify, voice
     steps = {"plan": lambda: script_parser.main(p), "source": lambda: source.main(p), "subs": lambda: subs.main(p, a.force),
-             "align": lambda: align.main(p, a.force), "captions": lambda: captions.main(p), "memes": lambda: memes.main(p, a.force), "visuals": lambda: visuals.main(p, a.force), "panel": lambda: panel.main(p, a.only, a.force),
+             "align": lambda: align.main(p, a.force), "captions": lambda: captions.main(p), "visuals": lambda: visuals.main(p, a.force), "panel": lambda: panel.main(p, a.only, a.force),
              "voice": lambda: voice.main(p, force=a.force), "cards": lambda: cards.main(p, a.only, a.force), "graphics": lambda: graphics.render_all(p, a.only),
              "render": lambda: render.main(p, a.only, concat=(not a.only or a.concat)), "concat": lambda: render.concat_only(p),
              "verify": lambda: verify.main(p, rounds=a.rounds, only=a.only, model=a.vmodel)}
     if a.cmd == "all":
-        for k in ("plan", "source", "subs", "align", "captions", "memes", "visuals", "panel", "cards", "graphics", "render", "verify"):
+        for k in ("plan", "source", "subs", "align", "captions", "visuals", "panel", "cards", "graphics", "render", "verify"):
             print(f"── {k}"); steps[k]()
     else:
         steps[a.cmd]()

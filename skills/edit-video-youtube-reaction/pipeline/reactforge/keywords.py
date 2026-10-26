@@ -11,7 +11,7 @@ from __future__ import annotations
 from pathlib import Path
 from .common import read_json, write_json
 
-MAX_GAP = 9.0     # seconds without a phrase (or card / meme) before the filler steps in
+MAX_GAP = 9.0     # seconds without a phrase (or card) before the filler steps in
 MIN_GAP = 2.0
 MAX_LEN = 5
 
