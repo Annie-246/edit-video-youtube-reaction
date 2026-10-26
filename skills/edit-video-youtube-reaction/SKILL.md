@@ -144,7 +144,28 @@ Học từ video mẫu "học thêm motion graphics (2)".
     ý, không `pills`) đè trên người nói ~3 giây → cảnh minh hoạ **tự vẽ** cho đúng ý đó (`FULL:`) → quay lại người nói
     kèm chữ highlight. Ý sau dùng hình khác ý trước.
 - **Outro** (`OUTRO:`) giữ kiểu showreel: chữ trồi có bóng lặp, tiếng whoosh + trầm tự tổng hợp.
-  **Không có intro**: video vào thẳng lời người dẫn.
+  **Không có sting mở đầu**: video vào thẳng lời người dẫn, nhưng đoạn hook đầu dựng theo "Intro kiểu match cut" dưới đây.
+
+## Intro kiểu match cut (khoá cứng)
+
+Đoạn intro / hook (từ câu đầu tới hết hook, **trước** câu "video này có N ý") dựng theo nhịp học từ video
+mẫu "học cách match cut và nhịp, sound effect". Chi tiết số đo, cách dựng, script mẫu, bẫy:
+**`references/intro-match-cut.md`** (đọc trước khi dựng intro).
+
+- **Chỉ xen kẽ hình ảnh full khung ↔ mặt người full khung**, không bố cục avatar. Mỗi danh từ một hình
+  (cảnh video gốc, logo, thẻ số liệu tự code, ảnh), **hình đến trước lời 0,1–0,3 s**; câu liệt kê mỗi mục một cảnh.
+- Cảnh 0,8–2 s; đoạn liệt kê / cao trào 0,33–0,4 s một cảnh, **cắt đúng phách nhạc**. Mặt người ~20–30 %,
+  mỗi lần 1,4–2,5 s, ở câu nhận định / ngôi thứ nhất; punch-in 1,15 đúng chữ nhấn.
+- **Match cut thật:** khớp vị trí + cỡ mặt (đo bằng nhận diện mặt) khi cắt nhân vật ↔ người dẫn, cùng bố
+  cục giữa hai thẻ liền nhau, cùng tâm giữa hai logo. Mọi cảnh tư liệu cùng một tốc độ push-in, zoom làm ở 4K
+  (zoompan ở 1080p làm hình rung).
+- **Chữ highlight vẫn bắt buộc** (composition `Keys`) trên mặt người và cảnh tư liệu; không đè lên thẻ đã có chữ;
+  một lúc một cụm.
+- **Nhạc nền kịch tính bắt buộc:** bài có lắng → dồn → drop; **drop rơi đúng câu chuyển ý lớn**; nhạc dưới giọng
+  12–16 dB (cân theo từng đoạn + ducking nhẹ, đo chứ đừng đặt một mức cố định); **tắt sạch** sau từ cuối của intro.
+- **SFX tối thiểu** (nhạc gánh nhịp): ~2–3 tiếng cho intro 45 s — whoosh mềm ở chuyển ý có chuyển động (L1),
+  im lặng 0,3 s (L15), boom ở thẻ tiêu đề (L5). Không swipe ở từng điểm cắt, không tiếng điện tử cho phim tư liệu.
+- Kết intro: im lặng → thẻ tiêu đề 1,8 s (flash, chữ đập vào, nền là cảnh đẹp của video gốc) + boom.
 
 ## Quy tắc SFX (khoá cứng)
 
@@ -194,7 +215,9 @@ Mỗi video mới, hỏi đủ: (1) kịch bản (file `.md`, Google Doc hoặc 
 4. Áp note dựng của người dùng; không có note thì tự áp các quy tắc dưới đây.
    Bước `visuals` tự chèn logo thương hiệu và ảnh thật; **xem `work/visuals_sheet.jpg`** rồi bỏ
    ảnh sai ý (sửa `work/visuals_auto.json`, chạy lại `visuals` rồi `panel --force`).
-5. Dựng graphic, b-roll, chữ nhảy, phụ đề clip, ghép và xuất `out/final.mp4`.
+5. Dựng graphic, b-roll, chữ nhảy, phụ đề clip, ghép và xuất `out/final.mp4`. Sau đó dựng intro match cut
+   (script EDL theo `references/intro-match-cut.md`), sao lưu `final.mp4` rồi ghép intro vào đầu. Chạy lại
+   `render --concat` sẽ ghi đè bản đã ghép → phải ghép lại.
 6. Người dùng nghiệm thu và yêu cầu chỉnh thêm.
 
 ## Quy tắc cắt (khoá cứng)
